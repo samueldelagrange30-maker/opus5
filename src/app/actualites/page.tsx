@@ -4,7 +4,7 @@ import { NewsList } from "@/components/news-list";
 import { Empty, Notice } from "@/components/ui";
 
 export const metadata: Metadata = { title: "Actualités TCG", description: "Les dernières actualités Pokémon TCG et One Piece Card Game.", alternates: { canonical: "/actualites" } };
-export const revalidate = 1800;
+export const dynamic = "force-dynamic";
 
 export default async function NewsPage() {
   const { items, errors } = await getNews(30);

@@ -4,7 +4,7 @@ import { config } from "@/lib/config";
 import { GAMES } from "@/lib/types";
 import { RANKINGS } from "@/lib/data";
 
-export const revalidate = 86400;
+export const dynamic = "force-dynamic";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const base = config.siteUrl.replace(/\/$/, "");

@@ -7,12 +7,8 @@ import { CardGrid } from "@/components/card-tile";
 import { Empty, Notice } from "@/components/ui";
 import type { GameId, RankingType } from "@/lib/types";
 
-export const revalidate = 1800;
+export const dynamic = "force-dynamic";
 type Params = { type: string };
-
-export function generateStaticParams() {
-  return Object.keys(RANKINGS).map((type) => ({ type }));
-}
 
 export async function generateMetadata({ params }: { params: Promise<Params> }): Promise<Metadata> {
   const t = (await params).type as RankingType;

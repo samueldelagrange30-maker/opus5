@@ -1,6 +1,7 @@
 // Mode direct : lecture des API publiques (TCGdex, OPTCG API…) avec cache.
 // Fonctionne sans base de données. Certaines fonctionnalités (classements basés sur
 // l'activité, historique long, comptes utilisateurs) nécessitent Supabase.
+import { unstable_cache } from "next/cache";
 import * as catalog from "../catalog";
 import * as tcgdex from "../providers/tcgdex";
 import { getFxRates, type FxRates } from "../fx";
@@ -38,7 +39,7 @@ async function rankingPool(game?: GameId): Promise<{ items: CardListItem[]; scop
       scope.push("toutes les cartes One Piece");
     }
     if (!game || game === "pokemon") {
-      const recent = (await sortedSets("pokemon").catch(() => [])).filter((s) => s.releaseDate).slice(0, 6);
+      const recent = (await sortedSets("pokemon").catch(() => [])).filter((s) => s.releaseDate).slice(0, 3);
       const lists = await mapLimit(recent, 2, (s) => catalog.getSetCards("pokemon", s.id, fx).catch(() => []));
       parts.push(...lists.flat().map(catalog.toListItem));
       if (recent.length) scope.push(`les ${recent.length} dernières extensions Pokémon`);
@@ -47,14 +48,26 @@ async function rankingPool(game?: GameId): Promise<{ items: CardListItem[]; scop
   });
 }
 
-export const liveRepo: Repository = {
-  mode: "live",
-
-  async listSets(game) {
-    const games: GameId[] = game ? [game] : ["pokemon", "onepiece"];
+// Résultats compacts mis en cache côté serveur (2 h) : évite de recharger des centaines de cartes à chaque visite.
+const cachedSets = unstable_cache(
+  async (game: GameId | "all") => {
+    const games: GameId[] = game === "all" ? ["pokemon", "onepiece"] : [game];
     const lists = await Promise.all(games.map((g) => catalog.listSets(g).catch(() => [] as TcgSet[])));
     return lists.flat().sort((a, b) => (b.releaseDate ?? "").localeCompare(a.releaseDate ?? ""));
   },
+  ["live-sets-v1"],
+  { revalidate: 6 * 3600 },
+);
+const cachedRanking = unstable_cache(
+  async (type: RankingType, game: GameId | "all", limit: number) => computeRanking(type, game === "all" ? undefined : game, limit),
+  ["live-ranking-v1"],
+  { revalidate: 2 * 3600 },
+);
+
+export const liveRepo: Repository = {
+  mode: "live",
+
+  listSets: (game) => cachedSets(game ?? "all"),
 
   getSet: (game, setId) => catalog.getSet(game, setId),
 
@@ -147,32 +160,33 @@ export const liveRepo: Repository = {
     return out.slice(0, 10);
   },
 
-  async ranking(type: RankingType, opts = {}): Promise<RankingResult> {
-    const limit = opts.limit ?? 100;
-    if (type === "most-searched" || type === "popular" || type === "best-sellers") {
-      return {
-        type, items: [], available: false,
-        notice: type === "best-sellers"
-          ? "Classement basé sur les ventes conclues eBay : nécessite Supabase et l'accès eBay Marketplace Insights (EBAY_CLIENT_ID / EBAY_CLIENT_SECRET)."
-          : "Classement basé sur l'activité réelle des utilisateurs : nécessite la base de données Supabase.",
-      };
-    }
-    const { items, scope } = await rankingPool(opts.game);
-    let ranked: CardListItem[] = [];
-    if (type === "most-expensive") ranked = sortCards(items.filter((c) => c.price.eur !== null), "price-desc");
-    if (type === "gainers-24h") ranked = items.filter((c) => (c.price.changes.h24?.pct ?? 0) > 0).sort((a, b) => b.price.changes.h24!.pct - a.price.changes.h24!.pct);
-    if (type === "gainers-7d") ranked = items.filter((c) => (c.price.changes.d7?.pct ?? 0) > 0).sort((a, b) => b.price.changes.d7!.pct - a.price.changes.d7!.pct);
-    if (type === "losers-7d") ranked = items.filter((c) => (c.price.changes.d7?.pct ?? 0) < 0).sort((a, b) => a.price.changes.d7!.pct - b.price.changes.d7!.pct);
-    if (type === "recent") ranked = sortCards(items, "release-desc");
-    // Les variations sur des cartes à quelques centimes ne sont pas significatives.
-    if (type.startsWith("gainers") || type.startsWith("losers")) ranked = ranked.filter((c) => (c.price.eur ?? 0) >= 1);
-    const changeNote = type.startsWith("gainers") || type.startsWith("losers")
-      ? " Variations calculées à partir des moyennes publiées par les sources (méthode indiquée au survol), cartes ≥ 1 €."
-      : "";
-    return { type, items: ranked.slice(0, limit), available: ranked.length > 0, notice: `Mode direct : classement calculé sur ${scope || "les données disponibles"}.${changeNote}` };
-  },
+  ranking: (type, opts = {}) => cachedRanking(type, opts.game ?? "all", opts.limit ?? 100),
 };
 
 function toSuggestion(c: CardListItem): Suggestion {
   return { game: c.game, id: c.id, name: c.name, setName: c.setName, number: c.number, image: c.imageSmall, priceEur: c.price.eur };
+}
+
+async function computeRanking(type: RankingType, game: GameId | undefined, limit: number): Promise<RankingResult> {
+  if (type === "most-searched" || type === "popular" || type === "best-sellers") {
+    return {
+      type, items: [], available: false,
+      notice: type === "best-sellers"
+        ? "Classement basé sur les ventes conclues eBay : nécessite Supabase et l'accès eBay Marketplace Insights (EBAY_CLIENT_ID / EBAY_CLIENT_SECRET)."
+        : "Classement basé sur l'activité réelle des utilisateurs : nécessite la base de données Supabase.",
+    };
+  }
+  const { items, scope } = await rankingPool(game);
+  let ranked: CardListItem[] = [];
+  if (type === "most-expensive") ranked = sortCards(items.filter((c) => c.price.eur !== null), "price-desc");
+  if (type === "gainers-24h") ranked = items.filter((c) => (c.price.changes.h24?.pct ?? 0) > 0).sort((a, b) => b.price.changes.h24!.pct - a.price.changes.h24!.pct);
+  if (type === "gainers-7d") ranked = items.filter((c) => (c.price.changes.d7?.pct ?? 0) > 0).sort((a, b) => b.price.changes.d7!.pct - a.price.changes.d7!.pct);
+  if (type === "losers-7d") ranked = items.filter((c) => (c.price.changes.d7?.pct ?? 0) < 0).sort((a, b) => a.price.changes.d7!.pct - b.price.changes.d7!.pct);
+  if (type === "recent") ranked = sortCards(items, "release-desc");
+  // Les variations sur des cartes à quelques centimes ne sont pas significatives.
+  if (type.startsWith("gainers") || type.startsWith("losers")) ranked = ranked.filter((c) => (c.price.eur ?? 0) >= 1);
+  const changeNote = type.startsWith("gainers") || type.startsWith("losers")
+    ? " Variations calculées à partir des moyennes publiées par les sources (méthode indiquée au survol), cartes ≥ 1 €."
+    : "";
+  return { type, items: ranked.slice(0, limit), available: ranked.length > 0, notice: `Mode direct : classement calculé sur ${scope || "les données disponibles"}.${changeNote}` };
 }

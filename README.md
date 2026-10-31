@@ -26,7 +26,7 @@ npm run dev                  # http://localhost:3000
 
 ### Deux modes de données
 
-1. **Mode direct** (aucune configuration) : le catalogue et les prix sont lus en temps réel depuis TCGdex et OPTCG API, avec le cache de Next.js (12 h pour le catalogue, 2 h pour les prix). Toutes les pages publiques fonctionnent. Limites : recherche Pokémon plafonnée à 120 résultats hors filtre d'extension, classements calculés sur toutes les cartes One Piece et les 6 dernières extensions Pokémon, pas de comptes utilisateurs.
+1. **Mode direct** (aucune configuration) : le catalogue et les prix sont lus en temps réel depuis TCGdex et OPTCG API, avec le cache de Next.js (12 h pour le catalogue, 2 h pour les prix). Toutes les pages publiques fonctionnent. Limites : recherche Pokémon plafonnée à 120 résultats hors filtre d'extension, classements calculés sur toutes les cartes One Piece et les 3 dernières extensions Pokémon, pas de comptes utilisateurs.
 2. **Mode Supabase** (recommandé en production) : les synchronisations alimentent PostgreSQL. Recherche exhaustive et filtres SQL, classements complets, historique quotidien illimité, variations exactes sur 24 h, 7 j, 30 j et 1 an, comptes, collections, alertes et administration. Une carte ou une extension pas encore synchronisée est lue en direct (repli automatique).
 
 ### Mise en place de Supabase
@@ -43,11 +43,11 @@ Importer le dépôt dans Vercel, ajouter les variables d'environnement, puis dé
 
 | Cron | Fréquence | Rôle |
 |---|---|---|
-| `/api/cron/sync?job=pokemon` | toutes les 30 min | extensions récentes + rotation sur le catalogue, puis alertes de prix |
-| `/api/cron/sync?job=onepiece` | toutes les 3 h | catalogue One Piece complet + prix, puis alertes |
-| `/api/cron/sync?job=collections` | chaque jour | valorisation quotidienne des collections |
+| `/api/cron/sync?job=pokemon` | 1 fois par jour | extensions récentes + rotation sur le catalogue, puis alertes de prix |
+| `/api/cron/sync?job=onepiece` | 1 fois par jour | catalogue One Piece complet + prix, puis alertes |
+| `/api/cron/sync?job=collections` | 1 fois par jour | valorisation quotidienne des collections |
 
-⚠️ L'offre Vercel **Hobby** limite les crons à une exécution par jour : avec cette offre, réduisez les fréquences ou lancez `npm run sync:*` depuis un serveur ou une GitHub Action. Chaque exécution est limitée à environ 50 s (`maxDuration = 60`), et un curseur stocké dans `sync_state` reprend la rotation là où elle s'est arrêtée.
+Ces fréquences sont compatibles avec l'offre gratuite Vercel **Hobby**, qui n'accepte qu'une exécution par jour et par cron (sinon le déploiement échoue). Avec l'offre **Pro**, vous pouvez actualiser plus souvent, par exemple `*/30 * * * *` pour Pokémon. Les crons ne servent qu'avec Supabase : sans base de données, les pages lisent les prix directement aux sources (cache de 2 h). Chaque exécution est limitée à environ 50 s (`maxDuration = 60`), et un curseur stocké dans `sync_state` reprend la rotation là où elle s'est arrêtée.
 
 ## Sources de données et clés
 

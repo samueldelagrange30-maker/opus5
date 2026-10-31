@@ -7,7 +7,7 @@ import { clsx } from "clsx";
 import type { GameId } from "@/lib/types";
 
 export const metadata: Metadata = { title: "Toutes les extensions Pokémon et One Piece", description: "Catalogue complet des extensions Pokémon TCG et One Piece Card Game : logos, dates de sortie, nombre de cartes, codes et listes de cartes avec prix.", alternates: { canonical: "/extensions" } };
-export const revalidate = 3600;
+export const dynamic = "force-dynamic";
 
 export default async function ExtensionsPage({ searchParams }: { searchParams: Promise<{ jeu?: string; tri?: string }> }) {
   const sp = await searchParams;

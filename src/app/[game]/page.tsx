@@ -8,11 +8,7 @@ import { CardGrid, CardRow } from "@/components/card-tile";
 import { Empty, Notice, SectionHeader } from "@/components/ui";
 import { clsx } from "clsx";
 
-export const revalidate = 1800;
-
-export function generateStaticParams() {
-  return [{ game: "pokemon" }, { game: "one-piece" }];
-}
+export const dynamic = "force-dynamic";
 
 export async function generateMetadata({ params }: { params: Promise<{ game: string }> }): Promise<Metadata> {
   const game = gameFromSlug((await params).game);
