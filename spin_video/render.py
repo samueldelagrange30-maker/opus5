@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Rendu d'une vidéo TikTok (1080x1920, 30 fps, 68 s) « TOURNE LA ROUE » :
+"""Rendu d'une vidéo TikTok (1080x1920, 30 fps, 68 s) « SPIN THE WHEEL » :
 roulette + maths + sonification. Usage : python3 render.py OUT.mp4"""
 import math, os, sys, subprocess, wave
 from multiprocessing import Pool
@@ -54,51 +54,51 @@ STAKE = 10
 def F(a, b):
     return ("f", a, b)
 SPINS = [
-    dict(name="NOIR", cells=[n for n in range(1, 37) if n not in REDS], pay=1, res=22,
-         stat="48,6 %", sub="18 cases sur 37",
-         f1=[("i", "P"), ("r", "(noir) = "), F("18", "37"), ("r", " = 48,6 %")],
-         f2=[("r", "18 rouges, 18 noirs, 1 zéro vert")],
-         tag="rouge ou noir : jamais 50/50", pill="UN POINT PAR BONNE RÉPONSE"),
-    dict(name="IMPAIR", cells=[n for n in range(1, 37) if n % 2], pay=1, res=0,
-         stat="48,6 %", sub="18 cases sur 37",
-         f1=[("i", "P"), ("r", "(impair) = "), F("18", "37"), ("r", " = 48,6 %")],
+    dict(name="BLACK", cells=[n for n in range(1, 37) if n not in REDS], pay=1, res=22,
+         stat="48.6 %", sub="18 of 37 pockets",
+         f1=[("i", "P"), ("r", "(black) = "), F("18", "37"), ("r", " = 48.6 %")],
+         f2=[("r", "18 red, 18 black, 1 green zero")],
+         tag="red or black is never 50/50", pill="+1 POINT PER RIGHT GUESS"),
+    dict(name="ODD", cells=[n for n in range(1, 37) if n % 2], pay=1, res=0,
+         stat="48.6 %", sub="18 of 37 pockets",
+         f1=[("i", "P"), ("r", "(odd) = "), F("18", "37"), ("r", " = 48.6 %")],
          f2=[("i", "E"), ("r", " = "), F("18", "37"), ("r", "(+1) + "), F("19", "37"),
              ("r", "(−1) = −"), F("1", "37")],
-         tag="le zéro n'est ni pair ni impair", pill="ZÉRO. LA BANQUE GAGNE."),
-    dict(name="13 À 24", cells=list(range(13, 25)), pay=2, res=17,
-         stat="32,4 %", sub="12 cases sur 37",
-         f1=[("i", "P"), ("r", "(13–24) = "), F("12", "37"), ("r", " = 32,4 %")],
-         f2=[("r", "paie 2:1 :  "), F("12", "37"), ("r", "·2 − "), F("25", "37"),
+         tag="zero is neither odd nor even", pill="ZERO. THE HOUSE WINS."),
+    dict(name="13 TO 24", cells=list(range(13, 25)), pay=2, res=17,
+         stat="32.4 %", sub="12 of 37 pockets",
+         f1=[("i", "P"), ("r", "(13–24) = "), F("12", "37"), ("r", " = 32.4 %")],
+         f2=[("r", "pays 2:1 :  "), F("12", "37"), ("r", "·2 − "), F("25", "37"),
              ("r", " = −"), F("1", "37")],
-         tag="autre forme, même avantage", pill="+20 JETONS"),
-    dict(name="CHEVAL 8/11", cells=[8, 11], pay=17, res=10,
-         stat="5,4 %", sub="2 cases sur 37",
-         f1=[("i", "P"), ("r", "(cheval) = "), F("2", "37"), ("r", " = 5,4 %")],
-         f2=[("r", "paie 17:1 :  "), F("2", "37"), ("r", "·17 − "), F("35", "37"),
+         tag="different shape, same edge", pill="+20 CHIPS"),
+    dict(name="SPLIT 8/11", cells=[8, 11], pay=17, res=10,
+         stat="5.4 %", sub="2 of 37 pockets",
+         f1=[("i", "P"), ("r", "(split) = "), F("2", "37"), ("r", " = 5.4 %")],
+         f2=[("r", "pays 17:1 :  "), F("2", "37"), ("r", "·17 − "), F("35", "37"),
              ("r", " = −"), F("1", "37")],
-         tag="gros gain, même −1/37", pill="UNE CASE À CÔTÉ"),
-    dict(name="SIXAIN 25–30", cells=list(range(25, 31)), pay=5, res=26,
-         stat="16,2 %", sub="6 cases sur 37",
-         f1=[("i", "P"), ("r", "(sixain) = "), F("6", "37"), ("r", " = 16,2 %")],
-         f2=[("r", "paie 5:1 :  "), F("6", "37"), ("r", "·5 − "), F("31", "37"),
+         tag="bigger payout, same −1/37", pill="ONE ROW AWAY"),
+    dict(name="SIX LINE 25–30", cells=list(range(25, 31)), pay=5, res=26,
+         stat="16.2 %", sub="6 of 37 pockets",
+         f1=[("i", "P"), ("r", "(six line) = "), F("6", "37"), ("r", " = 16.2 %")],
+         f2=[("r", "pays 5:1 :  "), F("6", "37"), ("r", "·5 − "), F("31", "37"),
              ("r", " = −"), F("1", "37")],
-         tag="l'avantage ne bouge jamais", pill="+50 JETONS"),
-    dict(name="COLONNE 3", cells=list(range(3, 37, 3)), pay=2, res=14,
-         stat="32,4 %", sub="12 cases sur 37",
-         f1=[("i", "P"), ("r", "(col 3) = "), F("12", "37"), ("r", " = 32,4 %")],
+         tag="the edge never moves", pill="+50 CHIPS"),
+    dict(name="COLUMN 3", cells=list(range(3, 37, 3)), pay=2, res=14,
+         stat="32.4 %", sub="12 of 37 pockets",
+         f1=[("i", "P"), ("r", "(col 3) = "), F("12", "37"), ("r", " = 32.4 %")],
          f2=[("r", "3, 6, 9, …, 36 :  "), ("i", "n"), ("r", " ≡ 0 (mod 3)")],
-         tag="une colonne, c'est juste mod 3", pill="PLUS QUE DEUX VIES"),
-    dict(name="19 À 36", cells=list(range(19, 37)), pay=1, res=31,
-         stat="48,6 %", sub="18 cases sur 37",
-         f1=[("i", "P"), ("r", "(19–36) = "), F("18", "37"), ("r", " = 48,6 %")],
-         f2=[("i", "P"), ("r", "(A | B) = "), ("i", "P"), ("r", "(A)  : tirages indépendants")],
-         tag="la roue n'a aucune mémoire", pill="DERNIER TOUR ENSUITE"),
-    dict(name="LE 13", cells=[13], pay=35, res=36,
-         stat="2,7 %", sub="1 case sur 37",
-         f1=[("i", "P"), ("r", "(13) = "), F("1", "37"), ("r", " = 2,7 %")],
-         f2=[("r", "paie 35:1 :  "), F("1", "37"), ("r", "·35 − "), F("36", "37"),
+         tag="column 3 = multiples of 3", pill="TWO LIVES LEFT"),
+    dict(name="19 TO 36", cells=list(range(19, 37)), pay=1, res=31,
+         stat="48.6 %", sub="18 of 37 pockets",
+         f1=[("i", "P"), ("r", "(19–36) = "), F("18", "37"), ("r", " = 48.6 %")],
+         f2=[("i", "P"), ("r", "(A | B) = "), ("i", "P"), ("r", "(A)  : spins are independent")],
+         tag="the wheel forgets everything", pill="LAST SPIN NEXT"),
+    dict(name="THE 13", cells=[13], pay=35, res=36,
+         stat="2.7 %", sub="1 of 37 pockets",
+         f1=[("i", "P"), ("r", "(13) = "), F("1", "37"), ("r", " = 2.7 %")],
+         f2=[("r", "pays 35:1 :  "), F("1", "37"), ("r", "·35 − "), F("36", "37"),
              ("r", " = −"), F("1", "37")],
-         tag="le 36 est juste à côté du 13", pill="SI PRÈS DU BUT."),
+         tag="36 sits right next to 13", pill="SO CLOSE."),
 ]
 LIVES0 = 5
 for s in SPINS:
@@ -227,7 +227,7 @@ def make_bg(color):
 G = {}
 def init_worker():
     G["wheel"] = make_wheel()
-    G["banner"] = make_banner("TOURNE LA ROUE")
+    G["banner"] = make_banner("SPIN THE WHEEL")
     G["bg_n"] = make_bg((22, 38, 30))
     G["bg_w"] = make_bg((20, 38, 78))
     G["bg_l"] = make_bg((84, 16, 22))
@@ -428,9 +428,9 @@ def render(fi):
     if ph == "reveal" and st["v"] > 0.15:
         pill(d, 288, 233, s["pill"], font("xb", 11.5), RED, WHITE, padx=8, h=19, r=3)
     elif ph == "outro":
-        pill(d, 288, 233, "COMMENTE TON SCORE /8", font("xb", 12), RED, WHITE, padx=8, h=20, r=3)
+        pill(d, 288, 233, "COMMENT YOUR SCORE /8", font("xb", 12), RED, WHITE, padx=8, h=20, r=3)
     else:
-        pill(d, 288, 236, "La roulette, version maths", font("bold", 15.5), WHITE, (10, 10, 10),
+        pill(d, 288, 236, "Roulette, but it's math", font("bold", 15.5), WHITE, (10, 10, 10),
              padx=9, h=27, r=3)
 
     # panneau central
@@ -504,19 +504,19 @@ def render(fi):
 
     # pastille de statut
     if ph == "intro":
-        pill_txt, pc = "PLACE 8 MISES", (50, 58, 56)
+        pill_txt, pc = "PLACE 8 BETS", (50, 58, 56)
         pc_box = (201, 469, 375, 497)
     elif ph in ("bet", "spin"):
-        pill_txt, pc = f"#{k + 1}/8  {s['name']} : GAGNÉ OU PERDU ?", (50, 58, 56)
+        pill_txt, pc = f"#{k + 1}/8  {s['name']} : WIN OR LOSE?", (50, 58, 56)
     elif ph == "reveal":
         if s["win"]:
-            pill_txt, pc = f"#{k + 1}/8  GAGNÉ +{s['delta']}", BLUE
+            pill_txt, pc = f"#{k + 1}/8  WIN +{s['delta']}", BLUE
         elif s["zero"]:
-            pill_txt, pc = f"#{k + 1}/8  ZÉRO −{STAKE}", RED
+            pill_txt, pc = f"#{k + 1}/8  ZERO −{STAKE}", RED
         else:
-            pill_txt, pc = f"#{k + 1}/8  PERDU −{STAKE}", RED
+            pill_txt, pc = f"#{k + 1}/8  LOST −{STAKE}", RED
     else:
-        pill_txt, pc = "SESSION TERMINÉE", GOLD
+        pill_txt, pc = "SESSION OVER", GOLD
     fpill = font("xb", 12.5)
     tw_ = d.textlength(pill_txt, font=fpill) / K
     half = max(87, tw_ / 2 + 12)
@@ -531,7 +531,7 @@ def render(fi):
 
     # ---- colonne gauche
     lab = font("bold", 10)
-    text(d, (95, 282), "VIES", lab, (225, 230, 228))
+    text(d, (95, 282), "LIVES", lab, (225, 230, 228))
     lv_disp = lives
     for i in range(LIVES0):
         x0 = 95 - (LIVES0 * 15 + (LIVES0 - 1) * 3) / 2 + i * 18
@@ -539,7 +539,7 @@ def render(fi):
         flash = ph == "reveal" and not s["win"] and i == lives and st["v"] < 0.8 and int(st["v"] * 10) % 2 == 0
         col = GREEN if on else ((232, 57, 72) if flash else (44, 54, 50))
         rrect(d, (x0, 296, x0 + 15, 305), 2, fill=col)
-    text(d, (95, 328), "BANQUE", lab, (225, 230, 228))
+    text(d, (95, 328), "BANK", lab, (225, 230, 228))
     rrect(d, (63, 340, 127, 372), 4, fill=(12, 6, 8), outline=(70, 30, 34), w=1)
     disp = cur_bank
     if ph == "reveal":
@@ -547,7 +547,7 @@ def render(fi):
     fm = font("mono", 23)
     text(d, (95, 357), "888", fm, (52, 14, 16))
     text(d, (95, 357), f"{disp:>3d}".replace(" ", "!").replace("!", " "), fm, (255, 52, 58))
-    text(d, (95, 391), "TOURS", lab, (225, 230, 228))
+    text(d, (95, 391), "SPINS", lab, (225, 230, 228))
     for i in range(8):
         x0 = 61 + (i % 4) * 17.5
         y0 = 402 + (i // 4) * 17.5
@@ -563,16 +563,16 @@ def render(fi):
 
     # ---- colonne droite
     if ph == "intro":
-        big, l1, l2, sm, bc = "37", "CASES SUR", "LA ROUE", "18 rouges · 18 noirs · 1 zéro", ORANGE
+        big, l1, l2, sm, bc = "37", "POCKETS ON", "THE WHEEL", "18 red · 18 black · 1 zero", ORANGE
     elif ph == "outro":
-        big, l1, l2, sm, bc = f"{WINS}/8", "TON", "SCORE", f"banque 100 → {bank[-1]}", YEL
+        big, l1, l2, sm, bc = f"{WINS}/8", "YOUR", "SCORE", f"bank 100 → {bank[-1]}", YEL
     else:
         pct = float(s["stat"].split()[0].replace(",", "."))
-        big, l1, l2, sm = s["stat"], "CHANCE :", s["name"], s["sub"]
+        big, l1, l2, sm = s["stat"], "CHANCE IT'S", s["name"], s["sub"]
         bc = LAV if pct > 40 else ORANGE
         if ph == "bet":       # le chiffre défile
             tt = smooth(st["v"] / 0.55)
-            big = f"{pct * tt:.1f} %".replace(".", ",")
+            big = f"{pct * tt:.1f} %"
     text(d, (482, 313), big, font("xb", 27), bc)
     text(d, (482, 345), l1, font("bold", 10.5), WHITE)
     text(d, (482, 359), l2, font("bold", 10.5), WHITE)
@@ -591,7 +591,7 @@ def render(fi):
     d.polygon([(P(GX1 + 1), P(GAXIS)), (P(GX1 - 7), P(GAXIS - 4)), (P(GX1 - 7), P(GAXIS + 4))], fill=axc)
     d.line([P(GDROP), P(665), P(GDROP), P(522)], fill=axc, width=int(P(1)))
     d.polygon([(P(GDROP), P(518)), (P(GDROP - 4), P(526)), (P(GDROP + 4), P(526))], fill=axc)
-    text(d, (GDROP, 512), "CHUTE", font("bold", 7.5), (140, 150, 146))
+    text(d, (GDROP, 512), "DROP", font("bold", 7.5), (140, 150, 146))
     for tx in np.arange(70, 515, 6.3):
         d.line([P(tx), P(660), P(tx), P(665)], fill=(90, 100, 96), width=int(P(0.7)))
 
@@ -621,7 +621,7 @@ def render(fi):
             else:
                 text(d, (300, fy(2.25)), "−36  (s = −3)", font("semi", 8), (255, 120, 120, a), "lm")
             if not s["win"]:
-                big_t = "ZÉRO" if s["zero"] else "PERDU"
+                big_t = "ZERO" if s["zero"] else "LOST"
                 sc = 1 + 0.25 * (1 - smooth((st["v"] - 0.5) / 0.25))
                 text(d, (420, 556), big_t, font("black", 31 * sc), RED + (a,))
             else:
@@ -645,25 +645,25 @@ def render(fi):
 
     # ---- formules
     if ph == "intro":
-        f1 = [("i", "P"), ("r", "(gagner) = "), F("# cases couvertes", "37")]
-        f2 = [("r", "chaque tour est une note :  "), ("i", "f"), ("sub", "out"), ("r", " = "),
+        f1 = [("i", "P"), ("r", "(win) = "), F("# pockets covered", "37")]
+        f2 = [("r", "every spin is a note :  "), ("i", "f"), ("sub", "out"), ("r", " = "),
               ("i", "f"), ("r", "·2"), ("sup", "s")]
         f3 = None
-        tag = "devine chaque tour avant qu'il tombe"
+        tag = "guess every spin before it lands"
     elif ph == "outro":
         bits = "".join("1" if x["win"] else "0" for x in SPINS)
-        f1 = [("r", f"{bits} = tes 8 tours")]
-        f2 = [("i", "E"), ("r", "[gain] = 80 · (−"), F("1", "37"), ("r", ") ≈ −2,16")]
-        f3 = [("r", f"cette partie : +{bank[-1] - 100}  ⇒  de la chance, pas un avantage")]
-        tag = "commente ton score /8"
+        f1 = [("r", f"{bits} = this session's spins")]
+        f2 = [("i", "E"), ("r", "[profit] = 80 · (−"), F("1", "37"), ("r", ") ≈ −2.16")]
+        f3 = [("r", f"this run : +{bank[-1] - 100}  ⇒  luck, not edge")]
+        tag = "comment your score /8"
     else:
         f1, f2, tag = s["f1"], s["f2"], s["tag"]
         if ph == "reveal" and st["v"] > 0.3:
             if s["win"]:
-                f3 = [("i", "s"), ("r", " = +2 :  4"), ("i", "f"), ("r", "  GAGNÉ (cloche de verre)")]
+                f3 = [("i", "s"), ("r", " = +2 :  4"), ("i", "f"), ("r", "  WIN (glass bell)")]
             else:
                 f3 = [("i", "s"), ("r", " = −3 :  "), ("i", "f"), ("r", "/8  "),
-                      ("r", "ZÉRO" if s["zero"] else "PERDU"), ("r", " (basse dent de scie)")]
+                      ("r", "ZERO" if s["zero"] else "LOST"), ("r", " (sub saw)")]
         else:
             f3 = [("i", "f"), ("sub", "out"), ("r", " = "), ("i", "f"), ("r", "·2"), ("sup", "s"),
                   ("r", ",   "), ("i", "s"), ("r", " = ?")]
