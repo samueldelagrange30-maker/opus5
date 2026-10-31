@@ -1,0 +1,41 @@
+{
+  "name": "tcg-vault",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Plateforme de r\u00e9f\u00e9rence Pok\u00e9mon TCG & One Piece Card Game : encyclop\u00e9die des cartes et suivi des prix du march\u00e9.",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "typecheck": "tsc --noEmit",
+    "test": "tsx --test tests/*.test.ts",
+    "sync:pokemon": "tsx scripts/sync.ts pokemon",
+    "sync:onepiece": "tsx scripts/sync.ts onepiece",
+    "sync:alerts": "tsx scripts/sync.ts alerts"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "@supabase/ssr": "^0.12.7",
+    "@supabase/supabase-js": "^2.118.0",
+    "clsx": "^2.1.1",
+    "lucide-react": "^1.66.0",
+    "next": "^15.5.28",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "recharts": "^3.10.1",
+    "server-only": "^0.0.1"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.6",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "autoprefixer": "^10.6.2",
+    "postcss": "^8.5.32",
+    "tailwindcss": "^3.4.19",
+    "tsx": "^4.23.15",
+    "typescript": "^5.9.3"
+  }
+}
