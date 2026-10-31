@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="AppTheme" parent="android:Theme.Material.NoActionBar">
+        <item name="android:windowBackground">@color/bg</item>
+        <item name="android:statusBarColor">@color/bg</item>
+        <item name="android:navigationBarColor">@color/bg</item>
+    </style>
+
+    <style name="CalcButton">
+        <item name="android:layout_width">0dp</item>
+        <item name="android:layout_height">match_parent</item>
+        <item name="android:layout_weight">1</item>
+        <item name="android:layout_margin">5dp</item>
+        <item name="android:textSize">28sp</item>
+        <item name="android:textColor">@color/text</item>
+        <item name="android:textAllCaps">false</item>
+        <item name="android:background">@drawable/btn_num</item>
+        <item name="android:stateListAnimator">@null</item>
+        <item name="android:onClick">onButtonClick</item>
+    </style>
+    <style name="CalcButton.Fn">
+        <item name="android:background">@drawable/btn_fn</item>
+    </style>
+    <style name="CalcButton.Op">
+        <item name="android:background">@drawable/btn_op</item>
+    </style>
+</resources>
