@@ -7,6 +7,8 @@ import numpy as np
 from PIL import Image, ImageDraw, ImageFont
 
 FPS = 30
+BPM = 160
+BEAT = 60.0 / BPM
 W, H = 1080, 1920
 SS = 2                              # supersampling
 K = W * SS / 576.0                  # coord. de design (576 de large) -> pixels SS
@@ -724,17 +726,38 @@ def synth_audio(path):
         sig = np.sin(2 * np.pi * np.cumsum(f) / SR) * np.exp(-tt * 9)
         add(sig.astype(np.float32), t0, gain=g)
 
+    def hat(dur=0.05):
+        tt = np.arange(int(dur * SR)) / SR
+        z = np.diff(rng.normal(0, 1, len(tt) + 1)) * np.exp(-tt * 90)
+        return z.astype(np.float32)
+    def snare(dur=0.18):
+        tt = np.arange(int(dur * SR)) / SR
+        z = rng.normal(0, 1, len(tt)) * np.exp(-tt * 22)
+        z = z + 0.6 * np.sin(2 * np.pi * 190 * tt) * np.exp(-tt * 30)
+        return z.astype(np.float32)
+
     # nappe de fond
     tt = np.arange(n) / SR
     pad = (0.5 * np.sin(2 * np.pi * 110 * tt) + 0.3 * np.sin(2 * np.pi * 164.8 * tt + 1)
-           + 0.2 * np.sin(2 * np.pi * 220.5 * tt)) * (0.6 + 0.4 * np.sin(2 * np.pi * 0.11 * tt))
+           + 0.2 * np.sin(2 * np.pi * 220.5 * tt)) * (0.6 + 0.4 * np.sin(2 * np.pi * 0.42 * tt))
     out[:, 0] += pad * 0.035
     out[:, 1] += pad * 0.035
+
+    # pulsation continue à BPM
+    tb = 0.0
+    j = 0
+    while tb < DURATION - 1.0:
+        kick(tb, 0.32)
+        add(hat(), tb + BEAT / 2, pan=0.25, gain=0.10)
+        if j % 2 == 1:
+            add(snare(), tb, gain=0.16)
+        tb += BEAT
+        j += 1
 
     PENTA = [220.0, 261.6, 293.7, 329.6, 392.0, 440.0, 523.3, 587.3, 659.3, 784.0, 880.0]
     # intro
     for i, f in enumerate([440, 523.3, 659.3, 880]):
-        add(tone(f, 0.6, 7, (1, .3, .1)), 0.25 + i * 0.12, pan=(i - 1.5) * 0.3, gain=0.22)
+        add(tone(f, 0.6, 7, (1, .3, .1)), 0.25 + i * BEAT / 4, pan=(i - 1.5) * 0.3, gain=0.22)
     add(bell(1760), 1.0, gain=0.10)
 
     for k, s in enumerate(SPINS):
@@ -752,11 +775,11 @@ def synth_audio(path):
             f = PENTA[int(np.clip(q, 0, len(PENTA) - 1))]
             add(tone(f, 0.18, 22, (1, .25, .08)), tcur, pan=math.sin(i * 1.3) * 0.4, gain=0.13)
             add(click(), tcur, pan=math.sin(i * 2.1) * 0.6, gain=0.25)
-            tcur += 0.06 + 0.34 * u ** 1.8
+            tcur += 0.04 + 0.22 * u ** 1.8
             i += 1
         b = 0
-        while ts + b * 0.5 < te:
-            kick(ts + b * 0.5, 0.25 + 0.25 * b / 9)
+        while ts + b * BEAT / 2 < te:
+            kick(ts + b * BEAT / 2, 0.15 + 0.25 * b / 22)
             b += 1
         add(click(0.03), te, gain=0.7)                                 # la bille tombe
         kick(te, 0.6)
@@ -775,7 +798,7 @@ def synth_audio(path):
     to = INTRO + NSPIN * SPIN_LEN
     for i, x in enumerate(SPINS):
         f = 880 if x["win"] else 330
-        add(tone(f, 0.4, 9, (1, .3, .1)), to + 0.3 + i * 0.16, pan=(i - 3.5) * 0.12, gain=0.18)
+        add(tone(f, 0.4, 9, (1, .3, .1)), to + 0.3 + i * BEAT / 2, pan=(i - 3.5) * 0.12, gain=0.18)
     for f in (440, 554.4, 659.3, 880):
         add(tone(f, 2.5, 1.4, (1, .3, .1), att=0.02), to + 1.75, gain=0.10)
     add(bell(1760, 3.0), to + 1.75, gain=0.15)
@@ -797,10 +820,19 @@ def G_noise_level(k, u):
     y = min(max(y, fy(4.6)), fy(2.6))
     return (fy(2.6) - y) / (fy(2.6) - fy(4.6)) * 9 + 1
 
+AUDIO_FX = "acompressor=threshold=-24dB:ratio=4:attack=5:release=120:makeup=4,loudnorm=I=-14:TP=-1.5:LRA=9"
+
 # ---------------------------------------------------------------- main
 def main():
     out = sys.argv[1] if len(sys.argv) > 1 else "tourne_la_roue.mp4"
     init_worker()
+    if len(sys.argv) > 2 and sys.argv[2] == "--audio-only":
+        wav = "/tmp/spin_audio.wav"
+        synth_audio(wav)
+        subprocess.run(["ffmpeg", "-y", "-v", "error", "-i", sys.argv[3], "-i", wav, "-map", "0:v",
+                        "-map", "1:a", "-c:v", "copy", "-af", AUDIO_FX, "-ar", "44100", "-c:a", "aac",
+                        "-b:a", "192k", "-movflags", "+faststart", "-t", f"{DURATION:.3f}", out], check=True)
+        return
     if len(sys.argv) > 2 and sys.argv[2] == "--preview":
         for tt in map(float, sys.argv[3:]):
             Image.frombytes("RGB", (W, H), render(int(tt * FPS))).save(f"/tmp/prev_{tt:05.1f}.png")
@@ -809,7 +841,7 @@ def main():
     synth_audio(wav)
     cmd = ["ffmpeg", "-y", "-v", "error", "-f", "rawvideo", "-pix_fmt", "rgb24", "-s", f"{W}x{H}",
            "-r", str(FPS), "-i", "-", "-i", wav, "-c:v", "libx264", "-preset", "medium", "-crf", "18",
-           "-pix_fmt", "yuv420p", "-c:a", "aac", "-b:a", "192k", "-movflags", "+faststart",
+           "-pix_fmt", "yuv420p", "-af", AUDIO_FX, "-ar", "44100", "-c:a", "aac", "-b:a", "192k", "-movflags", "+faststart",
            "-t", f"{DURATION:.3f}", out]
     ff = subprocess.Popen(cmd, stdin=subprocess.PIPE)
     with Pool(os.cpu_count(), initializer=init_worker) as pool:
