@@ -26,7 +26,7 @@ npm run dev                  # http://localhost:3000
 
 ### Deux modes de données
 
-1. **Mode direct** (aucune configuration) : le catalogue et les prix sont lus en temps réel depuis TCGdex et OPTCG API, avec le cache de Next.js (12 h pour le catalogue, 2 h pour les prix). Toutes les pages publiques fonctionnent. Limites : recherche Pokémon plafonnée à 120 résultats hors filtre d'extension, classements calculés sur toutes les cartes One Piece et les 6 dernières extensions Pokémon, pas de comptes utilisateurs.
+1. **Mode direct** (aucune configuration) : le catalogue et les prix sont lus en temps réel depuis TCGdex et OPTCG API, avec le cache de Next.js (12 h pour le catalogue, 2 h pour les prix). Toutes les pages publiques fonctionnent. Limites : recherche Pokémon plafonnée à 120 résultats hors filtre d'extension, classements calculés sur toutes les cartes One Piece et les 3 dernières extensions Pokémon, pas de comptes utilisateurs.
 2. **Mode Supabase** (recommandé en production) : les synchronisations alimentent PostgreSQL. Recherche exhaustive et filtres SQL, classements complets, historique quotidien illimité, variations exactes sur 24 h, 7 j, 30 j et 1 an, comptes, collections, alertes et administration. Une carte ou une extension pas encore synchronisée est lue en direct (repli automatique).
 
 ### Mise en place de Supabase

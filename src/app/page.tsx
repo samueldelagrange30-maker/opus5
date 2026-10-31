@@ -10,7 +10,8 @@ import { Empty, Notice, SectionHeader } from "@/components/ui";
 import { formatPct } from "@/lib/format";
 import type { CardListItem, RankingResult } from "@/lib/types";
 
-export const revalidate = 1800;
+// Rendu à la demande : les données lourdes sont mises en cache côté serveur (voir live-repo).
+export const dynamic = "force-dynamic";
 
 const settle = async <T,>(p: Promise<T>, fallback: T): Promise<T> => {
   try { return await p; } catch (e) { console.error(e); return fallback; }

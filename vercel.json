@@ -1,8 +1,20 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": "nextjs",
+  "installCommand": "npm ci",
+  "buildCommand": "npm run build",
   "crons": [
-    { "path": "/api/cron/sync?job=pokemon", "schedule": "17 3 * * *" },
-    { "path": "/api/cron/sync?job=onepiece", "schedule": "47 4 * * *" },
-    { "path": "/api/cron/sync?job=collections", "schedule": "23 5 * * *" }
+    {
+      "path": "/api/cron/sync?job=pokemon",
+      "schedule": "17 3 * * *"
+    },
+    {
+      "path": "/api/cron/sync?job=onepiece",
+      "schedule": "47 4 * * *"
+    },
+    {
+      "path": "/api/cron/sync?job=collections",
+      "schedule": "23 5 * * *"
+    }
   ]
 }
