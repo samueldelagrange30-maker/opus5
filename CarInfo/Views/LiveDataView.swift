@@ -78,6 +78,8 @@ struct LiveDataView: View {
             RingGauge(value: obd.values[.speed], range: OBDPID.speed.range, title: "Vitesse", unit: "km/h", tint: .blue)
         }
 
+        DoorStatusCard()
+
         LazyVGrid(columns: columns, spacing: 10) {
             if let b = obd.batteryVoltage {
                 StatTile(icon: "minus.plus.batteryblock.fill", title: "Batterie", value: String(format: "%.1f", b), unit: "V",

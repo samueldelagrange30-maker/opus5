@@ -59,6 +59,13 @@ final class OBDManager: NSObject, ObservableObject {
     @Published private(set) var log: [String] = []
     @Published private(set) var connectedName: String?
 
+    // Portières (voir DoorMonitor.swift)
+    @Published var doorConfig = DoorConfig.load() { didSet { doorConfig.save() } }
+    @Published var doorStates: [Door: Bool] = [:]
+    @Published var lastDoorRead: Date?
+    var doorPollCounter = 0
+    var scanToken = 0
+
     // MARK: - Bluetooth
 
     private var central: CBCentralManager!
@@ -69,22 +76,22 @@ final class OBDManager: NSObject, ObservableObject {
 
     // MARK: - File de commandes ELM327
 
-    private struct Command {
+    struct Command {
         let text: String
         let timeout: TimeInterval
         let completion: (String?) -> Void
     }
 
-    private var queue: [Command] = []
+    var queue: [Command] = []
     private var current: Command?
     private var buffer = ""
     private var timeoutWork: DispatchWorkItem?
     private var pollIndex = 0
     private var pollCount = 0
-    private var pollGeneration = 0
-    private var isCAN = true
+    var pollGeneration = 0
+    var isCAN = true
     private var demoTimer: Timer?
-    private var demoTick: Double = 0
+    var demoTick: Double = 0
 
     override init() {
         super.init()
@@ -216,6 +223,7 @@ final class OBDManager: NSObject, ObservableObject {
         storedDTCCount = nil
         connectedName = nil
         isReadingDTC = false
+        doorStates = [:]
     }
 
     private func initializeAdapter() {
@@ -281,7 +289,7 @@ final class OBDManager: NSObject, ObservableObject {
     }
 
     /// Boucle d'interrogation : les PIDs « rapides » (régime, vitesse…) sont lus plus souvent.
-    private func poll(gen: Int) {
+    func poll(gen: Int) {
         guard gen == pollGeneration, state == .connected else { return }
         let fast: [OBDPID] = [.rpm, .speed, .throttle, .engineLoad, .maf, .fuelRate].filter { supportedPIDs.contains($0.rawValue) }
         let slow = pollList.filter { !fast.contains($0) }
@@ -298,6 +306,7 @@ final class OBDManager: NSObject, ObservableObject {
                 if let v { self?.batteryVoltage = v }
             }
         }
+        enqueueDoorPollIfNeeded()
         for pid in batch {
             send(pid.command) { [weak self] r in
                 guard let self, let bytes = self.dataBytes(r, header: [0x41, pid.rawValue]), let v = pid.decode(bytes) else { return }
@@ -313,7 +322,7 @@ final class OBDManager: NSObject, ObservableObject {
 
     // MARK: - Envoi
 
-    private func send(_ text: String, timeout: TimeInterval = 3, completion: @escaping (String?) -> Void) {
+    func send(_ text: String, timeout: TimeInterval = 3, completion: @escaping (String?) -> Void) {
         queue.append(Command(text: text, timeout: timeout, completion: completion))
         sendNextIfIdle()
     }
@@ -382,7 +391,7 @@ final class OBDManager: NSObject, ObservableObject {
         return nil
     }
 
-    private func hexBytes(_ hex: String) -> [UInt8] {
+    func hexBytes(_ hex: String) -> [UInt8] {
         var out: [UInt8] = []
         var i = hex.startIndex
         while let j = hex.index(i, offsetBy: 2, limitedBy: hex.endIndex), i < hex.endIndex {
@@ -393,7 +402,7 @@ final class OBDManager: NSObject, ObservableObject {
     }
 
     /// Fusionne les trames multi-lignes (format CAN « 0: … 1: … ») en une seule chaîne hexadécimale.
-    private func joinedHex(_ response: String) -> String {
+    func joinedHex(_ response: String) -> String {
         response.components(separatedBy: "\n").compactMap { line -> String? in
             let l = line.uppercased().trimmingCharacters(in: .whitespaces)
             if l.contains(":") { return String(l.split(separator: ":").last ?? "").filter { $0.isHexDigit } }
@@ -489,11 +498,12 @@ final class OBDManager: NSObject, ObservableObject {
         v[.odometer] = 84215.4 + speed * t / 3600
         values = v
         batteryVoltage = v[.moduleVoltage]
+        demoDoors()
     }
 
     // MARK: - Utilitaires
 
-    private func appendLog(_ s: String) {
+    func appendLog(_ s: String) {
         let f = DateFormatter()
         f.dateFormat = "HH:mm:ss"
         log.append("\(f.string(from: Date()))  \(s)")
