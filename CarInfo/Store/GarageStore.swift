@@ -12,7 +12,14 @@ final class GarageStore: ObservableObject {
         return dir.appendingPathComponent("garage.json")
     }()
 
-    init() { load() }
+    init() {
+        load()
+        if vehicles.isEmpty && !UserDefaults.standard.bool(forKey: "didCreateDefaultVehicle") {
+            // Premier lancement : la Dacia Sandero III de l'utilisateur est préenregistrée.
+            UserDefaults.standard.set(true, forKey: "didCreateDefaultVehicle")
+            add(Vehicle(nickname: "Sandero III", make: "Dacia", model: "Sandero", year: 2026))
+        }
+    }
 
     var selectedVehicleID: UUID? {
         get { UUID(uuidString: selectedIDString) ?? vehicles.first?.id }

@@ -68,7 +68,14 @@ final class OBDManager: NSObject, ObservableObject {
 
     // MARK: - Bluetooth
 
-    private var central: CBCentralManager!
+    /// Créé à la première recherche, pour ne pas demander l'autorisation Bluetooth au lancement.
+    private var _central: CBCentralManager?
+    private var central: CBCentralManager {
+        if let c = _central { return c }
+        let c = CBCentralManager(delegate: self, queue: nil)
+        _central = c
+        return c
+    }
     private var peripheral: CBPeripheral?
     private var writeCharacteristic: CBCharacteristic?
     private var notifyCharacteristic: CBCharacteristic?
@@ -95,7 +102,6 @@ final class OBDManager: NSObject, ObservableObject {
 
     override init() {
         super.init()
-        central = CBCentralManager(delegate: self, queue: nil)
     }
 
     // MARK: - API publique
@@ -118,7 +124,7 @@ final class OBDManager: NSObject, ObservableObject {
 
     func stopScan() {
         wantsScan = false
-        if central.isScanning { central.stopScan() }
+        if let c = _central, c.isScanning { c.stopScan() }
         if state == .scanning { state = .idle }
     }
 
@@ -140,7 +146,7 @@ final class OBDManager: NSObject, ObservableObject {
     func disconnect() {
         pollGeneration += 1
         stopDemo()
-        if let p = peripheral { central.cancelPeripheralConnection(p) }
+        if let p = peripheral { _central?.cancelPeripheralConnection(p) }
         resetSession()
         state = .idle
     }
