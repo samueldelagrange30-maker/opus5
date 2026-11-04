@@ -100,7 +100,7 @@ struct DoorsView: View {
                 Text("L'alerte fonctionne tant que l'adaptateur OBD est connecté (contact mis ou peu après la coupure). Une alerte renforcée est émise si une porte s'ouvre au-dessus de 5 km/h.")
             }
 
-            Section("Configuration") {
+            Section {
                 LabeledContent("Calculateur", value: "\(obd.doorConfig.ecu.name)")
                 LabeledContent("Adresse CAN", value: "\(obd.doorConfig.ecu.request) → \(obd.doorConfig.ecu.response)")
                 ForEach(Door.allCases) { d in
@@ -123,6 +123,8 @@ struct DoorsView: View {
                         obd.doorStates = [:]
                     }
                 }
+            } header: {
+                Text("Configuration")
             } footer: {
                 Text(obd.state == .connected
                      ? "L'apprentissage lit le boîtier de carrosserie portes fermées puis chaque porte ouverte pour trouver le signal correspondant. Compatible avec les véhicules du groupe Renault (Dacia Sandero III, Clio V, Captur II…) si la passerelle de sécurité autorise la lecture."

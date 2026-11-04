@@ -39,8 +39,8 @@ jobs:
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGN_IDENTITY="" \
-            build | tee xcodebuild.log | grep -E "error:|warning: .*CarInfo/|BUILD" || true
-          test -d build/Build/Products/Release-iphoneos/CarInfo.app
+            build > xcodebuild.log 2>&1 || { grep -E "error:" xcodebuild.log | head -60; exit 1; }
+          grep -E "BUILD SUCCEEDED" xcodebuild.log
 
       - name: Package IPA
         run: |
