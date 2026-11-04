@@ -80,6 +80,18 @@ jobs:
           xcodegen generate
       - name: Simulator screenshots
         run: ./scripts/screenshots.sh
+      - name: Publish screenshots to ci-screenshots branch
+        if: always()
+        run: |
+          [ -d shots ] || exit 0
+          cp sim-build.log shots/ 2>/dev/null || true
+          cd shots
+          git init -q -b ci-screenshots
+          git config user.name "github-actions"
+          git config user.email "github-actions@users.noreply.github.com"
+          git add -A
+          git commit -qm "Captures ${GITHUB_SHA::7}"
+          git push -qf "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" ci-screenshots
       - name: Upload screenshots
         if: always()
         uses: actions/upload-artifact@v4
