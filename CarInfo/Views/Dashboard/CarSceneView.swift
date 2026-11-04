@@ -130,9 +130,9 @@ struct CarSceneView: UIViewRepresentable {
             disc.radialSegmentCount = 96
             let dm = SCNMaterial()
             dm.lightingModel = .physicallyBased
-            dm.diffuse.contents = UIColor(red: 0.10, green: 0.11, blue: 0.13, alpha: 1)
-            dm.metalness.contents = 0.25
-            dm.roughness.contents = 0.55
+            dm.diffuse.contents = UIColor(red: 0.075, green: 0.08, blue: 0.095, alpha: 1)
+            dm.metalness.contents = 0.0
+            dm.roughness.contents = 0.85
             disc.materials = [dm]
             let discNode = SCNNode(geometry: disc)
             discNode.position = SCNVector3(0, -0.012, 0)
@@ -200,7 +200,7 @@ struct CarSceneView: UIViewRepresentable {
             let pos: SCNVector3
             switch mode {
             case .showcase: pos = SCNVector3(5.5 * zoom, 1.75 * zoom, 5.7 * zoom)
-            case .doors: pos = SCNVector3(2.4 * zoom, 7.8 * zoom, 3.8 * zoom)
+            case .doors: pos = SCNVector3(3.2 * zoom, 10.5 * zoom, 5.0 * zoom)
             }
             SCNTransaction.begin()
             SCNTransaction.animationDuration = animated ? 0.8 : 0

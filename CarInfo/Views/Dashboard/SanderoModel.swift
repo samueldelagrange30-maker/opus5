@@ -209,7 +209,7 @@ final class SanderoModel {
     private func makeBody() -> SCNNode {
         let s = shape
         // Stations le long de la voiture, resserrées près des passages de roue.
-        var xs = stride(from: -SanderoShape.tip, through: SanderoShape.tip, by: 0.02).map { $0 }
+        var xs = stride(from: -SanderoShape.tip, through: SanderoShape.tip, by: 0.014).map { $0 }
         for cx in [SanderoShape.frontAxle, SanderoShape.rearAxle] {
             for e in [-SanderoShape.archRadius, SanderoShape.archRadius] {
                 xs += [cx + e - 0.004, cx + e + 0.004]
@@ -218,7 +218,7 @@ final class SanderoModel {
         xs.append(SanderoShape.tip)
         xs = Array(Set(xs.map { ($0 * 10000).rounded() / 10000 })).sorted()
 
-        let ring = 72
+        let ring = 120
         var verts: [SIMD3<Double>] = []
         verts.reserveCapacity(xs.count * ring)
         for x in xs {
