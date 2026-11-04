@@ -8,6 +8,7 @@ struct SummaryRow: View {
     @EnvironmentObject var store: GarageStore
     @Binding var tab: DashTab
     var compact: Bool
+    var short = false
 
     var body: some View {
         HStack(spacing: 12) {
@@ -17,7 +18,7 @@ struct SummaryRow: View {
                 summary(icon: "gauge.with.dots.needle.33percent", title: "Moteur", subtitle: engineText, tint: Theme.accent) { tab = .moteur }
             }
         }
-        .frame(height: 64)
+        .frame(height: short ? 50 : 64)
     }
 
     private func summary(icon: String, title: String, subtitle: String, tint: Color, action: @escaping () -> Void) -> some View {

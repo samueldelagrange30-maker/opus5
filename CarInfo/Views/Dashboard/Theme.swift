@@ -171,6 +171,8 @@ struct PillTabs<T: Hashable & Identifiable>: View {
                 } label: {
                     Text(title(item))
                         .font(.system(size: 14, weight: .semibold))
+                        .lineLimit(1)
+                        .fixedSize()
                         .foregroundStyle(selection == item ? .white : Theme.textDim)
                         .padding(.horizontal, 14)
                         .padding(.vertical, 8)

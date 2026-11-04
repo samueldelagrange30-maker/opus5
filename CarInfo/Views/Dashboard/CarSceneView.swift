@@ -79,7 +79,9 @@ struct CarSceneView: UIViewRepresentable {
 
             // Caméra
             let cam = SCNCamera()
-            cam.fieldOfView = 26
+            // Champ horizontal : la voiture tient dans la largeur quelle que soit l'orientation.
+            cam.projectionDirection = .horizontal
+            cam.fieldOfView = 40
             cam.zNear = 0.1
             cam.zFar = 100
             cam.wantsHDR = true
@@ -128,9 +130,9 @@ struct CarSceneView: UIViewRepresentable {
             disc.radialSegmentCount = 96
             let dm = SCNMaterial()
             dm.lightingModel = .physicallyBased
-            dm.diffuse.contents = UIColor(red: 0.16, green: 0.17, blue: 0.20, alpha: 1)
-            dm.metalness.contents = 0.6
-            dm.roughness.contents = 0.35
+            dm.diffuse.contents = UIColor(red: 0.10, green: 0.11, blue: 0.13, alpha: 1)
+            dm.metalness.contents = 0.25
+            dm.roughness.contents = 0.55
             disc.materials = [dm]
             let discNode = SCNNode(geometry: disc)
             discNode.position = SCNVector3(0, -0.012, 0)
@@ -140,7 +142,7 @@ struct CarSceneView: UIViewRepresentable {
             ring.ringSegmentCount = 128
             let rm = SCNMaterial()
             rm.lightingModel = .constant
-            rm.diffuse.contents = UIColor(red: 0.45, green: 0.62, blue: 1.0, alpha: 0.55)
+            rm.diffuse.contents = UIColor(red: 0.45, green: 0.62, blue: 1.0, alpha: 0.35)
             ring.materials = [rm]
             turntable.addChildNode(SCNNode(geometry: ring))
 
@@ -197,8 +199,8 @@ struct CarSceneView: UIViewRepresentable {
         func moveCamera(animated: Bool) {
             let pos: SCNVector3
             switch mode {
-            case .showcase: pos = SCNVector3(6.4 * zoom, 2.1 * zoom, 6.6 * zoom)
-            case .doors: pos = SCNVector3(2.6 * zoom, 8.6 * zoom, 4.2 * zoom)
+            case .showcase: pos = SCNVector3(5.5 * zoom, 1.75 * zoom, 5.7 * zoom)
+            case .doors: pos = SCNVector3(2.4 * zoom, 7.8 * zoom, 3.8 * zoom)
             }
             SCNTransaction.begin()
             SCNTransaction.animationDuration = animated ? 0.8 : 0

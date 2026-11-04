@@ -39,7 +39,7 @@ struct DashboardView: View {
                         .padding(.horizontal, 14)
                         .padding(.vertical, 12)
                 } else {
-                    portraitLayout
+                    portraitLayout(geo.size)
                 }
             }
         }
@@ -53,21 +53,22 @@ struct DashboardView: View {
     // MARK: Mises en page
 
     private func landscapeLayout(_ size: CGSize) -> some View {
-        let rightWidth = min(330, max(250, size.width * 0.28))
-        return HStack(spacing: 14) {
-            DockView(sheet: $sheet)
-                .frame(width: 78)
-            centerPanel(compact: false)
-            RightColumn(sheet: $sheet)
+        let short = size.height < 520
+        let rightWidth = min(330, max(short ? 230 : 250, size.width * 0.28))
+        return HStack(spacing: short ? 10 : 14) {
+            DockView(sheet: $sheet, compact: short)
+                .frame(width: short ? 64 : 78)
+            centerPanel(compact: false, short: short)
+            RightColumn(sheet: $sheet, compact: short)
                 .frame(width: rightWidth)
         }
     }
 
-    private var portraitLayout: some View {
+    private func portraitLayout(_ size: CGSize) -> some View {
         ScrollView {
             VStack(spacing: 14) {
-                centerPanel(compact: true)
-                    .frame(height: 560)
+                centerPanel(compact: true, short: false)
+                    .frame(height: max(480, size.height * 0.52))
                 PortraitTiles(sheet: $sheet)
                 HStack(spacing: 14) {
                     ForEach([DashApp.waze, .spotify, .maps, .youtube, .web]) { DashAppButton(app: $0, size: 52) }
@@ -82,10 +83,10 @@ struct DashboardView: View {
         }
     }
 
-    private func centerPanel(compact: Bool) -> some View {
-        DashCard(padding: 18, radius: 26) {
-            VStack(spacing: 12) {
-                header(compact: compact)
+    private func centerPanel(compact: Bool, short: Bool) -> some View {
+        DashCard(padding: short ? 12 : 18, radius: 26) {
+            VStack(spacing: short ? 8 : 12) {
+                header(compact: compact, short: short)
                 ZStack {
                     // La scène 3D reste chargée pour un passage instantané entre onglets.
                     CarSceneView(paint: paint, doorStates: obd.doorStates,
@@ -102,37 +103,37 @@ struct DashboardView: View {
                     }
                 }
                 .frame(maxHeight: .infinity)
-                SummaryRow(tab: $tab, compact: compact)
+                SummaryRow(tab: $tab, compact: compact, short: short)
             }
         }
     }
 
-    private func header(compact: Bool) -> some View {
+    private func header(compact: Bool, short: Bool) -> some View {
         let v = store.selectedVehicle
-        let title = v?.displayName ?? "Dacia Sandero"
-        return VStack(alignment: .leading, spacing: 10) {
-            HStack(alignment: .top) {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(title)
-                        .font(.system(size: compact ? 24 : 28, weight: .bold))
-                        .foregroundStyle(.white)
-                        .lineLimit(1)
-                    HStack(spacing: 6) {
-                        Circle().fill(statusColor).frame(width: 7, height: 7)
-                            .shadow(color: statusColor, radius: 4)
-                        Text(statusText)
-                            .font(.system(size: 13, weight: .medium))
-                            .foregroundStyle(Theme.textDim)
-                    }
-                }
-                Spacer(minLength: 12)
-                if !compact {
-                    PillTabs(items: DashTab.allCases, selection: $tab, title: \.title)
-                }
+        let titleView = VStack(alignment: .leading, spacing: 4) {
+            Text(v?.displayName ?? "Dacia Sandero")
+                .font(.system(size: short ? 20 : (compact ? 24 : 28), weight: .bold))
+                .foregroundStyle(.white)
+                .lineLimit(1)
+            HStack(spacing: 6) {
+                Circle().fill(statusColor).frame(width: 7, height: 7)
+                    .shadow(color: statusColor, radius: 4)
+                Text(statusText)
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundStyle(Theme.textDim)
+                    .lineLimit(1)
             }
-            if compact {
-                PillTabs(items: DashTab.allCases, selection: $tab, title: \.title)
-                    .frame(maxWidth: .infinity)
+        }
+        let tabs = PillTabs(items: DashTab.allCases, selection: $tab, title: \.title)
+        return ViewThatFits(in: .horizontal) {
+            HStack(alignment: .top) {
+                titleView
+                Spacer(minLength: 12)
+                tabs
+            }
+            VStack(alignment: .leading, spacing: 8) {
+                titleView
+                ScrollView(.horizontal, showsIndicators: false) { tabs }
             }
         }
     }
@@ -235,31 +236,36 @@ struct DashboardView: View {
 
 struct DockView: View {
     @Binding var sheet: DashSheet?
+    var compact = false
+
+    private var icon: CGFloat { compact ? 42 : 54 }
 
     var body: some View {
-        DashCard(padding: 10, radius: 26) {
-            VStack(spacing: 14) {
+        DashCard(padding: compact ? 8 : 10, radius: 24) {
+            VStack(spacing: compact ? 8 : 14) {
                 TimelineView(.periodic(from: .now, by: 1)) { ctx in
                     Text(ctx.date, format: .dateTime.hour(.twoDigits(amPM: .omitted)).minute(.twoDigits))
                         .font(.system(size: 15, weight: .bold))
                         .monospacedDigit()
                         .foregroundStyle(.white)
                 }
-                .padding(.top, 6)
+                .padding(.top, compact ? 2 : 6)
                 Button { sheet = .garage } label: {
-                    AppIcon(symbol: "car.fill", colors: [Color(white: 0.30), Color(white: 0.16)], size: 54)
+                    AppIcon(symbol: "car.fill", colors: [Color(white: 0.30), Color(white: 0.16)], size: icon)
                 }
                 .buttonStyle(PressableStyle())
-                DashAppButton(app: .waze)
-                DashAppButton(app: .spotify)
-                DashAppButton(app: .maps)
+                DashAppButton(app: .waze, size: icon)
+                DashAppButton(app: .spotify, size: icon)
+                DashAppButton(app: .maps, size: icon)
                 Spacer(minLength: 0)
-                Button { sheet = .diagnostic } label: {
-                    AppIcon(symbol: "stethoscope", colors: [Color(white: 0.26), Color(white: 0.14)], size: 46)
+                if !compact {
+                    Button { sheet = .diagnostic } label: {
+                        AppIcon(symbol: "stethoscope", colors: [Color(white: 0.26), Color(white: 0.14)], size: 46)
+                    }
+                    .buttonStyle(PressableStyle())
                 }
-                .buttonStyle(PressableStyle())
                 Button { sheet = .menu } label: {
-                    AppIcon(symbol: "square.grid.2x2.fill", colors: [Color(white: 0.26), Color(white: 0.14)], size: 46)
+                    AppIcon(symbol: "square.grid.2x2.fill", colors: [Color(white: 0.26), Color(white: 0.14)], size: compact ? 38 : 46)
                 }
                 .buttonStyle(PressableStyle())
                 .padding(.bottom, 4)
@@ -274,10 +280,11 @@ struct DockView: View {
 struct RightColumn: View {
     @EnvironmentObject var obd: OBDManager
     @Binding var sheet: DashSheet?
+    var compact = false
 
     var body: some View {
-        VStack(spacing: 12) {
-            OBDTile(sheet: $sheet).frame(height: 86)
+        VStack(spacing: compact ? 8 : 12) {
+            OBDTile(sheet: $sheet).frame(height: compact ? 60 : 86)
             HStack(spacing: 12) {
                 smallTile(app: .youtube)
                 smallTile(app: .web)
@@ -286,9 +293,9 @@ struct RightColumn: View {
                 }
                 .buttonStyle(PressableStyle())
             }
-            .frame(height: 66)
-            ClockTile().frame(height: 92)
-            MetricsGrid()
+            .frame(height: compact ? 48 : 66)
+            if !compact { ClockTile().frame(height: 92) }
+            MetricsGrid(compact: compact)
         }
     }
 
@@ -342,13 +349,15 @@ struct OBDTile: View {
             HStack(spacing: 14) {
                 Image(systemName: obd.state.isLive ? "antenna.radiowaves.left.and.right" : "cable.connector")
                     .font(.system(size: 22, weight: .semibold))
-                    .frame(width: 46, height: 46)
-                    .background(RoundedRectangle(cornerRadius: 14).fill(.white.opacity(0.18)))
+                    .frame(width: 42, height: 42)
+                    .background(RoundedRectangle(cornerRadius: 13).fill(.white.opacity(0.18)))
                 VStack(alignment: .leading, spacing: 2) {
                     Text(obd.state.isLive ? (obd.connectedName ?? "OBD") : "Connexion OBD")
                         .font(.system(size: 17, weight: .bold))
+                        .lineLimit(1).minimumScaleFactor(0.7)
                     Text(obd.state.isLive ? "Ouvrir le diagnostic" : "Rechercher l'adaptateur")
                         .font(.system(size: 12, weight: .medium))
+                        .lineLimit(1).minimumScaleFactor(0.7)
                         .opacity(0.8)
                 }
                 Spacer()
@@ -378,13 +387,17 @@ struct ClockTile: View {
                         .font(.system(size: 44, weight: .semibold, design: .rounded))
                         .monospacedDigit()
                         .foregroundStyle(.white)
-                        .minimumScaleFactor(0.6)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.5)
+                        .layoutPriority(1)
                     VStack(alignment: .leading, spacing: 0) {
                         Text(ctx.date.formatted(.dateTime.weekday(.wide).locale(Locale(identifier: "fr_FR"))))
                         Text(ctx.date.formatted(.dateTime.day().month(.wide).locale(Locale(identifier: "fr_FR"))))
                     }
                     .font(.system(size: 13, weight: .medium))
                     .foregroundStyle(Theme.textDim)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
                     Spacer(minLength: 0)
                 }
                 .frame(maxHeight: .infinity)
@@ -395,9 +408,10 @@ struct ClockTile: View {
 
 struct MetricsGrid: View {
     @EnvironmentObject var obd: OBDManager
+    var compact = false
 
     var body: some View {
-        Grid(horizontalSpacing: 12, verticalSpacing: 12) {
+        Grid(horizontalSpacing: compact ? 8 : 12, verticalSpacing: compact ? 8 : 12) {
             GridRow {
                 speedTile
                 coolantTile

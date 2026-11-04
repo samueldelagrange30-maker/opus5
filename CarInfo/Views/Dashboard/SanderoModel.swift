@@ -44,8 +44,8 @@ final class SanderoModel {
     let paint = SCNMaterial()
 
     private let halfWidth: CGFloat = 0.87
-    private let frontWheelX: Float = 1.30
-    private let rearWheelX: Float = -1.30
+    private let frontWheelX: Float = 1.21
+    private let rearWheelX: Float = -1.39
 
     init(paint p: SanderoPaint) {
         configurePaint(p)
@@ -128,124 +128,133 @@ final class SanderoModel {
 
         // Caisse (profil latéral extrudé sur la largeur)
         let body = UIBezierPath()
-        body.move(to: p(1.73, 0.26))
-        body.addLine(to: p(1.95, 0.26))
-        body.addQuadCurve(to: p(2.05, 0.50), controlPoint: p(2.05, 0.28))
-        body.addQuadCurve(to: p(1.92, 0.77), controlPoint: p(2.07, 0.72))
-        body.addQuadCurve(to: p(0.92, 0.97), controlPoint: p(1.38, 0.92))
-        body.addLine(to: p(-1.70, 1.04))
-        body.addQuadCurve(to: p(-2.03, 0.93), controlPoint: p(-1.99, 1.05))
-        body.addQuadCurve(to: p(-2.06, 0.40), controlPoint: p(-2.10, 0.64))
-        body.addQuadCurve(to: p(-1.92, 0.26), controlPoint: p(-2.05, 0.27))
-        body.addLine(to: p(-1.73, 0.26))
-        body.addArc(withCenter: p(-1.30, 0.26), radius: 0.43, startAngle: .pi, endAngle: 0, clockwise: false)
-        body.addLine(to: p(0.87, 0.26))
-        body.addArc(withCenter: p(1.30, 0.26), radius: 0.43, startAngle: .pi, endAngle: 0, clockwise: false)
+        body.move(to: p(1.65, 0.27))
+        body.addLine(to: p(1.95, 0.25))
+        body.addQuadCurve(to: p(2.044, 0.48), controlPoint: p(2.04, 0.26))
+        body.addQuadCurve(to: p(1.96, 0.82), controlPoint: p(2.06, 0.76))
+        body.addQuadCurve(to: p(0.95, 1.00), controlPoint: p(1.45, 0.96))
+        body.addQuadCurve(to: p(-1.90, 1.07), controlPoint: p(-0.50, 1.02))
+        body.addQuadCurve(to: p(-2.02, 0.98), controlPoint: p(-2.00, 1.07))
+        body.addQuadCurve(to: p(-2.044, 0.45), controlPoint: p(-2.08, 0.70))
+        body.addQuadCurve(to: p(-1.93, 0.26), controlPoint: p(-2.04, 0.27))
+        body.addLine(to: p(-1.83, 0.27))
+        body.addArc(withCenter: p(-1.39, 0.27), radius: 0.44, startAngle: .pi, endAngle: 0, clockwise: false)
+        body.addLine(to: p(0.77, 0.27))
+        body.addArc(withCenter: p(1.21, 0.27), radius: 0.44, startAngle: .pi, endAngle: 0, clockwise: false)
         body.close()
-        car.addChildNode(extrude(body, depth: halfWidth * 2, chamfer: 0.11, paint))
+        car.addChildNode(extrude(body, depth: halfWidth * 2, chamfer: 0.15, paint))
 
-        // Habitacle vitré
+        // Élargisseurs d'ailes autour des passages de roue
+        for cx in [CGFloat(1.21), CGFloat(-1.39)] {
+            let arch = UIBezierPath()
+            arch.addArc(withCenter: p(cx, 0.27), radius: 0.485, startAngle: .pi, endAngle: 0, clockwise: false)
+            arch.addLine(to: p(cx + 0.44, 0.27))
+            arch.addArc(withCenter: p(cx, 0.27), radius: 0.44, startAngle: 0, endAngle: .pi, clockwise: true)
+            arch.close()
+            car.addChildNode(extrude(arch, depth: halfWidth * 2 + 0.05, chamfer: 0.02, paint))
+        }
+
+        // Habitacle vitré (pare-brise incliné, lunette arrière fuyante)
         let cabin = UIBezierPath()
-        cabin.move(to: p(0.98, 0.93))
-        cabin.addQuadCurve(to: p(0.05, 1.43), controlPoint: p(0.48, 1.28))
-        cabin.addQuadCurve(to: p(-1.45, 1.46), controlPoint: p(-0.70, 1.51))
-        cabin.addQuadCurve(to: p(-1.88, 1.36), controlPoint: p(-1.78, 1.47))
-        cabin.addLine(to: p(-1.99, 0.98))
+        cabin.move(to: p(0.97, 0.96))
+        cabin.addQuadCurve(to: p(0.02, 1.43), controlPoint: p(0.50, 1.30))
+        cabin.addQuadCurve(to: p(-1.52, 1.45), controlPoint: p(-0.72, 1.51))
+        cabin.addQuadCurve(to: p(-1.95, 1.05), controlPoint: p(-1.82, 1.36))
         cabin.close()
-        car.addChildNode(extrude(cabin, depth: 1.56, chamfer: 0.15, glass))
+        car.addChildNode(extrude(cabin, depth: 1.54, chamfer: 0.17, glass))
 
         // Pavillon couleur carrosserie
         let roof = UIBezierPath()
-        roof.move(to: p(0.12, 1.415))
-        roof.addQuadCurve(to: p(-1.45, 1.478), controlPoint: p(-0.70, 1.525))
-        roof.addQuadCurve(to: p(-1.87, 1.372), controlPoint: p(-1.79, 1.49))
-        roof.addLine(to: p(-1.84, 1.345))
-        roof.addQuadCurve(to: p(-1.45, 1.44), controlPoint: p(-1.74, 1.45))
-        roof.addQuadCurve(to: p(0.12, 1.385), controlPoint: p(-0.70, 1.485))
+        roof.move(to: p(0.10, 1.415))
+        roof.addQuadCurve(to: p(-1.54, 1.462), controlPoint: p(-0.72, 1.525))
+        roof.addLine(to: p(-1.52, 1.43))
+        roof.addQuadCurve(to: p(0.10, 1.385), controlPoint: p(-0.72, 1.49))
         roof.close()
-        car.addChildNode(extrude(roof, depth: 1.50, chamfer: 0.12, paint))
+        car.addChildNode(extrude(roof, depth: 1.48, chamfer: 0.12, paint))
 
         // Becquet noir + antenne requin
-        car.addChildNode(box(0.20, 0.035, 1.18, r: 0.015, blackGloss, at: SCNVector3(-1.80, 1.405, 0), rot: SCNVector3(0, 0, -0.18)))
-        car.addChildNode(box(0.16, 0.06, 0.05, r: 0.02, blackGloss, at: SCNVector3(-1.30, 1.50, 0)))
+        car.addChildNode(box(0.24, 0.035, 1.20, r: 0.015, blackGloss, at: SCNVector3(-1.60, 1.44, 0), rot: SCNVector3(0, 0, -0.30)))
+        car.addChildNode(box(0.16, 0.06, 0.05, r: 0.02, blackGloss, at: SCNVector3(-1.30, 1.49, 0)))
 
         for side: Float in [-1, 1] {
             let z = Float(halfWidth) * side
 
             // Montants A (couleur), B (noir) et C (couleur)
-            let aLen: CGFloat = 1.06
-            car.addChildNode(box(aLen, 0.05, 0.05, r: 0.02, paint,
-                                 at: SCNVector3(0.515, 1.18, 0.755 * side), rot: SCNVector3(0, 0, -0.48)))
-            car.addChildNode(box(0.10, 0.44, 0.03, r: 0.01, blackGloss,
-                                 at: SCNVector3(-0.30, 1.205, 0.772 * side), rot: SCNVector3(0, 0, -0.06)))
+            car.addChildNode(box(1.06, 0.05, 0.05, r: 0.02, paint,
+                                 at: SCNVector3(0.495, 1.195, 0.745 * side), rot: SCNVector3(0, 0, -0.451)))
+            car.addChildNode(box(0.10, 0.43, 0.03, r: 0.01, blackGloss,
+                                 at: SCNVector3(-0.32, 1.22, 0.768 * side), rot: SCNVector3(0, 0, -0.06)))
             let cp = UIBezierPath()
-            cp.move(to: p(-1.18, 1.00)); cp.addLine(to: p(-1.42, 1.455))
-            cp.addQuadCurve(to: p(-1.87, 1.36), controlPoint: p(-1.77, 1.46))
-            cp.addLine(to: p(-1.98, 1.00)); cp.close()
+            cp.move(to: p(-1.12, 1.04)); cp.addLine(to: p(-1.40, 1.45))
+            cp.addLine(to: p(-1.58, 1.43))
+            cp.addQuadCurve(to: p(-1.94, 1.06), controlPoint: p(-1.80, 1.33))
+            cp.close()
             let c = extrude(cp, depth: 0.03, chamfer: 0.01, paint)
-            c.position = SCNVector3(0, 0, 0.77 * side)
+            c.position = SCNVector3(0, 0, 0.765 * side)
             car.addChildNode(c)
 
             // Bas de caisse noir
-            car.addChildNode(box(1.72, 0.07, 0.025, r: 0.01, blackMatte, at: SCNVector3(0, 0.30, z + 0.005 * side)))
+            car.addChildNode(box(1.68, 0.07, 0.025, r: 0.01, blackMatte, at: SCNVector3(-0.09, 0.30, z + 0.005 * side)))
 
             // Rétroviseur
-            car.addChildNode(box(0.10, 0.04, 0.10, r: 0.01, blackGloss, at: SCNVector3(0.80, 1.00, (0.86 + 0.04) * side)))
-            car.addChildNode(box(0.20, 0.13, 0.15, r: 0.04, blackGloss, at: SCNVector3(0.76, 1.06, (0.86 + 0.12) * side)))
+            car.addChildNode(box(0.10, 0.04, 0.10, r: 0.01, blackGloss, at: SCNVector3(0.86, 1.02, (0.86 + 0.04) * side)))
+            car.addChildNode(box(0.20, 0.13, 0.15, r: 0.04, blackGloss, at: SCNVector3(0.82, 1.08, (0.86 + 0.12) * side)))
 
             // Portières (pivot à l'avant pour l'animation d'ouverture)
-            addDoor(side == -1 ? .frontLeft : .frontRight, to: car, side: side, hingeX: 0.90, outline: { b in
+            addDoor(side == -1 ? .frontLeft : .frontRight, to: car, side: side, hingeX: 0.82, outline: { b in
                 b.move(to: self.p(0, 0.31)); b.addLine(to: self.p(0, 0.92))
-                b.addLine(to: self.p(-1.19, 0.945)); b.addLine(to: self.p(-1.19, 0.31)); b.close()
-            }, handleX: -0.95)
-            addDoor(side == -1 ? .rearLeft : .rearRight, to: car, side: side, hingeX: -0.30, outline: { b in
+                b.addLine(to: self.p(-1.14, 0.945)); b.addLine(to: self.p(-1.14, 0.31)); b.close()
+            }, handleX: -0.90)
+            addDoor(side == -1 ? .rearLeft : .rearRight, to: car, side: side, hingeX: -0.32, outline: { b in
                 b.move(to: self.p(0, 0.31)); b.addLine(to: self.p(0, 0.945))
-                b.addLine(to: self.p(-0.92, 0.965)); b.addLine(to: self.p(-0.92, 0.73))
-                b.addQuadCurve(to: self.p(-0.55, 0.31), controlPoint: self.p(-0.56, 0.64))
+                b.addLine(to: self.p(-0.84, 0.975)); b.addLine(to: self.p(-0.84, 0.70))
+                b.addQuadCurve(to: self.p(-0.60, 0.31), controlPoint: self.p(-0.62, 0.62))
                 b.close()
-            }, handleX: -0.70)
+            }, handleX: -0.66)
 
             // Roues
             for x in [frontWheelX, rearWheelX] {
                 let w = wheel(outward: side)
-                w.position = SCNVector3(x, 0.32, 0.755 * side)
+                w.position = SCNVector3(x, 0.325, 0.755 * side)
                 car.addChildNode(w)
             }
 
             // Optiques avant : boîtier noir + signature lumineuse en Y
             let hz = 0.56 * side
-            car.addChildNode(box(0.10, 0.10, 0.40, r: 0.03, blackGloss, at: SCNVector3(1.995, 0.665, hz)))
-            car.addChildNode(box(0.03, 0.018, 0.30, r: 0.008, ledWhite, at: SCNVector3(2.045, 0.69, hz)))
-            car.addChildNode(box(0.03, 0.018, 0.12, r: 0.008, ledWhite, at: SCNVector3(2.042, 0.655, hz + 0.13 * side), rot: SCNVector3(0.55 * side, 0, 0)))
-            car.addChildNode(box(0.02, 0.05, 0.13, r: 0.02, pbr(UIColor(white: 0.8, alpha: 1), metal: 1, rough: 0.05), at: SCNVector3(2.04, 0.645, hz - 0.06 * side)))
+            car.addChildNode(box(0.10, 0.11, 0.42, r: 0.03, blackGloss, at: SCNVector3(1.985, 0.735, hz)))
+            car.addChildNode(box(0.03, 0.018, 0.32, r: 0.008, ledWhite, at: SCNVector3(2.03, 0.765, hz)))
+            car.addChildNode(box(0.03, 0.018, 0.12, r: 0.008, ledWhite, at: SCNVector3(2.03, 0.73, hz + 0.14 * side), rot: SCNVector3(0.55 * side, 0, 0)))
+            car.addChildNode(box(0.02, 0.05, 0.14, r: 0.02, pbr(UIColor(white: 0.8, alpha: 1), metal: 1, rough: 0.05), at: SCNVector3(2.03, 0.715, hz - 0.06 * side)))
 
             // Feux arrière en Y
             let tz = 0.64 * side
-            car.addChildNode(box(0.06, 0.26, 0.20, r: 0.03, lensRed, at: SCNVector3(-2.035, 0.86, tz)))
-            car.addChildNode(box(0.02, 0.20, 0.025, r: 0.008, ledRed, at: SCNVector3(-2.068, 0.86, tz + 0.03 * side)))
-            car.addChildNode(box(0.02, 0.025, 0.12, r: 0.008, ledRed, at: SCNVector3(-2.068, 0.93, tz - 0.04 * side), rot: SCNVector3(-0.6 * side, 0, 0)))
-            car.addChildNode(box(0.02, 0.025, 0.12, r: 0.008, ledRed, at: SCNVector3(-2.068, 0.79, tz - 0.04 * side), rot: SCNVector3(0.6 * side, 0, 0)))
+            car.addChildNode(box(0.06, 0.24, 0.20, r: 0.03, lensRed, at: SCNVector3(-2.02, 0.88, tz)))
+            car.addChildNode(box(0.02, 0.19, 0.025, r: 0.008, ledRed, at: SCNVector3(-2.055, 0.88, tz + 0.03 * side)))
+            car.addChildNode(box(0.02, 0.025, 0.12, r: 0.008, ledRed, at: SCNVector3(-2.055, 0.945, tz - 0.04 * side), rot: SCNVector3(-0.6 * side, 0, 0)))
+            car.addChildNode(box(0.02, 0.025, 0.12, r: 0.008, ledRed, at: SCNVector3(-2.055, 0.815, tz - 0.04 * side), rot: SCNVector3(0.6 * side, 0, 0)))
         }
 
         // Face avant : calandre, logo Dacia, prise d'air, plaque
-        car.addChildNode(box(0.06, 0.13, 0.78, r: 0.03, blackGloss, at: SCNVector3(2.02, 0.585, 0)))
-        car.addChildNode(box(0.02, 0.05, 0.20, r: 0.01, chrome, at: SCNVector3(2.055, 0.59, 0)))
-        car.addChildNode(box(0.07, 0.11, 1.20, r: 0.04, blackMatte, at: SCNVector3(2.02, 0.35, 0)))
-        car.addChildNode(box(0.01, 0.11, 0.52, r: 0.005, plateWhite, at: SCNVector3(2.062, 0.36, 0)))
-        car.addChildNode(box(0.012, 0.11, 0.05, r: 0.005, plateBlue, at: SCNVector3(2.064, 0.36, -0.235)))
+        car.addChildNode(box(0.06, 0.13, 0.78, r: 0.03, blackGloss, at: SCNVector3(2.02, 0.64, 0)))
+        car.addChildNode(box(0.02, 0.05, 0.20, r: 0.01, chrome, at: SCNVector3(2.05, 0.65, 0)))
+        car.addChildNode(box(0.07, 0.12, 1.20, r: 0.04, blackMatte, at: SCNVector3(2.015, 0.36, 0)))
+        car.addChildNode(box(0.01, 0.11, 0.52, r: 0.005, plateWhite, at: SCNVector3(2.058, 0.45, 0)))
+        car.addChildNode(box(0.012, 0.11, 0.05, r: 0.005, plateBlue, at: SCNVector3(2.06, 0.45, -0.235)))
 
         // Face arrière : bouclier, plaque, logo, essuie-glace
         car.addChildNode(box(0.07, 0.12, 1.50, r: 0.04, blackMatte, at: SCNVector3(-2.035, 0.34, 0)))
         car.addChildNode(box(0.01, 0.11, 0.52, r: 0.005, plateWhite, at: SCNVector3(-2.075, 0.62, 0)))
         car.addChildNode(box(0.012, 0.11, 0.05, r: 0.005, plateBlue, at: SCNVector3(-2.077, 0.62, -0.235)))
-        car.addChildNode(box(0.02, 0.045, 0.18, r: 0.01, chrome, at: SCNVector3(-2.07, 0.80, 0)))
+        car.addChildNode(box(0.02, 0.045, 0.18, r: 0.01, chrome, at: SCNVector3(-2.06, 0.84, 0)))
 
         // Surbrillances coffre / capot (visibles uniquement quand l'ouvrant est ouvert)
         let glow = pbr(UIColor(red: 1, green: 0.2, blue: 0.2, alpha: 1), metal: 0, rough: 0.5, emission: UIColor(red: 1, green: 0.15, blue: 0.15, alpha: 1))
         glow.transparency = 0.55
         glow.isDoubleSided = true
-        let trunk = box(0.02, 0.62, 1.40, r: 0.01, glow, at: SCNVector3(-2.085, 0.95, 0), rot: SCNVector3(0, 0, -0.12))
-        let hood = box(0.98, 0.02, 1.40, r: 0.01, glow, at: SCNVector3(1.42, 0.905, 0), rot: SCNVector3(0, 0, -0.19))
+        let trunk = SCNNode()
+        trunk.addChildNode(box(0.50, 0.02, 1.40, r: 0.01, glow, at: SCNVector3(-1.79, 1.25, 0), rot: SCNVector3(0, 0, 0.83)))
+        trunk.addChildNode(box(0.02, 0.40, 1.40, r: 0.01, glow, at: SCNVector3(-2.07, 0.80, 0)))
+        let hood = box(1.00, 0.02, 1.40, r: 0.01, glow, at: SCNVector3(1.45, 0.945, 0), rot: SCNVector3(0, 0, -0.176))
         trunk.isHidden = true; hood.isHidden = true
         overlays[.trunk] = trunk; overlays[.hood] = hood
         car.addChildNode(trunk); car.addChildNode(hood)
@@ -284,11 +293,11 @@ final class SanderoModel {
 
     private func wheel(outward side: Float) -> SCNNode {
         let n = SCNNode()
-        let tire = SCNTube(innerRadius: 0.215, outerRadius: 0.32, height: 0.205)
+        let tire = SCNTube(innerRadius: 0.215, outerRadius: 0.325, height: 0.205)
         tire.radialSegmentCount = 64
         tire.materials = [rubber]
         n.addChildNode(SCNNode(geometry: tire))
-        let wall = SCNCylinder(radius: 0.305, height: 0.19)
+        let wall = SCNCylinder(radius: 0.31, height: 0.19)
         wall.radialSegmentCount = 64
         wall.materials = [rubber]
         n.addChildNode(SCNNode(geometry: wall))
