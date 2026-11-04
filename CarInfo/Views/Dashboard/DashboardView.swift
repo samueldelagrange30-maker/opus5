@@ -97,7 +97,7 @@ struct DashboardView: View {
 
                     switch tab {
                     case .vehicule: vehicleOverlay
-                    case .ouvrants: DoorsPanel(sheet: $sheet)
+                    case .ouvrants: DoorsPanel(sheet: $sheet, short: short)
                     case .entretien: MaintenancePanel(sheet: $sheet)
                     case .moteur: EnginePanel(sheet: $sheet)
                     }

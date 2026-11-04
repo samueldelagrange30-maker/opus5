@@ -23,23 +23,30 @@ struct SummaryRow: View {
 
     private func summary(icon: String, title: String, subtitle: String, tint: Color, action: @escaping () -> Void) -> some View {
         Button(action: action) {
-            HStack(spacing: 12) {
-                Image(systemName: icon)
-                    .font(.system(size: 17, weight: .semibold))
-                    .foregroundStyle(.white)
-                    .frame(width: 38, height: 38)
-                    .background(RoundedRectangle(cornerRadius: 12, style: .continuous)
-                        .fill(LinearGradient(colors: [tint.opacity(0.9), tint.opacity(0.55)], startPoint: .top, endPoint: .bottom)))
+            HStack(spacing: short ? 0 : 12) {
+                if !short {
+                    Image(systemName: icon)
+                        .font(.system(size: 17, weight: .semibold))
+                        .foregroundStyle(.white)
+                        .frame(width: 38, height: 38)
+                        .background(RoundedRectangle(cornerRadius: 12, style: .continuous)
+                            .fill(LinearGradient(colors: [tint.opacity(0.9), tint.opacity(0.55)], startPoint: .top, endPoint: .bottom)))
+                }
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(title).font(.system(size: 15, weight: .bold)).foregroundStyle(.white)
-                    Text(subtitle).font(.system(size: 12, weight: .medium)).foregroundStyle(Theme.textDim).lineLimit(1)
+                    HStack(spacing: 5) {
+                        if short { Circle().fill(tint).frame(width: 6, height: 6) }
+                        Text(title).font(.system(size: short ? 13 : 15, weight: .bold)).foregroundStyle(.white)
+                            .lineLimit(1).minimumScaleFactor(0.8)
+                    }
+                    Text(subtitle).font(.system(size: short ? 11 : 12, weight: .medium)).foregroundStyle(Theme.textDim)
+                        .lineLimit(1).minimumScaleFactor(0.8)
                 }
                 Spacer(minLength: 0)
             }
-            .padding(.horizontal, 12)
+            .padding(.horizontal, short ? 10 : 12)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .background(RoundedRectangle(cornerRadius: 18, style: .continuous).fill(.black.opacity(0.25)))
-            .overlay(RoundedRectangle(cornerRadius: 18, style: .continuous).strokeBorder(Theme.stroke, lineWidth: 1))
+            .background(RoundedRectangle(cornerRadius: 16, style: .continuous).fill(.black.opacity(0.25)))
+            .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous).strokeBorder(Theme.stroke, lineWidth: 1))
         }
         .buttonStyle(PressableStyle())
     }
@@ -77,23 +84,24 @@ struct SummaryRow: View {
 struct DoorsPanel: View {
     @EnvironmentObject var obd: OBDManager
     @Binding var sheet: DashSheet?
+    var short = false
 
     var body: some View {
         HStack(alignment: .top) {
-            VStack(alignment: .leading, spacing: 8) {
+            VStack(alignment: .leading, spacing: short ? 4 : 8) {
                 ForEach([Door.frontLeft, .frontRight, .rearLeft, .rearRight, .trunk, .hood]) { d in
                     let open = obd.doorStates[d] == true
                     let known = obd.doorStates[d] != nil
-                    HStack(spacing: 8) {
+                    HStack(spacing: short ? 5 : 8) {
                         Circle()
                             .fill(open ? Theme.danger : known ? Theme.ok : Color.gray.opacity(0.5))
                             .frame(width: 8, height: 8)
                             .shadow(color: open ? Theme.danger : .clear, radius: 4)
-                        Text(d.name)
-                            .font(.system(size: 13, weight: open ? .bold : .medium))
+                        Text(short ? d.shortName : d.name)
+                            .font(.system(size: short ? 11 : 13, weight: open ? .bold : .medium))
                             .foregroundStyle(open ? .white : Theme.textDim)
                     }
-                    .padding(.horizontal, 10).padding(.vertical, 6)
+                    .padding(.horizontal, short ? 8 : 10).padding(.vertical, short ? 3 : 6)
                     .background(Capsule().fill(open ? Theme.danger.opacity(0.18) : .black.opacity(0.25)))
                 }
             }
