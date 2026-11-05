@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Tickets de maintenance</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="container topbar-inner">
+      <a class="brand" href="#/">
+        <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path fill="currentColor" d="M22.7 19.3 13.6 10.2c.9-2.3.4-5-1.5-6.9-2-2-5-2.4-7.4-1.3L9 6.3 6.3 9 1.9 4.7C.8 7.1 1.3 10.1 3.3 12.1c1.9 1.9 4.6 2.4 6.9 1.5l9.1 9.1c.4.4 1 .4 1.4 0l2-2c.4-.4.4-1 0-1.4z"/></svg>
+        <span>Maintenance</span>
+      </a>
+      <nav class="nav">
+        <a href="#/" data-nav="liste">Tickets</a>
+        <a href="#/nouveau" class="btn btn-primary" data-nav="nouveau">+ Nouveau ticket</a>
+      </nav>
+    </div>
+  </header>
+
+  <main id="app" class="container"></main>
+
+  <footer class="container footer">
+    <span>Les tickets sont enregistrés dans ce navigateur.</span>
+    <button type="button" id="btn-export" class="link">Exporter (JSON)</button>
+    <label class="link">Importer<input type="file" id="file-import" accept="application/json,.json" hidden></label>
+  </footer>
+
+  <div id="toast" role="status" aria-live="polite"></div>
+  <script src="app.js"></script>
+</body>
+</html>
