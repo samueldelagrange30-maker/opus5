@@ -1,0 +1,177 @@
+Screens:
+  scrDetail:
+    Properties:
+      Fill: =RGBA(243, 245, 248, 1)
+      OnVisible: =Reset(txtCommentaireCloture)
+    Children:
+      - recEnteteDetail:
+          Control: Rectangle@2.3.0
+          Properties:
+            Fill: =RGBA(0, 95, 184, 1)
+            Width: =Parent.Width
+            Height: =80
+      - icoRetourDetail:
+          Control: Classic/Icon@2.5.0
+          Properties:
+            Icon: =Icon.ChevronLeft
+            Color: =RGBA(255, 255, 255, 1)
+            OnSelect: =Navigate(scrListe, ScreenTransition.UnCover)
+            X: =16
+            Y: =20
+            Width: =40
+            Height: =40
+      - lblTitreDetail:
+          Control: Label@2.5.1
+          Properties:
+            Text: ="Ticket TCK-" & Text(varTicket.ID, "0000")
+            Color: =RGBA(255, 255, 255, 1)
+            Size: =22
+            FontWeight: =FontWeight.Bold
+            X: =64
+            Y: =0
+            Width: =Parent.Width - 300
+            Height: =80
+      - lblStatutDetail:
+          Control: Label@2.5.1
+          Properties:
+            Text: =varTicket.Statut
+            Align: =Align.Center
+            FontWeight: =FontWeight.Semibold
+            Color: =If(varTicket.Statut = "Clôturé", RGBA(80, 90, 100, 1), RGBA(16, 124, 16, 1))
+            Fill: =If(varTicket.Statut = "Clôturé", RGBA(225, 228, 232, 1), RGBA(223, 246, 221, 1))
+            X: =Parent.Width - Self.Width - 24
+            Y: =22
+            Width: =140
+            Height: =36
+      - lblSujet:
+          Control: Label@2.5.1
+          Properties:
+            Text: =varTicket.Title
+            Size: =18
+            FontWeight: =FontWeight.Semibold
+            X: =24
+            Y: =96
+            Width: =Parent.Width - 48
+            Height: =40
+      - lblMeta:
+          Control: Label@2.5.1
+          Properties:
+            Text: |-
+              ="Priorité : " & varTicket.Priorite &
+              "    •    Catégorie : " & varTicket.Categorie &
+              "    •    Demandeur : " & varTicket.Demandeur &
+              "    •    Créé le " & Text(varTicket.Created, "dd/mm/yyyy hh:mm")
+            Color: =RGBA(100, 110, 120, 1)
+            X: =24
+            Y: =136
+            Width: =Parent.Width - 48
+            Height: =30
+      - lblDescription:
+          Control: Label@2.5.1
+          Properties:
+            Text: =Coalesce(varTicket.Description, "(aucune description)")
+            VerticalAlign: =VerticalAlign.Top
+            Fill: =RGBA(255, 255, 255, 1)
+            BorderColor: =RGBA(220, 224, 230, 1)
+            BorderThickness: =1
+            PaddingLeft: =12
+            PaddingTop: =12
+            PaddingRight: =12
+            X: =24
+            Y: =176
+            Width: =Parent.Width - 48
+            Height: =180
+      - lblInfosCloture:
+          Control: Label@2.5.1
+          Properties:
+            Visible: =varTicket.Statut = "Clôturé"
+            Text: |-
+              ="Clôturé le " & Text(varTicket.DateCloture, "dd/mm/yyyy hh:mm") &
+              " par " & varTicket.CloturePar &
+              Char(10) & "Commentaire : " & Coalesce(varTicket.CommentaireCloture, "-")
+            VerticalAlign: =VerticalAlign.Top
+            Fill: =RGBA(225, 228, 232, 1)
+            PaddingLeft: =12
+            PaddingTop: =12
+            X: =24
+            Y: =372
+            Width: =Parent.Width - 48
+            Height: =100
+      - lblChampCommentaire:
+          Control: Label@2.5.1
+          Properties:
+            Visible: =varTicket.Statut <> "Clôturé"
+            Text: ="Commentaire de clôture (résolution)"
+            FontWeight: =FontWeight.Semibold
+            X: =24
+            Y: =372
+            Width: =Parent.Width - 48
+            Height: =30
+      - txtCommentaireCloture:
+          Control: Classic/TextInput@2.3.2
+          Properties:
+            Visible: =varTicket.Statut <> "Clôturé"
+            Default: =""
+            Mode: =TextMode.MultiLine
+            HintText: ="Comment le problème a-t-il été résolu ?"
+            X: =24
+            Y: =402
+            Width: =Parent.Width - 48
+            Height: =110
+      - btnCloturer:
+          Control: Classic/Button@2.2.0
+          Properties:
+            Visible: =varTicket.Statut <> "Clôturé"
+            Text: ="Clôturer le ticket"
+            OnSelect: |-
+              =Set(
+                  varTicket,
+                  Patch(
+                      Tickets,
+                      LookUp(Tickets, ID = varTicket.ID),
+                      {
+                          Statut: "Clôturé",
+                          DateCloture: Now(),
+                          CloturePar: User().FullName,
+                          CommentaireCloture: txtCommentaireCloture.Text
+                      }
+                  )
+              );
+              If(
+                  IsEmpty(Errors(Tickets)),
+                  Notify("Ticket clôturé.", NotificationType.Success);
+                  Reset(txtCommentaireCloture),
+                  Notify("Erreur lors de la clôture : " & First(Errors(Tickets)).Message, NotificationType.Error)
+              )
+            Fill: =RGBA(196, 43, 28, 1)
+            HoverFill: =RGBA(160, 30, 20, 1)
+            Color: =RGBA(255, 255, 255, 1)
+            X: =Parent.Width - Self.Width - 24
+            Y: =528
+            Width: =220
+            Height: =44
+      - btnRouvrir:
+          Control: Classic/Button@2.2.0
+          Properties:
+            Visible: =varTicket.Statut = "Clôturé"
+            Text: ="Rouvrir le ticket"
+            OnSelect: |-
+              =Set(
+                  varTicket,
+                  Patch(
+                      Tickets,
+                      LookUp(Tickets, ID = varTicket.ID),
+                      { Statut: "Ouvert", DateCloture: Blank(), CloturePar: "", CommentaireCloture: "" }
+                  )
+              );
+              Notify("Ticket rouvert.", NotificationType.Information)
+            Fill: =RGBA(255, 255, 255, 1)
+            Color: =RGBA(0, 95, 184, 1)
+            BorderColor: =RGBA(0, 95, 184, 1)
+            BorderThickness: =1
+            HoverFill: =RGBA(230, 240, 250, 1)
+            HoverColor: =RGBA(0, 95, 184, 1)
+            X: =Parent.Width - Self.Width - 24
+            Y: =488
+            Width: =220
+            Height: =44

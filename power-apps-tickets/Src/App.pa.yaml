@@ -1,0 +1,6 @@
+App:
+  Properties:
+    StartScreen: =scrListe
+    OnStart: |-
+      =Set(varCouleurPrincipale, RGBA(0, 95, 184, 1));
+      Set(varTicket, Blank())

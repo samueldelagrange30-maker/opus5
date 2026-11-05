@@ -1,0 +1,173 @@
+Screens:
+  scrNouveau:
+    Properties:
+      Fill: =RGBA(243, 245, 248, 1)
+    Children:
+      - recEnteteNouveau:
+          Control: Rectangle@2.3.0
+          Properties:
+            Fill: =RGBA(0, 95, 184, 1)
+            Width: =Parent.Width
+            Height: =80
+      - icoRetourNouveau:
+          Control: Classic/Icon@2.5.0
+          Properties:
+            Icon: =Icon.ChevronLeft
+            Color: =RGBA(255, 255, 255, 1)
+            OnSelect: =Back()
+            X: =16
+            Y: =20
+            Width: =40
+            Height: =40
+      - lblTitreNouveau:
+          Control: Label@2.5.1
+          Properties:
+            Text: ="Nouveau ticket"
+            Color: =RGBA(255, 255, 255, 1)
+            Size: =22
+            FontWeight: =FontWeight.Bold
+            X: =64
+            Y: =0
+            Width: =Parent.Width - 100
+            Height: =80
+      - lblChampTitre:
+          Control: Label@2.5.1
+          Properties:
+            Text: ="Titre *"
+            FontWeight: =FontWeight.Semibold
+            X: =24
+            Y: =100
+            Width: =Parent.Width - 48
+            Height: =30
+      - txtTitre:
+          Control: Classic/TextInput@2.3.2
+          Properties:
+            Default: =""
+            HintText: ="Résumé court du problème"
+            X: =24
+            Y: =130
+            Width: =Parent.Width - 48
+            Height: =44
+      - lblChampDescription:
+          Control: Label@2.5.1
+          Properties:
+            Text: ="Description"
+            FontWeight: =FontWeight.Semibold
+            X: =24
+            Y: =186
+            Width: =Parent.Width - 48
+            Height: =30
+      - txtDescription:
+          Control: Classic/TextInput@2.3.2
+          Properties:
+            Default: =""
+            Mode: =TextMode.MultiLine
+            HintText: ="Décrivez le problème en détail"
+            X: =24
+            Y: =216
+            Width: =Parent.Width - 48
+            Height: =150
+      - lblChampPriorite:
+          Control: Label@2.5.1
+          Properties:
+            Text: ="Priorité"
+            FontWeight: =FontWeight.Semibold
+            X: =24
+            Y: =380
+            Width: =(Parent.Width - 72) / 2
+            Height: =30
+      - ddPriorite:
+          Control: Classic/DropDown@2.3.1
+          Properties:
+            Items: =["Basse", "Moyenne", "Haute", "Critique"]
+            Default: ="Moyenne"
+            X: =24
+            Y: =410
+            Width: =(Parent.Width - 72) / 2
+            Height: =44
+      - lblChampCategorie:
+          Control: Label@2.5.1
+          Properties:
+            Text: ="Catégorie"
+            FontWeight: =FontWeight.Semibold
+            X: =48 + (Parent.Width - 72) / 2
+            Y: =380
+            Width: =(Parent.Width - 72) / 2
+            Height: =30
+      - ddCategorie:
+          Control: Classic/DropDown@2.3.1
+          Properties:
+            Items: =["Matériel", "Logiciel", "Réseau", "Accès / Comptes", "Autre"]
+            Default: ="Logiciel"
+            X: =48 + (Parent.Width - 72) / 2
+            Y: =410
+            Width: =(Parent.Width - 72) / 2
+            Height: =44
+      - lblDemandeurInfo:
+          Control: Label@2.5.1
+          Properties:
+            Text: |-
+              ="Demandeur : " & User().FullName
+            Color: =RGBA(100, 110, 120, 1)
+            X: =24
+            Y: =470
+            Width: =Parent.Width - 48
+            Height: =30
+      - btnAnnuler:
+          Control: Classic/Button@2.2.0
+          Properties:
+            Text: ="Annuler"
+            OnSelect: |-
+              =Reset(txtTitre);
+              Reset(txtDescription);
+              Reset(ddPriorite);
+              Reset(ddCategorie);
+              Back()
+            Fill: =RGBA(255, 255, 255, 1)
+            Color: =RGBA(0, 95, 184, 1)
+            BorderColor: =RGBA(0, 95, 184, 1)
+            BorderThickness: =1
+            HoverFill: =RGBA(230, 240, 250, 1)
+            HoverColor: =RGBA(0, 95, 184, 1)
+            X: =Parent.Width - 24 - 2 * Self.Width - 16
+            Y: =520
+            Width: =180
+            Height: =44
+      - btnEnregistrer:
+          Control: Classic/Button@2.2.0
+          Properties:
+            Text: ="Créer le ticket"
+            DisplayMode: =If(IsBlank(Trim(txtTitre.Text)), DisplayMode.Disabled, DisplayMode.Edit)
+            OnSelect: |-
+              =Set(
+                  varNouveau,
+                  Patch(
+                      Tickets,
+                      Defaults(Tickets),
+                      {
+                          Title: Trim(txtTitre.Text),
+                          Description: txtDescription.Text,
+                          Priorite: ddPriorite.Selected.Value,
+                          Categorie: ddCategorie.Selected.Value,
+                          Statut: "Ouvert",
+                          Demandeur: User().FullName,
+                          DemandeurEmail: User().Email
+                      }
+                  )
+              );
+              If(
+                  IsEmpty(Errors(Tickets)),
+                  Notify("Ticket TCK-" & Text(varNouveau.ID, "0000") & " créé.", NotificationType.Success);
+                  Reset(txtTitre);
+                  Reset(txtDescription);
+                  Reset(ddPriorite);
+                  Reset(ddCategorie);
+                  Navigate(scrListe, ScreenTransition.UnCover),
+                  Notify("Erreur lors de la création : " & First(Errors(Tickets)).Message, NotificationType.Error)
+              )
+            Fill: =RGBA(0, 95, 184, 1)
+            Color: =RGBA(255, 255, 255, 1)
+            X: =Parent.Width - 24 - Self.Width
+            Y: =520
+            Width: =180
+            Height: =44
