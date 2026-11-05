@@ -1,0 +1,40 @@
+{
+  "$schema": "https://developer.microsoft.com/en-us/json-schemas/teams/v1.17/MicrosoftTeams.schema.json",
+  "manifestVersion": "1.17",
+  "version": "1.0.0",
+  "id": "e506fac6-52a5-421b-a7ff-82c969a6b81f",
+  "developer": {
+    "name": "Samuel Delagrange",
+    "websiteUrl": "https://samueldelagrange30-maker.github.io/opus5/",
+    "privacyUrl": "https://samueldelagrange30-maker.github.io/opus5/#confidentialite",
+    "termsOfUseUrl": "https://samueldelagrange30-maker.github.io/opus5/#conditions"
+  },
+  "name": {
+    "short": "Mon Espace",
+    "full": "Mon Espace - tableau de tâches personnel"
+  },
+  "description": {
+    "short": "Un onglet personnel pour gérer vos tâches dans Teams.",
+    "full": "Mon Espace est une application Teams sans bot : un simple onglet personnel qui affiche un tableau de tâches (à faire, en cours, terminé). Les données restent dans votre navigateur."
+  },
+  "icons": {
+    "color": "color.png",
+    "outline": "outline.png"
+  },
+  "accentColor": "#5B5FC7",
+  "staticTabs": [
+    {
+      "entityId": "monespace-accueil",
+      "name": "Accueil",
+      "contentUrl": "https://samueldelagrange30-maker.github.io/opus5/?inTeams=true",
+      "websiteUrl": "https://samueldelagrange30-maker.github.io/opus5/",
+      "scopes": ["personal"]
+    },
+    {
+      "entityId": "about",
+      "scopes": ["personal"]
+    }
+  ],
+  "permissions": ["identity"],
+  "validDomains": ["samueldelagrange30-maker.github.io"]
+}
