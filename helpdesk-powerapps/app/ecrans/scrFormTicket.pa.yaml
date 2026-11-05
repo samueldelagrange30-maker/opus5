@@ -1,0 +1,321 @@
+Screens:
+  scrFormTicket:
+    Properties:
+      Fill: =Couleurs.Fond
+      OnVisible: |-
+        =Reset(txtFormTitre);
+        Reset(drpFormCategorie);
+        Reset(drpFormPriorite);
+        Reset(txtFormDescription);
+        Reset(dteFormEcheance)
+    Children:
+      - conForm:
+          Control: GroupContainer@1.3.0
+          Variant: AutoLayout
+          Properties:
+            Width: =Parent.Width
+            Height: =Parent.Height
+            Fill: =Couleurs.Fond
+            LayoutDirection: =LayoutDirection.Vertical
+            LayoutGap: =0
+          Children:
+            # ------------------------------------------------------------ En-tête
+            - conFormEnTete:
+                Control: GroupContainer@1.3.0
+                Variant: AutoLayout
+                Properties:
+                  FillPortions: =0
+                  Height: =64
+                  Fill: =Couleurs.Carte
+                  BorderColor: =Couleurs.Bordure
+                  BorderThickness: =1
+                  AlignInContainer: =AlignInContainer.Stretch
+                  LayoutDirection: =LayoutDirection.Horizontal
+                  LayoutAlignItems: =LayoutAlignItems.Center
+                  LayoutGap: =12
+                  PaddingLeft: =16
+                  PaddingRight: =24
+                Children:
+                  - btnFormRetour:
+                      Control: Button@0.0.45
+                      Properties:
+                        Text: ="Retour"
+                        Icon: ="ArrowLeft"
+                        Appearance: ='ButtonCanvas.Appearance'.Subtle
+                        Width: =110
+                        Height: =36
+                        OnSelect: =Back()
+                  - lblFormTitreEcran:
+                      Control: Label@2.5.1
+                      Properties:
+                        Text: |-
+                          =If(varModeFormulaire = "Nouveau", "Nouveau ticket", "Modifier le ticket TCK-" & Text(varTicket.ID, "00000"))
+                        Font: =Font.'Segoe UI'
+                        Size: =16
+                        FontWeight: =FontWeight.Semibold
+                        Color: =Couleurs.Texte
+                        FillPortions: =1
+                        Height: =40
+            # ------------------------------------------------------------ Corps
+            - conFormCorps:
+                Control: GroupContainer@1.3.0
+                Variant: AutoLayout
+                Properties:
+                  FillPortions: =1
+                  AlignInContainer: =AlignInContainer.Stretch
+                  LayoutDirection: =LayoutDirection.Vertical
+                  LayoutAlignItems: =LayoutAlignItems.Center
+                  PaddingTop: =24
+                  PaddingBottom: =24
+                  PaddingLeft: =16
+                  PaddingRight: =16
+                  LayoutOverflowY: =LayoutOverflow.Scroll
+                Children:
+                  - conFormCarte:
+                      Control: GroupContainer@1.3.0
+                      Variant: AutoLayout
+                      Properties:
+                        FillPortions: =0
+                        Width: =Min(760, Parent.Width - 32)
+                        Height: =660
+                        AlignInContainer: =AlignInContainer.Center
+                        LayoutDirection: =LayoutDirection.Vertical
+                        LayoutGap: =6
+                        PaddingTop: =24
+                        PaddingBottom: =24
+                        PaddingLeft: =24
+                        PaddingRight: =24
+                        Fill: =Couleurs.Carte
+                        BorderColor: =Couleurs.Bordure
+                        BorderThickness: =1
+                        RadiusTopLeft: =8
+                        RadiusTopRight: =8
+                        RadiusBottomLeft: =8
+                        RadiusBottomRight: =8
+                        DropShadow: =DropShadow.Light
+                      Children:
+                        - lblFormIntro:
+                            Control: Label@2.5.1
+                            Properties:
+                              Text: |-
+                                ="Décrivez votre problème le plus précisément possible : l'équipe support vous répondra dans le fil de discussion du ticket."
+                              Font: =Font.'Segoe UI'
+                              Size: =11
+                              Color: =Couleurs.TexteSecondaire
+                              FillPortions: =0
+                              Height: =44
+                              AlignInContainer: =AlignInContainer.Stretch
+                        # Titre
+                        - lblFormTitre:
+                            Control: Label@2.5.1
+                            Properties:
+                              Text: ="Titre *"
+                              Font: =Font.'Segoe UI'
+                              Size: =11
+                              FontWeight: =FontWeight.Semibold
+                              Color: =Couleurs.Texte
+                              FillPortions: =0
+                              Height: =24
+                              AlignInContainer: =AlignInContainer.Stretch
+                        - txtFormTitre:
+                            Control: TextInput@0.0.54
+                            Properties:
+                              Value: =If(varModeFormulaire = "Modifier", varTicket.Title, "")
+                              Placeholder: |-
+                                ="Ex. : Impossible d'accéder au VPN"
+                              AccessibleLabel: ="Titre du ticket"
+                              MaxLength: =255
+                              FillPortions: =0
+                              Height: =36
+                              AlignInContainer: =AlignInContainer.Stretch
+                        # Catégorie + Priorité
+                        - conFormLigne:
+                            Control: GroupContainer@1.3.0
+                            Variant: AutoLayout
+                            Properties:
+                              FillPortions: =0
+                              Height: =70
+                              AlignInContainer: =AlignInContainer.Stretch
+                              LayoutDirection: =LayoutDirection.Horizontal
+                              LayoutGap: =16
+                              PaddingTop: =8
+                            Children:
+                              - conFormCategorie:
+                                  Control: GroupContainer@1.3.0
+                                  Variant: AutoLayout
+                                  Properties:
+                                    FillPortions: =1
+                                    LayoutDirection: =LayoutDirection.Vertical
+                                    LayoutGap: =4
+                                  Children:
+                                    - lblFormCategorie:
+                                        Control: Label@2.5.1
+                                        Properties:
+                                          Text: ="Catégorie"
+                                          Font: =Font.'Segoe UI'
+                                          Size: =11
+                                          FontWeight: =FontWeight.Semibold
+                                          Color: =Couleurs.Texte
+                                          FillPortions: =0
+                                          Height: =24
+                                          AlignInContainer: =AlignInContainer.Stretch
+                                    - drpFormCategorie:
+                                        Control: DropDown@0.0.45
+                                        Properties:
+                                          Items: =ListeCategories
+                                          DefaultSelectedItems: =[If(varModeFormulaire = "Modifier", varTicket.Categorie.Value, "Logiciel")]
+                                          AccessibleLabel: ="Catégorie"
+                                          FillPortions: =0
+                                          Height: =36
+                                          AlignInContainer: =AlignInContainer.Stretch
+                              - conFormPriorite:
+                                  Control: GroupContainer@1.3.0
+                                  Variant: AutoLayout
+                                  Properties:
+                                    FillPortions: =1
+                                    LayoutDirection: =LayoutDirection.Vertical
+                                    LayoutGap: =4
+                                  Children:
+                                    - lblFormPriorite:
+                                        Control: Label@2.5.1
+                                        Properties:
+                                          Text: ="Priorité"
+                                          Font: =Font.'Segoe UI'
+                                          Size: =11
+                                          FontWeight: =FontWeight.Semibold
+                                          Color: =Couleurs.Texte
+                                          FillPortions: =0
+                                          Height: =24
+                                          AlignInContainer: =AlignInContainer.Stretch
+                                    - drpFormPriorite:
+                                        Control: DropDown@0.0.45
+                                        Properties:
+                                          Items: =ListePriorites
+                                          DefaultSelectedItems: =[If(varModeFormulaire = "Modifier", varTicket.Priorite.Value, "Normale")]
+                                          AccessibleLabel: ="Priorité"
+                                          FillPortions: =0
+                                          Height: =36
+                                          AlignInContainer: =AlignInContainer.Stretch
+                        # Description
+                        - lblFormDescription:
+                            Control: Label@2.5.1
+                            Properties:
+                              Text: ="Description *"
+                              Font: =Font.'Segoe UI'
+                              Size: =11
+                              FontWeight: =FontWeight.Semibold
+                              Color: =Couleurs.Texte
+                              FillPortions: =0
+                              Height: =32
+                              PaddingTop: =8
+                              AlignInContainer: =AlignInContainer.Stretch
+                        - txtFormDescription:
+                            Control: TextInput@0.0.54
+                            Properties:
+                              Mode: ='TextInputCanvas.Mode'.Multiline
+                              Value: =If(varModeFormulaire = "Modifier", varTicket.Details, "")
+                              Placeholder: ="Que se passe-t-il ? Depuis quand ? Message d'erreur, poste concerné…"
+                              AccessibleLabel: ="Description du problème"
+                              FillPortions: =0
+                              Height: =180
+                              AlignInContainer: =AlignInContainer.Stretch
+                        # Échéance
+                        - lblFormEcheance:
+                            Control: Label@2.5.1
+                            Properties:
+                              Text: ="Échéance souhaitée (facultatif)"
+                              Font: =Font.'Segoe UI'
+                              Size: =11
+                              FontWeight: =FontWeight.Semibold
+                              Color: =Couleurs.Texte
+                              FillPortions: =0
+                              Height: =32
+                              PaddingTop: =8
+                              AlignInContainer: =AlignInContainer.Stretch
+                        - dteFormEcheance:
+                            Control: DatePicker@0.0.46
+                            Properties:
+                              SelectedDate: =If(varModeFormulaire = "Modifier", varTicket.Echeance, Blank())
+                              AccessibleLabel: ="Échéance souhaitée"
+                              FillPortions: =0
+                              Width: =240
+                              Height: =36
+                        # Boutons
+                        - conFormBoutons:
+                            Control: GroupContainer@1.3.0
+                            Variant: AutoLayout
+                            Properties:
+                              FillPortions: =1
+                              AlignInContainer: =AlignInContainer.Stretch
+                              LayoutDirection: =LayoutDirection.Horizontal
+                              LayoutJustifyContent: =LayoutJustifyContent.End
+                              LayoutAlignItems: =LayoutAlignItems.End
+                              LayoutGap: =8
+                            Children:
+                              - btnFormAnnuler:
+                                  Control: Button@0.0.45
+                                  Properties:
+                                    Text: ="Annuler"
+                                    Appearance: ='ButtonCanvas.Appearance'.Secondary
+                                    Width: =120
+                                    Height: =36
+                                    OnSelect: =Back()
+                              - btnFormEnregistrer:
+                                  Control: Button@0.0.45
+                                  Properties:
+                                    Text: =If(varModeFormulaire = "Nouveau", "Créer le ticket", "Enregistrer")
+                                    Icon: ="Checkmark"
+                                    Appearance: ='ButtonCanvas.Appearance'.Primary
+                                    Width: =170
+                                    Height: =36
+                                    DisplayMode: |-
+                                      =If(
+                                          IsBlank(Trim(txtFormTitre.Value)) || IsBlank(Trim(txtFormDescription.Value)) || varEnregistrement,
+                                          DisplayMode.Disabled,
+                                          DisplayMode.Edit
+                                      )
+                                    OnSelect: |-
+                                      =Set(varEnregistrement, true);
+                                      IfError(
+                                          If(
+                                              varModeFormulaire = "Nouveau",
+                                              Set(
+                                                  varTicket,
+                                                  Patch(
+                                                      Tickets,
+                                                      Defaults(Tickets),
+                                                      {
+                                                          Title: Trim(txtFormTitre.Value),
+                                                          Details: txtFormDescription.Value,
+                                                          Categorie: {Value: drpFormCategorie.Selected.Value},
+                                                          Priorite: {Value: drpFormPriorite.Selected.Value},
+                                                          Statut: {Value: "Nouveau"},
+                                                          Demandeur: UtilisateurSP,
+                                                          Echeance: dteFormEcheance.SelectedDate
+                                                      }
+                                                  )
+                                              ),
+                                              Set(
+                                                  varTicket,
+                                                  Patch(
+                                                      Tickets,
+                                                      LookUp(Tickets, ID = varTicket.ID),
+                                                      {
+                                                          Title: Trim(txtFormTitre.Value),
+                                                          Details: txtFormDescription.Value,
+                                                          Categorie: {Value: drpFormCategorie.Selected.Value},
+                                                          Priorite: {Value: drpFormPriorite.Selected.Value},
+                                                          Echeance: dteFormEcheance.SelectedDate
+                                                      }
+                                                  )
+                                              )
+                                          ),
+                                          Set(varEnregistrement, false);
+                                          Notify("Enregistrement impossible : " & FirstError.Message, NotificationType.Error),
+                                          Set(varEnregistrement, false);
+                                          Notify(
+                                              If(varModeFormulaire = "Nouveau", "Ticket TCK-" & Text(varTicket.ID, "00000") & " créé", "Ticket mis à jour"),
+                                              NotificationType.Success
+                                          );
+                                          Navigate(scrDetailTicket, ScreenTransition.UnCover)
+                                      )

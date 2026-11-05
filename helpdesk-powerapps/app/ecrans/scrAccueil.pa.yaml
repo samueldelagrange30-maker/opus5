@@ -1,0 +1,432 @@
+Screens:
+  scrAccueil:
+    Properties:
+      Fill: =Couleurs.Fond
+      OnVisible: |-
+        =If(IsBlank(varVue), Set(varVue, If(EstAgent, "Tous", "Mes demandes")));
+        Refresh(Tickets)
+    Children:
+      - conAccueil:
+          Control: GroupContainer@1.3.0
+          Variant: AutoLayout
+          Properties:
+            Width: =Parent.Width
+            Height: =Parent.Height
+            Fill: =Couleurs.Fond
+            LayoutDirection: =LayoutDirection.Vertical
+            LayoutGap: =0
+          Children:
+            # ------------------------------------------------------------ En-tête
+            - conAccueilEnTete:
+                Control: GroupContainer@1.3.0
+                Variant: AutoLayout
+                Properties:
+                  FillPortions: =0
+                  Height: =64
+                  Fill: =Couleurs.PrimaireFonce
+                  LayoutDirection: =LayoutDirection.Horizontal
+                  LayoutAlignItems: =LayoutAlignItems.Center
+                  LayoutJustifyContent: =LayoutJustifyContent.SpaceBetween
+                  PaddingLeft: =24
+                  PaddingRight: =24
+                  AlignInContainer: =AlignInContainer.Stretch
+                Children:
+                  - lblAccueilLogo:
+                      Control: Label@2.5.1
+                      Properties:
+                        Text: ="Centre de support"
+                        Font: =Font.'Segoe UI'
+                        Size: =16
+                        FontWeight: =FontWeight.Semibold
+                        Color: =Color.White
+                        Width: =320
+                        Height: =40
+                  - lblAccueilUtilisateur:
+                      Control: Label@2.5.1
+                      Properties:
+                        Text: =User().FullName & If(EstAgent, "  ·  Agent support", "")
+                        Font: =Font.'Segoe UI'
+                        Size: =11
+                        Color: =ColorFade(Color.White, 0.15)
+                        Align: =Align.Right
+                        Width: =360
+                        Height: =40
+            # ------------------------------------------------------------ Corps
+            - conAccueilCorps:
+                Control: GroupContainer@1.3.0
+                Variant: AutoLayout
+                Properties:
+                  FillPortions: =1
+                  AlignInContainer: =AlignInContainer.Stretch
+                  LayoutDirection: =LayoutDirection.Vertical
+                  LayoutGap: =16
+                  PaddingTop: =24
+                  PaddingBottom: =24
+                  PaddingLeft: =24
+                  PaddingRight: =24
+                  LayoutOverflowY: =LayoutOverflow.Scroll
+                Children:
+                  # ---------------- Titre + actions
+                  - conAccueilTitre:
+                      Control: GroupContainer@1.3.0
+                      Variant: AutoLayout
+                      Properties:
+                        FillPortions: =0
+                        Height: =44
+                        AlignInContainer: =AlignInContainer.Stretch
+                        LayoutDirection: =LayoutDirection.Horizontal
+                        LayoutAlignItems: =LayoutAlignItems.Center
+                        LayoutGap: =8
+                      Children:
+                        - lblAccueilTitre:
+                            Control: Label@2.5.1
+                            Properties:
+                              Text: =If(EstAgent, "Tickets", "Mes demandes de support")
+                              Font: =Font.'Segoe UI'
+                              Size: =22
+                              FontWeight: =FontWeight.Bold
+                              Color: =Couleurs.Texte
+                              FillPortions: =1
+                              Height: =44
+                        - btnActualiser:
+                            Control: Button@0.0.45
+                            Properties:
+                              Text: ="Actualiser"
+                              Icon: ="ArrowClockwise"
+                              Appearance: ='ButtonCanvas.Appearance'.Secondary
+                              Width: =130
+                              Height: =36
+                              OnSelect: =Refresh(Tickets)
+                        - btnNouveauTicket:
+                            Control: Button@0.0.45
+                            Properties:
+                              Text: ="Nouveau ticket"
+                              Icon: ="Add"
+                              Appearance: ='ButtonCanvas.Appearance'.Primary
+                              Width: =160
+                              Height: =36
+                              OnSelect: |-
+                                =Set(varModeFormulaire, "Nouveau");
+                                Navigate(scrFormTicket, ScreenTransition.Cover)
+                  # ---------------- Indicateurs
+                  - galIndicateurs:
+                      Control: Gallery@2.15.0
+                      Variant: Horizontal
+                      Properties:
+                        FillPortions: =0
+                        Height: =104
+                        AlignInContainer: =AlignInContainer.Stretch
+                        TemplatePadding: =6
+                        TemplateSize: =Max(170, (Self.Width - 48) / 4)
+                        ShowScrollbar: =false
+                        OnSelect: |-
+                          =Set(varFiltreStatut, ThisItem.Filtre);
+                          Reset(drpFiltreStatut)
+                        Items: |-
+                          =Table(
+                              {
+                                  Titre: "Nouveaux",
+                                  Valeur: CountRows(Filter(Tickets, Statut.Value = "Nouveau", EstAgent || Demandeur.Email = EmailUtilisateur)),
+                                  Couleur: ColorValue("#0F6CBD"),
+                                  Filtre: "Nouveau"
+                              },
+                              {
+                                  Titre: "En cours",
+                                  Valeur: CountRows(Filter(Tickets, Statut.Value = "En cours", EstAgent || Demandeur.Email = EmailUtilisateur)),
+                                  Couleur: ColorValue("#8764B8"),
+                                  Filtre: "En cours"
+                              },
+                              {
+                                  Titre: "En attente",
+                                  Valeur: CountRows(Filter(Tickets, Statut.Value = "En attente", EstAgent || Demandeur.Email = EmailUtilisateur)),
+                                  Couleur: ColorValue("#B08800"),
+                                  Filtre: "En attente"
+                              },
+                              {
+                                  Titre: "Critiques ouverts",
+                                  Valeur: CountRows(Filter(Tickets, Priorite.Value = "Critique", Statut.Value = "Nouveau" || Statut.Value = "En cours" || Statut.Value = "En attente", EstAgent || Demandeur.Email = EmailUtilisateur)),
+                                  Couleur: ColorValue("#C50F1F"),
+                                  Filtre: "Ouverts"
+                              }
+                          )
+                      Children:
+                        - lblIndicateurFond:
+                            Control: Label@2.5.1
+                            Properties:
+                              Text: =""
+                              X: =0
+                              Y: =0
+                              Width: =Parent.TemplateWidth
+                              Height: =Parent.TemplateHeight
+                              Fill: =Couleurs.Carte
+                              BorderColor: =Couleurs.Bordure
+                              BorderThickness: =1
+                              RadiusTopLeft: =8
+                              RadiusTopRight: =8
+                              RadiusBottomLeft: =8
+                              RadiusBottomRight: =8
+                              OnSelect: =Select(Parent)
+                        - rctIndicateurAccent:
+                            Control: Rectangle@2.3.0
+                            Properties:
+                              X: =0
+                              Y: =12
+                              Width: =4
+                              Height: =Parent.TemplateHeight - 24
+                              Fill: =ThisItem.Couleur
+                        - lblIndicateurTitre:
+                            Control: Label@2.5.1
+                            Properties:
+                              Text: =ThisItem.Titre
+                              Font: =Font.'Segoe UI'
+                              Size: =11
+                              Color: =Couleurs.TexteSecondaire
+                              X: =20
+                              Y: =12
+                              Width: =Parent.TemplateWidth - 32
+                              Height: =24
+                              OnSelect: =Select(Parent)
+                        - lblIndicateurValeur:
+                            Control: Label@2.5.1
+                            Properties:
+                              Text: =Text(ThisItem.Valeur)
+                              Font: =Font.'Segoe UI'
+                              Size: =26
+                              FontWeight: =FontWeight.Bold
+                              Color: =ThisItem.Couleur
+                              X: =20
+                              Y: =38
+                              Width: =Parent.TemplateWidth - 32
+                              Height: =48
+                              OnSelect: =Select(Parent)
+                  # ---------------- Filtres
+                  - conAccueilFiltres:
+                      Control: GroupContainer@1.3.0
+                      Variant: AutoLayout
+                      Properties:
+                        FillPortions: =0
+                        Height: =If(Compact, 132, 44)
+                        AlignInContainer: =AlignInContainer.Stretch
+                        LayoutDirection: =LayoutDirection.Horizontal
+                        LayoutWrap: =true
+                        LayoutAlignItems: =LayoutAlignItems.Center
+                        LayoutGap: =8
+                      Children:
+                        - galVues:
+                            Control: Gallery@2.15.0
+                            Variant: Horizontal
+                            Properties:
+                              Items: =If(EstAgent, ["Tous", "Assignés à moi", "Mes demandes"], ["Mes demandes"])
+                              Width: =If(EstAgent, 420, 140)
+                              Height: =40
+                              TemplateSize: =136
+                              TemplatePadding: =2
+                              ShowScrollbar: =false
+                            Children:
+                              - btnVue:
+                                  Control: Button@0.0.45
+                                  Properties:
+                                    Text: =ThisItem.Value
+                                    Appearance: =If(varVue = ThisItem.Value, 'ButtonCanvas.Appearance'.Primary, 'ButtonCanvas.Appearance'.Subtle)
+                                    X: =0
+                                    Y: =2
+                                    Width: =Parent.TemplateWidth
+                                    Height: =32
+                                    OnSelect: =Set(varVue, ThisItem.Value)
+                        - txtRecherche:
+                            Control: TextInput@0.0.54
+                            Properties:
+                              Placeholder: ="Rechercher par titre…"
+                              AccessibleLabel: ="Rechercher un ticket"
+                              TriggerOutput: ='TextInputCanvas.TriggerOutput'.Delayed
+                              Width: =280
+                              Height: =36
+                        - drpFiltreStatut:
+                            Control: DropDown@0.0.45
+                            Properties:
+                              Items: =["Tous les statuts", "Ouverts", "Nouveau", "En cours", "En attente", "Résolu", "Fermé"]
+                              DefaultSelectedItems: =[Coalesce(varFiltreStatut, "Ouverts")]
+                              AccessibleLabel: ="Filtrer par statut"
+                              Width: =190
+                              Height: =36
+                        - drpFiltrePriorite:
+                            Control: DropDown@0.0.45
+                            Properties:
+                              Items: =["Toutes priorités", "Critique", "Haute", "Normale", "Basse"]
+                              DefaultSelectedItems: =["Toutes priorités"]
+                              AccessibleLabel: ="Filtrer par priorité"
+                              Width: =190
+                              Height: =36
+                  # ---------------- Liste des tickets
+                  - conAccueilListe:
+                      Control: GroupContainer@1.3.0
+                      Variant: AutoLayout
+                      Properties:
+                        FillPortions: =1
+                        LayoutMinHeight: =320
+                        AlignInContainer: =AlignInContainer.Stretch
+                        LayoutDirection: =LayoutDirection.Vertical
+                        Fill: =Couleurs.Carte
+                        BorderColor: =Couleurs.Bordure
+                        BorderThickness: =1
+                        RadiusTopLeft: =8
+                        RadiusTopRight: =8
+                        RadiusBottomLeft: =8
+                        RadiusBottomRight: =8
+                        DropShadow: =DropShadow.Light
+                      Children:
+                        - galTickets:
+                            Control: Gallery@2.15.0
+                            Variant: Vertical
+                            Properties:
+                              FillPortions: =1
+                              AlignInContainer: =AlignInContainer.Stretch
+                              TemplateSize: =76
+                              TemplatePadding: =0
+                              Items: |-
+                                =With(
+                                    {
+                                        vStatut: drpFiltreStatut.Selected.Value,
+                                        vPrio: drpFiltrePriorite.Selected.Value,
+                                        vRecherche: Trim(txtRecherche.Value),
+                                        vVue: varVue
+                                    },
+                                    Sort(
+                                        Filter(
+                                            Tickets,
+                                            EstAgent || Demandeur.Email = EmailUtilisateur,
+                                            vVue <> "Mes demandes" || Demandeur.Email = EmailUtilisateur,
+                                            vVue <> "Assignés à moi" || AssigneA.Email = EmailUtilisateur,
+                                            vStatut = "Tous les statuts"
+                                                || Statut.Value = vStatut
+                                                || (vStatut = "Ouverts" && (Statut.Value = "Nouveau" || Statut.Value = "En cours" || Statut.Value = "En attente")),
+                                            vPrio = "Toutes priorités" || Priorite.Value = vPrio,
+                                            IsBlank(vRecherche) || StartsWith(Title, vRecherche)
+                                        ),
+                                        ID,
+                                        SortOrder.Descending
+                                    )
+                                )
+                              OnSelect: |-
+                                =Set(varTicket, ThisItem);
+                                Navigate(scrDetailTicket, ScreenTransition.Cover)
+                            Children:
+                              - rctTicketPriorite:
+                                  Control: Rectangle@2.3.0
+                                  Properties:
+                                    X: =0
+                                    Y: =12
+                                    Width: =4
+                                    Height: =Parent.TemplateHeight - 24
+                                    Fill: =LookUp(CouleursPriorite, Nom = ThisItem.Priorite.Value, Couleur)
+                                    OnSelect: =Select(Parent)
+                              - lblTicketNumero:
+                                  Control: Label@2.5.1
+                                  Properties:
+                                    Text: ="TCK-" & Text(ThisItem.ID, "00000") & "  ·  " & ThisItem.Categorie.Value
+                                    Font: =Font.'Segoe UI'
+                                    Size: =10
+                                    Color: =Couleurs.TexteSecondaire
+                                    X: =20
+                                    Y: =8
+                                    Width: =Max(120, Parent.TemplateWidth - 300)
+                                    Height: =20
+                                    OnSelect: =Select(Parent)
+                              - lblTicketTitre:
+                                  Control: Label@2.5.1
+                                  Properties:
+                                    Text: =ThisItem.Title
+                                    Font: =Font.'Segoe UI'
+                                    Size: =13
+                                    FontWeight: =FontWeight.Semibold
+                                    Color: =Couleurs.Texte
+                                    X: =20
+                                    Y: =27
+                                    Width: =Max(120, Parent.TemplateWidth - 300)
+                                    Height: =24
+                                    OnSelect: =Select(Parent)
+                              - lblTicketSousTitre:
+                                  Control: Label@2.5.1
+                                  Properties:
+                                    Text: |-
+                                      =ThisItem.Demandeur.DisplayName & "  ·  " & Text(ThisItem.Created, "dd/mm/yyyy hh:mm") & "  ·  " & If(IsBlank(ThisItem.AssigneA.Email), "Non assigné", "Assigné à " & ThisItem.AssigneA.DisplayName)
+                                    Font: =Font.'Segoe UI'
+                                    Size: =10
+                                    Color: =Couleurs.TexteSecondaire
+                                    X: =20
+                                    Y: =50
+                                    Width: =Max(120, Parent.TemplateWidth - 300)
+                                    Height: =20
+                                    OnSelect: =Select(Parent)
+                              - lblTicketPriorite:
+                                  Control: Label@2.5.1
+                                  Properties:
+                                    Text: =ThisItem.Priorite.Value
+                                    Font: =Font.'Segoe UI'
+                                    Size: =10
+                                    FontWeight: =FontWeight.Semibold
+                                    Align: =Align.Center
+                                    Color: =LookUp(CouleursPriorite, Nom = ThisItem.Priorite.Value, Couleur)
+                                    Fill: =ColorFade(LookUp(CouleursPriorite, Nom = ThisItem.Priorite.Value, Couleur), 0.88)
+                                    RadiusTopLeft: =12
+                                    RadiusTopRight: =12
+                                    RadiusBottomLeft: =12
+                                    RadiusBottomRight: =12
+                                    X: =Parent.TemplateWidth - 268
+                                    Y: =(Parent.TemplateHeight - Self.Height) / 2
+                                    Width: =92
+                                    Height: =26
+                                    OnSelect: =Select(Parent)
+                              - lblTicketStatut:
+                                  Control: Label@2.5.1
+                                  Properties:
+                                    Text: =ThisItem.Statut.Value
+                                    Font: =Font.'Segoe UI'
+                                    Size: =10
+                                    FontWeight: =FontWeight.Semibold
+                                    Align: =Align.Center
+                                    Color: =LookUp(CouleursStatut, Nom = ThisItem.Statut.Value, Couleur)
+                                    Fill: =ColorFade(LookUp(CouleursStatut, Nom = ThisItem.Statut.Value, Couleur), 0.88)
+                                    RadiusTopLeft: =12
+                                    RadiusTopRight: =12
+                                    RadiusBottomLeft: =12
+                                    RadiusBottomRight: =12
+                                    X: =Parent.TemplateWidth - 166
+                                    Y: =(Parent.TemplateHeight - Self.Height) / 2
+                                    Width: =104
+                                    Height: =26
+                                    OnSelect: =Select(Parent)
+                              - icoTicketChevron:
+                                  Control: Classic/Icon@2.5.0
+                                  Properties:
+                                    Icon: =Icon.ChevronRight
+                                    Color: =Couleurs.TexteSecondaire
+                                    X: =Parent.TemplateWidth - 46
+                                    Y: =(Parent.TemplateHeight - Self.Height) / 2
+                                    Width: =28
+                                    Height: =28
+                                    PaddingTop: =6
+                                    PaddingBottom: =6
+                                    PaddingLeft: =6
+                                    PaddingRight: =6
+                                    OnSelect: =Select(Parent)
+                              - rctTicketSeparateur:
+                                  Control: Rectangle@2.3.0
+                                  Properties:
+                                    X: =16
+                                    Y: =Parent.TemplateHeight - 1
+                                    Width: =Parent.TemplateWidth - 32
+                                    Height: =1
+                                    Fill: =Couleurs.Bordure
+                        - lblAucunTicket:
+                            Control: Label@2.5.1
+                            Properties:
+                              Visible: =CountRows(galTickets.AllItems) = 0
+                              Text: ="Aucun ticket ne correspond à ces critères."
+                              Font: =Font.'Segoe UI'
+                              Size: =12
+                              Color: =Couleurs.TexteSecondaire
+                              Align: =Align.Center
+                              FillPortions: =0
+                              Height: =60
+                              AlignInContainer: =AlignInContainer.Stretch

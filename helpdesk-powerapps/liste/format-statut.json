@@ -1,0 +1,14 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/sp/v2/column-formatting.schema.json",
+  "elmType": "div",
+  "style": {
+    "padding": "2px 10px",
+    "border-radius": "12px",
+    "font-weight": "600",
+    "font-size": "12px",
+    "display": "inline-block",
+    "color": "=if(@currentField == 'Nouveau', '#0F6CBD', if(@currentField == 'En cours', '#5C2E91', if(@currentField == 'En attente', '#8A6A00', if(@currentField == 'Résolu', '#0E700E', '#424242'))))",
+    "background-color": "=if(@currentField == 'Nouveau', '#EBF3FC', if(@currentField == 'En cours', '#F3EEFA', if(@currentField == 'En attente', '#FFF9E5', if(@currentField == 'Résolu', '#E7F4E7', '#F0F0F0'))))"
+  },
+  "txtContent": "@currentField"
+}

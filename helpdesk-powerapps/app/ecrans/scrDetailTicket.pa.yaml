@@ -1,0 +1,784 @@
+Screens:
+  scrDetailTicket:
+    Properties:
+      Fill: =Couleurs.Fond
+      OnVisible: |-
+        =Set(varTicket, LookUp(Tickets, ID = varTicket.ID));
+        Reset(txtCommentaire);
+        Reset(chkInterne);
+        Reset(cmbAssigne);
+        Reset(drpNouveauStatut);
+        Reset(txtResolution)
+    Children:
+      - conDetail:
+          Control: GroupContainer@1.3.0
+          Variant: AutoLayout
+          Properties:
+            Width: =Parent.Width
+            Height: =Parent.Height
+            Fill: =Couleurs.Fond
+            LayoutDirection: =LayoutDirection.Vertical
+            LayoutGap: =0
+          Children:
+            # ============================================================ En-tête
+            - conDetailEnTete:
+                Control: GroupContainer@1.3.0
+                Variant: AutoLayout
+                Properties:
+                  FillPortions: =0
+                  Height: =64
+                  Fill: =Couleurs.Carte
+                  BorderColor: =Couleurs.Bordure
+                  BorderThickness: =1
+                  AlignInContainer: =AlignInContainer.Stretch
+                  LayoutDirection: =LayoutDirection.Horizontal
+                  LayoutAlignItems: =LayoutAlignItems.Center
+                  LayoutGap: =12
+                  PaddingLeft: =16
+                  PaddingRight: =24
+                Children:
+                  - btnDetailRetour:
+                      Control: Button@0.0.45
+                      Properties:
+                        Text: ="Tickets"
+                        Icon: ="ArrowLeft"
+                        Appearance: ='ButtonCanvas.Appearance'.Subtle
+                        Width: =110
+                        Height: =36
+                        OnSelect: =Navigate(scrAccueil, ScreenTransition.UnCover)
+                  - lblDetailNumero:
+                      Control: Label@2.5.1
+                      Properties:
+                        Text: ="TCK-" & Text(varTicket.ID, "00000")
+                        Font: =Font.'Segoe UI'
+                        Size: =16
+                        FontWeight: =FontWeight.Semibold
+                        Color: =Couleurs.Texte
+                        FillPortions: =1
+                        Height: =40
+                  - btnDetailModifier:
+                      Control: Button@0.0.45
+                      Properties:
+                        Text: ="Modifier"
+                        Icon: ="Edit"
+                        Appearance: ='ButtonCanvas.Appearance'.Secondary
+                        Width: =120
+                        Height: =36
+                        Visible: |-
+                          =varTicket.Statut.Value <> "Fermé" && (EstAgent || (varTicket.Demandeur.Email = EmailUtilisateur && varTicket.Statut.Value = "Nouveau"))
+                        OnSelect: |-
+                          =Set(varModeFormulaire, "Modifier");
+                          Navigate(scrFormTicket, ScreenTransition.Cover)
+            # ============================================================ Corps
+            - conDetailCorps:
+                Control: GroupContainer@1.3.0
+                Variant: AutoLayout
+                Properties:
+                  FillPortions: =1
+                  AlignInContainer: =AlignInContainer.Stretch
+                  LayoutDirection: =If(Compact, LayoutDirection.Vertical, LayoutDirection.Horizontal)
+                  LayoutGap: =16
+                  PaddingTop: =24
+                  PaddingBottom: =24
+                  PaddingLeft: =24
+                  PaddingRight: =24
+                  LayoutOverflowY: =LayoutOverflow.Scroll
+                Children:
+                  # -------------------------------------------------- Colonne gauche
+                  - conDetailGauche:
+                      Control: GroupContainer@1.3.0
+                      Variant: AutoLayout
+                      Properties:
+                        FillPortions: =If(Compact, 0, 2)
+                        Height: =If(Compact, 760, Parent.Height - 48)
+                        AlignInContainer: =AlignInContainer.Stretch
+                        LayoutDirection: =LayoutDirection.Vertical
+                        LayoutGap: =16
+                      Children:
+                        # ---------- Carte résumé
+                        - conCarteResume:
+                            Control: GroupContainer@1.3.0
+                            Variant: AutoLayout
+                            Properties:
+                              FillPortions: =0
+                              Height: =280
+                              AlignInContainer: =AlignInContainer.Stretch
+                              LayoutDirection: =LayoutDirection.Vertical
+                              LayoutGap: =8
+                              PaddingTop: =20
+                              PaddingBottom: =20
+                              PaddingLeft: =24
+                              PaddingRight: =24
+                              Fill: =Couleurs.Carte
+                              BorderColor: =Couleurs.Bordure
+                              BorderThickness: =1
+                              RadiusTopLeft: =8
+                              RadiusTopRight: =8
+                              RadiusBottomLeft: =8
+                              RadiusBottomRight: =8
+                              DropShadow: =DropShadow.Light
+                            Children:
+                              - conResumePastilles:
+                                  Control: GroupContainer@1.3.0
+                                  Variant: AutoLayout
+                                  Properties:
+                                    FillPortions: =0
+                                    Height: =26
+                                    AlignInContainer: =AlignInContainer.Stretch
+                                    LayoutDirection: =LayoutDirection.Horizontal
+                                    LayoutGap: =8
+                                  Children:
+                                    - lblResumeStatut:
+                                        Control: Label@2.5.1
+                                        Properties:
+                                          Text: =varTicket.Statut.Value
+                                          Font: =Font.'Segoe UI'
+                                          Size: =10
+                                          FontWeight: =FontWeight.Semibold
+                                          Align: =Align.Center
+                                          Color: =LookUp(CouleursStatut, Nom = varTicket.Statut.Value, Couleur)
+                                          Fill: =ColorFade(LookUp(CouleursStatut, Nom = varTicket.Statut.Value, Couleur), 0.88)
+                                          RadiusTopLeft: =12
+                                          RadiusTopRight: =12
+                                          RadiusBottomLeft: =12
+                                          RadiusBottomRight: =12
+                                          Width: =104
+                                          Height: =26
+                                    - lblResumePriorite:
+                                        Control: Label@2.5.1
+                                        Properties:
+                                          Text: ="Priorité " & Lower(varTicket.Priorite.Value)
+                                          Font: =Font.'Segoe UI'
+                                          Size: =10
+                                          FontWeight: =FontWeight.Semibold
+                                          Align: =Align.Center
+                                          Color: =LookUp(CouleursPriorite, Nom = varTicket.Priorite.Value, Couleur)
+                                          Fill: =ColorFade(LookUp(CouleursPriorite, Nom = varTicket.Priorite.Value, Couleur), 0.88)
+                                          RadiusTopLeft: =12
+                                          RadiusTopRight: =12
+                                          RadiusBottomLeft: =12
+                                          RadiusBottomRight: =12
+                                          Width: =130
+                                          Height: =26
+                                    - lblResumeCategorie:
+                                        Control: Label@2.5.1
+                                        Properties:
+                                          Text: =varTicket.Categorie.Value
+                                          Font: =Font.'Segoe UI'
+                                          Size: =10
+                                          FontWeight: =FontWeight.Semibold
+                                          Align: =Align.Center
+                                          Color: =Couleurs.TexteSecondaire
+                                          Fill: =Couleurs.Fond
+                                          RadiusTopLeft: =12
+                                          RadiusTopRight: =12
+                                          RadiusBottomLeft: =12
+                                          RadiusBottomRight: =12
+                                          Width: =130
+                                          Height: =26
+                              - lblResumeTitre:
+                                  Control: Label@2.5.1
+                                  Properties:
+                                    Text: =varTicket.Title
+                                    Font: =Font.'Segoe UI'
+                                    Size: =18
+                                    FontWeight: =FontWeight.Bold
+                                    Color: =Couleurs.Texte
+                                    FillPortions: =0
+                                    Height: =40
+                                    AlignInContainer: =AlignInContainer.Stretch
+                              - lblResumeDescription:
+                                  Control: Label@2.5.1
+                                  Properties:
+                                    Text: =Coalesce(varTicket.Details, "Aucune description.")
+                                    Font: =Font.'Segoe UI'
+                                    Size: =11
+                                    Color: =Couleurs.Texte
+                                    VerticalAlign: =VerticalAlign.Top
+                                    Overflow: =Overflow.Scroll
+                                    FillPortions: =1
+                                    AlignInContainer: =AlignInContainer.Stretch
+                        # ---------- Carte discussion
+                        - conCarteDiscussion:
+                            Control: GroupContainer@1.3.0
+                            Variant: AutoLayout
+                            Properties:
+                              FillPortions: =1
+                              LayoutMinHeight: =320
+                              AlignInContainer: =AlignInContainer.Stretch
+                              LayoutDirection: =LayoutDirection.Vertical
+                              LayoutGap: =8
+                              PaddingTop: =16
+                              PaddingBottom: =16
+                              PaddingLeft: =24
+                              PaddingRight: =24
+                              Fill: =Couleurs.Carte
+                              BorderColor: =Couleurs.Bordure
+                              BorderThickness: =1
+                              RadiusTopLeft: =8
+                              RadiusTopRight: =8
+                              RadiusBottomLeft: =8
+                              RadiusBottomRight: =8
+                              DropShadow: =DropShadow.Light
+                            Children:
+                              - lblDiscussionTitre:
+                                  Control: Label@2.5.1
+                                  Properties:
+                                    Text: ="Fil de discussion"
+                                    Font: =Font.'Segoe UI'
+                                    Size: =13
+                                    FontWeight: =FontWeight.Semibold
+                                    Color: =Couleurs.Texte
+                                    FillPortions: =0
+                                    Height: =32
+                                    AlignInContainer: =AlignInContainer.Stretch
+                              - galCommentaires:
+                                  Control: Gallery@2.15.0
+                                  Variant: Vertical
+                                  Properties:
+                                    FillPortions: =1
+                                    AlignInContainer: =AlignInContainer.Stretch
+                                    TemplateSize: =96
+                                    TemplatePadding: =4
+                                    Items: |-
+                                      =Sort(
+                                          Filter(
+                                              CommentairesTickets,
+                                              TicketId = varTicket.ID,
+                                              EstAgent || Interne = false
+                                          ),
+                                          ID,
+                                          SortOrder.Ascending
+                                      )
+                                  Children:
+                                    - lblCommentaireBulle:
+                                        Control: Label@2.5.1
+                                        Properties:
+                                          Text: =""
+                                          X: =0
+                                          Y: =0
+                                          Width: =Parent.TemplateWidth
+                                          Height: =Parent.TemplateHeight
+                                          Fill: |-
+                                            =If(ThisItem.Interne, ColorValue("#FFF9E5"), ThisItem.Author.Email = varTicket.Demandeur.Email, Couleurs.Fond, ColorValue("#EBF3FC"))
+                                          RadiusTopLeft: =8
+                                          RadiusTopRight: =8
+                                          RadiusBottomLeft: =8
+                                          RadiusBottomRight: =8
+                                    - lblCommentaireAuteur:
+                                        Control: Label@2.5.1
+                                        Properties:
+                                          Text: |-
+                                            =ThisItem.Author.DisplayName & "  ·  " & Text(ThisItem.Created, "dd/mm/yyyy hh:mm") & If(ThisItem.Interne, "  ·  Note interne", "")
+                                          Font: =Font.'Segoe UI'
+                                          Size: =10
+                                          FontWeight: =FontWeight.Semibold
+                                          Color: =Couleurs.TexteSecondaire
+                                          X: =12
+                                          Y: =6
+                                          Width: =Parent.TemplateWidth - 24
+                                          Height: =22
+                                    - lblCommentaireMessage:
+                                        Control: Label@2.5.1
+                                        Properties:
+                                          Text: =ThisItem.Message
+                                          Font: =Font.'Segoe UI'
+                                          Size: =11
+                                          Color: =Couleurs.Texte
+                                          VerticalAlign: =VerticalAlign.Top
+                                          Overflow: =Overflow.Scroll
+                                          X: =12
+                                          Y: =28
+                                          Width: =Parent.TemplateWidth - 24
+                                          Height: =Parent.TemplateHeight - 34
+                              - lblAucunCommentaire:
+                                  Control: Label@2.5.1
+                                  Properties:
+                                    Visible: =CountRows(galCommentaires.AllItems) = 0
+                                    Text: ="Aucun message pour le moment."
+                                    Font: =Font.'Segoe UI'
+                                    Size: =11
+                                    Color: =Couleurs.TexteSecondaire
+                                    FillPortions: =0
+                                    Height: =32
+                                    AlignInContainer: =AlignInContainer.Stretch
+                              - conSaisieCommentaire:
+                                  Control: GroupContainer@1.3.0
+                                  Variant: AutoLayout
+                                  Properties:
+                                    Visible: =varTicket.Statut.Value <> "Fermé"
+                                    FillPortions: =0
+                                    Height: =44
+                                    AlignInContainer: =AlignInContainer.Stretch
+                                    LayoutDirection: =LayoutDirection.Horizontal
+                                    LayoutAlignItems: =LayoutAlignItems.Center
+                                    LayoutGap: =8
+                                  Children:
+                                    - txtCommentaire:
+                                        Control: TextInput@0.0.54
+                                        Properties:
+                                          Placeholder: ="Écrire un message…"
+                                          AccessibleLabel: ="Nouveau message"
+                                          FillPortions: =1
+                                          Height: =36
+                                    - chkInterne:
+                                        Control: Checkbox@0.0.30
+                                        Properties:
+                                          Visible: =EstAgent
+                                          Label: ="Note interne"
+                                          Checked: =false
+                                          Width: =140
+                                          Height: =36
+                                    - btnEnvoyer:
+                                        Control: Button@0.0.45
+                                        Properties:
+                                          Text: ="Envoyer"
+                                          Icon: ="Send"
+                                          Appearance: ='ButtonCanvas.Appearance'.Primary
+                                          Width: =120
+                                          Height: =36
+                                          DisplayMode: =If(IsBlank(Trim(txtCommentaire.Value)), DisplayMode.Disabled, DisplayMode.Edit)
+                                          OnSelect: |-
+                                            =IfError(
+                                                Patch(
+                                                    CommentairesTickets,
+                                                    Defaults(CommentairesTickets),
+                                                    {
+                                                        Title: "TCK-" & Text(varTicket.ID, "00000"),
+                                                        TicketId: varTicket.ID,
+                                                        Message: Trim(txtCommentaire.Value),
+                                                        Interne: EstAgent && chkInterne.Checked
+                                                    }
+                                                );
+                                                // Un demandeur qui répond à un ticket "En attente" le relance automatiquement
+                                                If(
+                                                    !EstAgent && varTicket.Statut.Value = "En attente",
+                                                    Set(varTicket, Patch(Tickets, LookUp(Tickets, ID = varTicket.ID), {Statut: {Value: "En cours"}}))
+                                                ),
+                                                Notify("Envoi impossible : " & FirstError.Message, NotificationType.Error),
+                                                Reset(txtCommentaire);
+                                                Reset(chkInterne)
+                                            )
+                  # -------------------------------------------------- Colonne droite
+                  - conDetailDroite:
+                      Control: GroupContainer@1.3.0
+                      Variant: AutoLayout
+                      Properties:
+                        FillPortions: =If(Compact, 0, 1)
+                        LayoutMinWidth: =320
+                        Height: =If(Compact, 1020, Parent.Height - 48)
+                        AlignInContainer: =AlignInContainer.Stretch
+                        LayoutDirection: =LayoutDirection.Vertical
+                        LayoutGap: =16
+                        LayoutOverflowY: =LayoutOverflow.Scroll
+                      Children:
+                        # ---------- Carte informations
+                        - conCarteInfos:
+                            Control: GroupContainer@1.3.0
+                            Variant: AutoLayout
+                            Properties:
+                              FillPortions: =0
+                              Height: =360
+                              AlignInContainer: =AlignInContainer.Stretch
+                              LayoutDirection: =LayoutDirection.Vertical
+                              PaddingTop: =16
+                              PaddingBottom: =16
+                              PaddingLeft: =20
+                              PaddingRight: =20
+                              Fill: =Couleurs.Carte
+                              BorderColor: =Couleurs.Bordure
+                              BorderThickness: =1
+                              RadiusTopLeft: =8
+                              RadiusTopRight: =8
+                              RadiusBottomLeft: =8
+                              RadiusBottomRight: =8
+                              DropShadow: =DropShadow.Light
+                            Children:
+                              - lblInfosTitre:
+                                  Control: Label@2.5.1
+                                  Properties:
+                                    Text: ="Informations"
+                                    Font: =Font.'Segoe UI'
+                                    Size: =13
+                                    FontWeight: =FontWeight.Semibold
+                                    Color: =Couleurs.Texte
+                                    FillPortions: =0
+                                    Height: =32
+                                    AlignInContainer: =AlignInContainer.Stretch
+                              - galInfos:
+                                  Control: Gallery@2.15.0
+                                  Variant: Vertical
+                                  Properties:
+                                    FillPortions: =1
+                                    AlignInContainer: =AlignInContainer.Stretch
+                                    TemplateSize: =34
+                                    TemplatePadding: =0
+                                    ShowScrollbar: =false
+                                    Items: |-
+                                      =Table(
+                                          {Cle: "Statut", Valeur: varTicket.Statut.Value},
+                                          {Cle: "Priorité", Valeur: varTicket.Priorite.Value},
+                                          {Cle: "Catégorie", Valeur: varTicket.Categorie.Value},
+                                          {Cle: "Demandeur", Valeur: varTicket.Demandeur.DisplayName},
+                                          {Cle: "Assigné à", Valeur: If(IsBlank(varTicket.AssigneA.Email), "Non assigné", varTicket.AssigneA.DisplayName)},
+                                          {Cle: "Créé le", Valeur: Text(varTicket.Created, "dd/mm/yyyy hh:mm")},
+                                          {Cle: "Échéance", Valeur: If(IsBlank(varTicket.Echeance), "—", Text(varTicket.Echeance, "dd/mm/yyyy"))},
+                                          {Cle: "Résolu le", Valeur: If(IsBlank(varTicket.DateResolution), "—", Text(varTicket.DateResolution, "dd/mm/yyyy hh:mm"))}
+                                      )
+                                  Children:
+                                    - lblInfoCle:
+                                        Control: Label@2.5.1
+                                        Properties:
+                                          Text: =ThisItem.Cle
+                                          Font: =Font.'Segoe UI'
+                                          Size: =10
+                                          Color: =Couleurs.TexteSecondaire
+                                          X: =0
+                                          Y: =0
+                                          Width: =110
+                                          Height: =Parent.TemplateHeight
+                                    - lblInfoValeur:
+                                        Control: Label@2.5.1
+                                        Properties:
+                                          Text: =ThisItem.Valeur
+                                          Font: =Font.'Segoe UI'
+                                          Size: =11
+                                          FontWeight: =FontWeight.Semibold
+                                          Color: =Couleurs.Texte
+                                          X: =110
+                                          Y: =0
+                                          Width: =Parent.TemplateWidth - 110
+                                          Height: =Parent.TemplateHeight
+                        # ---------- Carte résolution (visible quand le ticket est résolu / fermé)
+                        - conCarteResolution:
+                            Control: GroupContainer@1.3.0
+                            Variant: AutoLayout
+                            Properties:
+                              Visible: =varTicket.Statut.Value = "Résolu" || varTicket.Statut.Value = "Fermé"
+                              FillPortions: =0
+                              Height: =If(varTicket.Statut.Value = "Résolu" && varTicket.Demandeur.Email = EmailUtilisateur, 230, 180)
+                              AlignInContainer: =AlignInContainer.Stretch
+                              LayoutDirection: =LayoutDirection.Vertical
+                              LayoutGap: =8
+                              PaddingTop: =16
+                              PaddingBottom: =16
+                              PaddingLeft: =20
+                              PaddingRight: =20
+                              Fill: =ColorValue("#F1FAF1")
+                              BorderColor: =ColorValue("#9FD89F")
+                              BorderThickness: =1
+                              RadiusTopLeft: =8
+                              RadiusTopRight: =8
+                              RadiusBottomLeft: =8
+                              RadiusBottomRight: =8
+                            Children:
+                              - lblResolutionTitre:
+                                  Control: Label@2.5.1
+                                  Properties:
+                                    Text: =If(varTicket.Statut.Value = "Fermé", "Ticket fermé", "Solution proposée")
+                                    Font: =Font.'Segoe UI'
+                                    Size: =13
+                                    FontWeight: =FontWeight.Semibold
+                                    Color: =Couleurs.Succes
+                                    FillPortions: =0
+                                    Height: =28
+                                    AlignInContainer: =AlignInContainer.Stretch
+                              - lblResolutionTexte:
+                                  Control: Label@2.5.1
+                                  Properties:
+                                    Text: =Coalesce(varTicket.Resolution, "—")
+                                    Font: =Font.'Segoe UI'
+                                    Size: =11
+                                    Color: =Couleurs.Texte
+                                    VerticalAlign: =VerticalAlign.Top
+                                    Overflow: =Overflow.Scroll
+                                    FillPortions: =1
+                                    AlignInContainer: =AlignInContainer.Stretch
+                              - conResolutionBoutons:
+                                  Control: GroupContainer@1.3.0
+                                  Variant: AutoLayout
+                                  Properties:
+                                    Visible: =varTicket.Statut.Value = "Résolu" && varTicket.Demandeur.Email = EmailUtilisateur
+                                    FillPortions: =0
+                                    Height: =40
+                                    AlignInContainer: =AlignInContainer.Stretch
+                                    LayoutDirection: =LayoutDirection.Horizontal
+                                    LayoutGap: =8
+                                  Children:
+                                    - btnConfirmerFermer:
+                                        Control: Button@0.0.45
+                                        Properties:
+                                          Text: ="Problème réglé"
+                                          Icon: ="Checkmark"
+                                          Appearance: ='ButtonCanvas.Appearance'.Primary
+                                          FillPortions: =1
+                                          Height: =36
+                                          OnSelect: |-
+                                            =IfError(
+                                                Set(varTicket, Patch(Tickets, LookUp(Tickets, ID = varTicket.ID), {Statut: {Value: "Fermé"}}));
+                                                Patch(
+                                                    CommentairesTickets,
+                                                    Defaults(CommentairesTickets),
+                                                    {Title: "TCK-" & Text(varTicket.ID, "00000"), TicketId: varTicket.ID, Message: "Le demandeur a confirmé la résolution. Ticket fermé.", Interne: false}
+                                                ),
+                                                Notify("Erreur : " & FirstError.Message, NotificationType.Error),
+                                                Notify("Merci ! Le ticket est fermé.", NotificationType.Success)
+                                            )
+                                    - btnRouvrir:
+                                        Control: Button@0.0.45
+                                        Properties:
+                                          Text: ="Rouvrir"
+                                          Icon: ="ArrowUndo"
+                                          Appearance: ='ButtonCanvas.Appearance'.Secondary
+                                          FillPortions: =1
+                                          Height: =36
+                                          OnSelect: |-
+                                            =IfError(
+                                                Set(varTicket, Patch(Tickets, LookUp(Tickets, ID = varTicket.ID), {Statut: {Value: "En cours"}, DateResolution: Blank()}));
+                                                Patch(
+                                                    CommentairesTickets,
+                                                    Defaults(CommentairesTickets),
+                                                    {Title: "TCK-" & Text(varTicket.ID, "00000"), TicketId: varTicket.ID, Message: "Le demandeur a rouvert le ticket : le problème persiste.", Interne: false}
+                                                ),
+                                                Notify("Erreur : " & FirstError.Message, NotificationType.Error),
+                                                Notify("Ticket rouvert. Précisez le problème dans le fil de discussion.", NotificationType.Information)
+                                            )
+                        # ---------- Carte traitement (agents uniquement)
+                        - conCarteTraitement:
+                            Control: GroupContainer@1.3.0
+                            Variant: AutoLayout
+                            Properties:
+                              Visible: =EstAgent && varTicket.Statut.Value <> "Fermé"
+                              FillPortions: =0
+                              Height: =460
+                              AlignInContainer: =AlignInContainer.Stretch
+                              LayoutDirection: =LayoutDirection.Vertical
+                              LayoutGap: =6
+                              PaddingTop: =16
+                              PaddingBottom: =16
+                              PaddingLeft: =20
+                              PaddingRight: =20
+                              Fill: =Couleurs.Carte
+                              BorderColor: =Couleurs.Bordure
+                              BorderThickness: =1
+                              RadiusTopLeft: =8
+                              RadiusTopRight: =8
+                              RadiusBottomLeft: =8
+                              RadiusBottomRight: =8
+                              DropShadow: =DropShadow.Light
+                            Children:
+                              - lblTraitementTitre:
+                                  Control: Label@2.5.1
+                                  Properties:
+                                    Text: ="Traitement"
+                                    Font: =Font.'Segoe UI'
+                                    Size: =13
+                                    FontWeight: =FontWeight.Semibold
+                                    Color: =Couleurs.Texte
+                                    FillPortions: =0
+                                    Height: =32
+                                    AlignInContainer: =AlignInContainer.Stretch
+                              # Assignation
+                              - lblAssigne:
+                                  Control: Label@2.5.1
+                                  Properties:
+                                    Text: ="Assigner à"
+                                    Font: =Font.'Segoe UI'
+                                    Size: =10
+                                    FontWeight: =FontWeight.Semibold
+                                    Color: =Couleurs.TexteSecondaire
+                                    FillPortions: =0
+                                    Height: =22
+                                    AlignInContainer: =AlignInContainer.Stretch
+                              - cmbAssigne:
+                                  Control: ComboBox@0.0.51
+                                  Properties:
+                                    Items: =Choices([@Tickets].AssigneA)
+                                    ItemDisplayText: =ThisItem.DisplayName
+                                    SelectMultiple: =false
+                                    DefaultSelectedItems: =Filter([varTicket.AssigneA], !IsBlank(Email))
+                                    InputTextPlaceholder: ="Rechercher une personne…"
+                                    AccessibleLabel: ="Personne assignée"
+                                    FillPortions: =0
+                                    Height: =36
+                                    AlignInContainer: =AlignInContainer.Stretch
+                              - conAssigneBoutons:
+                                  Control: GroupContainer@1.3.0
+                                  Variant: AutoLayout
+                                  Properties:
+                                    FillPortions: =0
+                                    Height: =40
+                                    AlignInContainer: =AlignInContainer.Stretch
+                                    LayoutDirection: =LayoutDirection.Horizontal
+                                    LayoutGap: =8
+                                  Children:
+                                    - btnMAssigner:
+                                        Control: Button@0.0.45
+                                        Properties:
+                                          Text: ="M'assigner"
+                                          Icon: ="Person"
+                                          Appearance: ='ButtonCanvas.Appearance'.Secondary
+                                          FillPortions: =1
+                                          Height: =36
+                                          DisplayMode: =If(varTicket.AssigneA.Email = EmailUtilisateur, DisplayMode.Disabled, DisplayMode.Edit)
+                                          OnSelect: |-
+                                            =IfError(
+                                                Set(
+                                                    varTicket,
+                                                    Patch(
+                                                        Tickets,
+                                                        LookUp(Tickets, ID = varTicket.ID),
+                                                        {
+                                                            AssigneA: UtilisateurSP,
+                                                            Statut: {Value: If(varTicket.Statut.Value = "Nouveau", "En cours", varTicket.Statut.Value)}
+                                                        }
+                                                    )
+                                                );
+                                                Patch(
+                                                    CommentairesTickets,
+                                                    Defaults(CommentairesTickets),
+                                                    {Title: "TCK-" & Text(varTicket.ID, "00000"), TicketId: varTicket.ID, Message: User().FullName & " prend en charge le ticket.", Interne: false}
+                                                ),
+                                                Notify("Erreur : " & FirstError.Message, NotificationType.Error),
+                                                Reset(cmbAssigne);
+                                                Notify("Ticket pris en charge", NotificationType.Success)
+                                            )
+                                    - btnAssigner:
+                                        Control: Button@0.0.45
+                                        Properties:
+                                          Text: ="Assigner"
+                                          Appearance: ='ButtonCanvas.Appearance'.Secondary
+                                          FillPortions: =1
+                                          Height: =36
+                                          DisplayMode: |-
+                                            =If(IsBlank(cmbAssigne.Selected.Email) || cmbAssigne.Selected.Email = varTicket.AssigneA.Email, DisplayMode.Disabled, DisplayMode.Edit)
+                                          OnSelect: |-
+                                            =IfError(
+                                                Set(
+                                                    varTicket,
+                                                    Patch(
+                                                        Tickets,
+                                                        LookUp(Tickets, ID = varTicket.ID),
+                                                        {
+                                                            AssigneA: cmbAssigne.Selected,
+                                                            Statut: {Value: If(varTicket.Statut.Value = "Nouveau", "En cours", varTicket.Statut.Value)}
+                                                        }
+                                                    )
+                                                );
+                                                Patch(
+                                                    CommentairesTickets,
+                                                    Defaults(CommentairesTickets),
+                                                    {Title: "TCK-" & Text(varTicket.ID, "00000"), TicketId: varTicket.ID, Message: "Ticket assigné à " & cmbAssigne.Selected.DisplayName & ".", Interne: false}
+                                                ),
+                                                Notify("Erreur : " & FirstError.Message, NotificationType.Error),
+                                                Notify("Ticket assigné", NotificationType.Success)
+                                            )
+                              # Statut
+                              - lblNouveauStatut:
+                                  Control: Label@2.5.1
+                                  Properties:
+                                    Text: ="Changer le statut"
+                                    Font: =Font.'Segoe UI'
+                                    Size: =10
+                                    FontWeight: =FontWeight.Semibold
+                                    Color: =Couleurs.TexteSecondaire
+                                    FillPortions: =0
+                                    Height: =30
+                                    PaddingTop: =8
+                                    AlignInContainer: =AlignInContainer.Stretch
+                              - conStatutLigne:
+                                  Control: GroupContainer@1.3.0
+                                  Variant: AutoLayout
+                                  Properties:
+                                    FillPortions: =0
+                                    Height: =40
+                                    AlignInContainer: =AlignInContainer.Stretch
+                                    LayoutDirection: =LayoutDirection.Horizontal
+                                    LayoutGap: =8
+                                  Children:
+                                    - drpNouveauStatut:
+                                        Control: DropDown@0.0.45
+                                        Properties:
+                                          Items: =["Nouveau", "En cours", "En attente"]
+                                          DefaultSelectedItems: =[If(varTicket.Statut.Value = "Résolu", "En cours", varTicket.Statut.Value)]
+                                          AccessibleLabel: ="Nouveau statut"
+                                          FillPortions: =1
+                                          Height: =36
+                                    - btnAppliquerStatut:
+                                        Control: Button@0.0.45
+                                        Properties:
+                                          Text: ="Appliquer"
+                                          Appearance: ='ButtonCanvas.Appearance'.Secondary
+                                          Width: =110
+                                          Height: =36
+                                          DisplayMode: =If(drpNouveauStatut.Selected.Value = varTicket.Statut.Value, DisplayMode.Disabled, DisplayMode.Edit)
+                                          OnSelect: |-
+                                            =With(
+                                                {vAncien: varTicket.Statut.Value, vNouveau: drpNouveauStatut.Selected.Value},
+                                                IfError(
+                                                    Set(varTicket, Patch(Tickets, LookUp(Tickets, ID = varTicket.ID), {Statut: {Value: vNouveau}, DateResolution: Blank()}));
+                                                    Patch(
+                                                        CommentairesTickets,
+                                                        Defaults(CommentairesTickets),
+                                                        {Title: "TCK-" & Text(varTicket.ID, "00000"), TicketId: varTicket.ID, Message: "Statut modifié : " & vAncien & " → " & vNouveau & ".", Interne: false}
+                                                    ),
+                                                    Notify("Erreur : " & FirstError.Message, NotificationType.Error),
+                                                    Notify("Statut mis à jour", NotificationType.Success)
+                                                )
+                                            )
+                              # Résolution
+                              - lblResolution:
+                                  Control: Label@2.5.1
+                                  Properties:
+                                    Text: ="Solution apportée"
+                                    Font: =Font.'Segoe UI'
+                                    Size: =10
+                                    FontWeight: =FontWeight.Semibold
+                                    Color: =Couleurs.TexteSecondaire
+                                    FillPortions: =0
+                                    Height: =30
+                                    PaddingTop: =8
+                                    AlignInContainer: =AlignInContainer.Stretch
+                              - txtResolution:
+                                  Control: TextInput@0.0.54
+                                  Properties:
+                                    Mode: ='TextInputCanvas.Mode'.Multiline
+                                    Value: =varTicket.Resolution
+                                    Placeholder: |-
+                                      ="Décrivez la solution : elle sera envoyée au demandeur."
+                                    AccessibleLabel: ="Solution apportée"
+                                    FillPortions: =1
+                                    AlignInContainer: =AlignInContainer.Stretch
+                              - btnResoudre:
+                                  Control: Button@0.0.45
+                                  Properties:
+                                    Text: =If(varTicket.Statut.Value = "Résolu", "Mettre à jour la solution", "Marquer comme résolu")
+                                    Icon: ="CheckmarkCircle"
+                                    Appearance: ='ButtonCanvas.Appearance'.Primary
+                                    FillPortions: =0
+                                    Height: =36
+                                    AlignInContainer: =AlignInContainer.Stretch
+                                    DisplayMode: =If(IsBlank(Trim(txtResolution.Value)), DisplayMode.Disabled, DisplayMode.Edit)
+                                    OnSelect: |-
+                                      =IfError(
+                                          Set(
+                                              varTicket,
+                                              Patch(
+                                                  Tickets,
+                                                  LookUp(Tickets, ID = varTicket.ID),
+                                                  {
+                                                      Statut: {Value: "Résolu"},
+                                                      Resolution: Trim(txtResolution.Value),
+                                                      DateResolution: Now(),
+                                                      AssigneA: If(IsBlank(varTicket.AssigneA.Email), UtilisateurSP, varTicket.AssigneA)
+                                                  }
+                                              )
+                                          );
+                                          Patch(
+                                              CommentairesTickets,
+                                              Defaults(CommentairesTickets),
+                                              {Title: "TCK-" & Text(varTicket.ID, "00000"), TicketId: varTicket.ID, Message: "✅ Ticket résolu : " & Trim(txtResolution.Value), Interne: false}
+                                          ),
+                                          Notify("Impossible de résoudre le ticket : " & FirstError.Message, NotificationType.Error),
+                                          Notify("Ticket résolu. Le demandeur peut confirmer ou rouvrir.", NotificationType.Success)
+                                      )
