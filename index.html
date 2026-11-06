@@ -1,0 +1,3130 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>Atelier convoyeurs 3D</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    [hidden] {
+      display: none !important;
+    }
+
+    body {
+      margin: 0;
+      font-family: system-ui, sans-serif;
+      background: #101722;
+      color: #e5edf7;
+    }
+
+    .app {
+      display: flex;
+      height: 100dvh;
+      overflow: hidden;
+    }
+
+    aside {
+      width: 360px;
+      flex-shrink: 0;
+      padding: 20px;
+      background: #172130;
+      border-right: 1px solid #324054;
+      overflow-y: auto;
+    }
+
+    h1 {
+      font-size: 22px;
+      margin: 0 0 8px;
+    }
+
+    h2 {
+      font-size: 15px;
+      margin: 22px 0 12px;
+    }
+
+    p,
+    .hint {
+      color: #a8b9ce;
+      font-size: 13px;
+      line-height: 1.6;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 4px 9px;
+      border-radius: 20px;
+      background: #153c3d;
+      color: #67e8bd;
+      font-size: 11px;
+      margin-bottom: 15px;
+    }
+
+    button {
+      border: 1px solid transparent;
+      border-radius: 8px;
+      padding: 11px;
+      cursor: pointer;
+      font-weight: 650;
+      background: #314158;
+      color: white;
+      transition:
+        background 0.15s,
+        filter 0.15s,
+        border-color 0.15s;
+    }
+
+    button:hover {
+      filter: brightness(1.15);
+    }
+
+    button:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
+
+    button:focus-visible,
+    input:focus-visible,
+    select:focus-visible {
+      outline: 2px solid #5eead4;
+      outline-offset: 2px;
+    }
+
+    .primary {
+      background: #087f72;
+    }
+
+    .danger {
+      background: #873e4e;
+    }
+
+    .mode.active {
+      background: #087f72;
+      border-color: #5eead4;
+    }
+
+    .full {
+      width: 100%;
+    }
+
+    .row {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 9px;
+    }
+
+    .row > * {
+      flex: 1;
+      min-width: 0;
+    }
+
+    label {
+      display: block;
+      font-size: 12px;
+      color: #bccbdd;
+      margin: 10px 0;
+    }
+
+    label.check {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin: 8px 0;
+    }
+
+    input[type="number"],
+    select {
+      display: block;
+      width: 100%;
+      margin-top: 6px;
+      background: #0f1927;
+      color: white;
+      border: 1px solid #3c506b;
+      border-radius: 7px;
+      padding: 9px;
+    }
+
+    input[type="checkbox"] {
+      accent-color: #2dd4bf;
+      margin: 0;
+      flex-shrink: 0;
+    }
+
+    .panel {
+      background: #111b29;
+      border: 1px solid #314158;
+      border-radius: 10px;
+      padding: 12px;
+    }
+
+    .panel .hint:last-child {
+      margin-bottom: 0;
+    }
+
+    .axis-x {
+      color: #ff9292;
+    }
+
+    .axis-z {
+      color: #91baff;
+    }
+
+    kbd {
+      display: inline-block;
+      min-width: 20px;
+      padding: 1px 5px;
+      border: 1px solid #46556a;
+      border-radius: 4px;
+      background: #243145;
+      color: #e5edf7;
+      font-size: 11px;
+      font-weight: 500;
+      text-align: center;
+    }
+
+    /* Palette de pièces */
+
+    .palette {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .palette button {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px;
+      text-align: left;
+      background: #1d2b3e;
+      border-color: #3a4d66;
+      font-size: 13px;
+    }
+
+    .palette button:first-child {
+      grid-column: span 2;
+    }
+
+    .palette button span {
+      flex: 1;
+    }
+
+    .palette svg {
+      width: 26px;
+      height: 26px;
+      flex-shrink: 0;
+      color: #5eead4;
+    }
+
+    .palette button.slope-up svg {
+      color: #fbbf24;
+    }
+
+    .palette button.slope-down svg {
+      color: #f472b6;
+    }
+
+    .legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px 14px;
+      margin-top: 10px;
+      font-size: 12px;
+      color: #a8b9ce;
+    }
+
+    .legend i {
+      display: inline-block;
+      width: 11px;
+      height: 11px;
+      margin-right: 5px;
+      border-radius: 50%;
+      border: 2px solid;
+      vertical-align: -1px;
+    }
+
+    .conn {
+      margin: 6px 0 4px;
+      font-size: 12px;
+      color: #a8b9ce;
+    }
+
+    .conn b {
+      color: #e5edf7;
+      font-weight: 600;
+    }
+
+    .height-row {
+      display: flex;
+      align-items: flex-end;
+      gap: 8px;
+    }
+
+    .height-row label {
+      flex: 1;
+      margin-bottom: 10px;
+    }
+
+    .height-row button {
+      margin-bottom: 10px;
+      padding: 9px 12px;
+    }
+
+    main {
+      position: relative;
+      flex: 1;
+      min-width: 0;
+      min-height: 0;
+    }
+
+    #viewport {
+      width: 100%;
+      height: 100%;
+      touch-action: none;
+    }
+
+    canvas {
+      display: block;
+    }
+
+    .overlay {
+      position: absolute;
+      top: 18px;
+      left: 18px;
+      right: 18px;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 12px;
+      pointer-events: none;
+    }
+
+    .pill {
+      border: 1px solid #415167;
+      background: #101a29df;
+      padding: 9px 13px;
+      border-radius: 10px;
+      font-size: 13px;
+    }
+
+    .view-toolbar {
+      position: absolute;
+      top: 70px;
+      right: 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .view-toolbar button {
+      background: #172130e8;
+      border-color: #415167;
+      box-shadow: 0 4px 14px #0003;
+    }
+
+    #message {
+      position: absolute;
+      left: 18px;
+      bottom: 18px;
+      max-width: calc(100% - 36px);
+      padding: 10px 14px;
+      background: #101a29e8;
+      border: 1px solid #415167;
+      border-radius: 10px;
+      color: #d6e6f7;
+      font-size: 13px;
+      pointer-events: none;
+    }
+
+    @media (max-width: 760px) {
+      .app {
+        flex-direction: column-reverse;
+      }
+
+      main {
+        flex: none;
+        height: 55dvh;
+      }
+
+      aside {
+        width: 100%;
+        height: 45dvh;
+        border-right: 0;
+        border-top: 1px solid #324054;
+        padding: 15px;
+      }
+
+      .overlay {
+        top: 10px;
+        left: 10px;
+        right: 10px;
+      }
+
+      .pill {
+        font-size: 11px;
+        padding: 7px 9px;
+      }
+
+      .view-toolbar {
+        top: 58px;
+        right: 10px;
+      }
+
+      .view-toolbar button {
+        padding: 8px;
+        font-size: 12px;
+      }
+
+      #message {
+        left: 10px;
+        bottom: 10px;
+        max-width: calc(100% - 20px);
+        font-size: 12px;
+      }
+    }
+  </style>
+
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.164.1/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.164.1/examples/jsm/"
+      }
+    }
+  </script>
+</head>
+
+<body>
+<div class="app">
+  <aside>
+    <h1>📦 Atelier convoyeurs</h1>
+    <span class="badge">Construction rapide et simulation 3D</span>
+
+    <div class="row">
+      <button id="play" class="primary">▶ Démarrer</button>
+      <button id="reset">↺ Réinitialiser</button>
+    </div>
+
+    <button id="carton" class="full">+ Ajouter un carton</button>
+
+    <label class="check">
+      <input id="autoFeed" type="checkbox">
+      Alimentation automatique (un carton toutes les 2,5 s)
+    </label>
+
+    <h2>Construire la ligne</h2>
+
+    <div class="palette">
+      <button id="pieceStraight" title="Convoyeur droit (touche 1)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3 12h17M15 7l5 5-5 5"/>
+        </svg>
+        <span>Droit</span><kbd>1</kbd>
+      </button>
+      <button id="pieceLeft" title="Virage à gauche 90° (touche 2)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M17 21v-8a5 5 0 0 0-5-5H4M8 4 4 8l4 4"/>
+        </svg>
+        <span>Virage gauche</span><kbd>2</kbd>
+      </button>
+      <button id="pieceRight" title="Virage à droite 90° (touche 3)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M7 21v-8a5 5 0 0 1 5-5h8M16 4l4 4-4 4"/>
+        </svg>
+        <span>Virage droite</span><kbd>3</kbd>
+      </button>
+      <button id="pieceUp" class="slope-up" title="Pente montante (touche 4)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M2 19h5l9-11h6M17 5h5v5"/>
+        </svg>
+        <span>Pente montée</span><kbd>4</kbd>
+      </button>
+      <button id="pieceDown" class="slope-down" title="Pente descendante (touche 5)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M2 6h5l9 11h6M22 14v5h-5"/>
+        </svg>
+        <span>Pente descente</span><kbd>5</kbd>
+      </button>
+    </div>
+
+    <p class="hint">
+      Chaque pièce se raccorde automatiquement à la
+      <b>sortie du convoyeur sélectionné</b> (anneau bleu) puis devient
+      la sélection : enchaîne les touches <kbd>1</kbd>–<kbd>5</kbd>
+      pour tracer la ligne. Insérée au milieu d’une ligne, la pièce
+      décale toute la suite.
+    </p>
+
+    <div class="legend">
+      <span><i style="border-color:#22d3ee"></i>point d’ajout</span>
+      <span><i style="border-color:#4ade80"></i>début de ligne</span>
+      <span><i style="border-color:#fbbf24"></i>fin de ligne</span>
+    </div>
+
+    <div class="row" style="margin-top: 14px">
+      <button id="undo" disabled title="Annuler (Ctrl+Z)">↶ Annuler</button>
+      <button id="redo" disabled title="Rétablir (Ctrl+Y)">↷ Rétablir</button>
+    </div>
+
+    <div class="row">
+      <button id="demo">Charger l’exemple</button>
+      <button id="clearAll" class="danger">Tout effacer</button>
+    </div>
+
+    <h2>Placement</h2>
+
+    <div class="panel">
+      <div class="row">
+        <button id="moveMode" class="mode active" aria-pressed="true">
+          ↔ Déplacer <kbd>G</kbd>
+        </button>
+        <button id="rotateMode" class="mode" aria-pressed="false">
+          ⟳ Tourner <kbd>R</kbd>
+        </button>
+      </div>
+
+      <div class="row">
+        <button id="rotateLeft" disabled title="Touche A">−90°</button>
+        <button id="rotateRight" disabled title="Touche E">+90°</button>
+        <button id="flip" disabled title="Inverser le sens du transport (touche F)">⇄ Sens</button>
+      </div>
+
+      <div class="row">
+        <button id="duplicate" disabled title="Ajouter une copie à la suite (Ctrl+D)">
+          ⧉ Dupliquer
+        </button>
+        <button id="delete" class="danger" disabled title="Suppr">
+          Supprimer
+        </button>
+      </div>
+
+      <label class="check">
+        <input id="autoConnect" type="checkbox" checked>
+        🧲 Raccordement magnétique des extrémités
+      </label>
+
+      <label class="check">
+        <input id="followChain" type="checkbox" checked>
+        Entraîner la suite de la ligne (aval)
+      </label>
+
+      <label class="check">
+        <input id="snapEnabled" type="checkbox" checked>
+        Grille de position et de rotation
+      </label>
+
+      <div class="row">
+        <label>
+          Pas de déplacement
+          <select id="moveStep">
+            <option value="0.1">10 cm</option>
+            <option value="0.25">25 cm</option>
+            <option value="0.5" selected>50 cm</option>
+            <option value="1">1 m</option>
+          </select>
+        </label>
+
+        <label>
+          Pas de rotation
+          <select id="angleStep">
+            <option value="5">5°</option>
+            <option value="15" selected>15°</option>
+            <option value="45">45°</option>
+            <option value="90">90°</option>
+          </select>
+        </label>
+      </div>
+
+      <p class="hint">
+        Les poignées sont placées à l’<b>entrée</b> du convoyeur.
+        En le faisant glisser près d’une extrémité libre, il s’y
+        raccorde tout seul (position, direction et hauteur).
+        Avec « Entraîner la suite », tout ce qui est en aval suit le
+        mouvement, et supprimer une pièce recolle la ligne.
+      </p>
+    </div>
+
+    <h2>Convoyeur sélectionné</h2>
+
+    <p id="empty">
+      Aucun convoyeur sélectionné. Clique sur un convoyeur, ou ajoute
+      une pièce depuis la palette.
+    </p>
+
+    <div id="editor" class="panel" hidden>
+      <strong id="selectionName"></strong>
+      <div id="connInfo" class="conn"></div>
+
+      <label>
+        Type de pièce
+        <select id="type">
+          <option value="straight">Droit</option>
+          <option value="curve">Virage</option>
+          <option value="slope">Pente</option>
+        </select>
+      </label>
+
+      <div class="row">
+        <label>
+          <span class="axis-x">Entrée X (m)</span>
+          <input id="posX" type="number" min="-35" max="35" step="0.5">
+        </label>
+        <label>
+          <span class="axis-z">Entrée Z (m)</span>
+          <input id="posZ" type="number" min="-35" max="35" step="0.5">
+        </label>
+      </div>
+
+      <label>
+        Direction à l’entrée (°)
+        <input id="direction" type="number" step="15">
+      </label>
+
+      <div class="height-row">
+        <label>
+          Hauteur du tapis à l’entrée (m)
+          <input id="elev" type="number" min="0.3" max="4" step="0.25">
+        </label>
+        <button id="elevDown" title="Descendre de 25 cm (Page suivante)">▼</button>
+        <button id="elevUp" title="Monter de 25 cm (Page précédente)">▲</button>
+      </div>
+
+      <label data-show="straight slope">
+        Longueur au sol (m)
+        <input id="length" type="number" min="1" max="12" step="0.5">
+      </label>
+
+      <div class="row" data-show="curve">
+        <label>
+          Sens du virage
+          <select id="turnDir">
+            <option value="left">Gauche</option>
+            <option value="right">Droite</option>
+          </select>
+        </label>
+        <label>
+          Angle
+          <select id="turnAngle">
+            <option value="30">30°</option>
+            <option value="45">45°</option>
+            <option value="60">60°</option>
+            <option value="90">90°</option>
+            <option value="180">180°</option>
+          </select>
+        </label>
+      </div>
+
+      <label data-show="curve">
+        Rayon (m, axe du tapis)
+        <input id="radius" type="number" min="1" max="6" step="0.5">
+      </label>
+
+      <div class="row" data-show="slope">
+        <label>
+          Sens de la pente
+          <select id="slopeDir">
+            <option value="up">Montée</option>
+            <option value="down">Descente</option>
+          </select>
+        </label>
+        <label>
+          Dénivelé (m)
+          <input id="rise" type="number" min="0.25" max="3" step="0.25">
+        </label>
+      </div>
+
+      <label>
+        Vitesse (m/s)
+        <input id="speed" type="number" min="0.2" max="4" step="0.1">
+      </label>
+
+      <label class="check">
+        <input id="sensor" type="checkbox">
+        Capteur : arrêt de 2 s au milieu
+      </label>
+
+      <p class="hint">
+        0° = +X · 90° = +Z · 180° = −X · 270° = −Z.<br>
+        Chaque modification est appliquée dès que tu valides
+        (<kbd>Entrée</kbd> ou changement de champ).
+      </p>
+    </div>
+
+    <h2>Raccourcis</h2>
+
+    <div class="panel hint">
+      <kbd>1</kbd>…<kbd>5</kbd> Ajouter une pièce à la suite<br>
+      <kbd>G</kbd> Déplacer · <kbd>R</kbd> Tourner<br>
+      <kbd>A</kbd> / <kbd>E</kbd> Tourner de −90° / +90°<br>
+      <kbd>F</kbd> Inverser le sens du transport<br>
+      <kbd>←</kbd> <kbd>↑</kbd> <kbd>↓</kbd> <kbd>→</kbd>
+      Déplacer selon X/Z (<kbd>Maj</kbd> : ×10)<br>
+      <kbd>Page ↑</kbd> / <kbd>Page ↓</kbd> Monter / descendre de 25 cm<br>
+      <kbd>N</kbd> / <kbd>P</kbd> Convoyeur suivant / précédent<br>
+      <kbd>Ctrl</kbd>+<kbd>Z</kbd> Annuler ·
+      <kbd>Ctrl</kbd>+<kbd>Y</kbd> Rétablir<br>
+      <kbd>Ctrl</kbd>+<kbd>D</kbd> Dupliquer à la suite<br>
+      <kbd>Espace</kbd> Démarrer / pause · <kbd>H</kbd> Tout voir<br>
+      <kbd>Suppr</kbd> Supprimer · <kbd>Échap</kbd> Désélectionner
+    </div>
+
+    <h2>Commandes de la vue</h2>
+
+    <p class="hint">
+      <b>Sur les poignées :</b> déplacer ou tourner le convoyeur.<br>
+      <b>Ailleurs :</b> maintenir le clic gauche pour tourner la vue.<br>
+      <b>Molette :</b> zoomer.<br>
+      <b>Clic droit :</b> déplacer la vue.<br>
+      <b>Double-clic sur le sol :</b> poser un convoyeur droit.<br>
+      <b>Tactile :</b> un doigt pour tourner la vue, deux doigts
+      pour zoomer ou déplacer.
+    </p>
+
+    <p class="hint">
+      La ligne est enregistrée automatiquement dans ce navigateur.
+    </p>
+  </aside>
+
+  <main>
+    <div id="viewport"></div>
+
+    <div class="overlay">
+      <div id="state" class="pill">⏸ En pause</div>
+      <div id="stats" class="pill">0 convoyeur · 0 carton</div>
+    </div>
+
+    <div class="view-toolbar">
+      <button id="topView" title="Vue de dessus centrée sur la sélection">
+        ⬇ Vue dessus
+      </button>
+      <button id="perspectiveView" title="Vue 3D centrée sur la sélection">
+        ◈ Vue 3D
+      </button>
+      <button id="focusView" title="Centrer la vue sur le convoyeur sélectionné">
+        ◎ Centrer
+      </button>
+      <button id="fitView" title="Voir toute la ligne (H)">
+        ⤢ Tout voir
+      </button>
+    </div>
+
+    <div id="message" role="status">
+      Chargement de la scène 3D…
+    </div>
+  </main>
+</div>
+
+<script type="module">
+import * as THREE from "three";
+import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+import { TransformControls } from "three/addons/controls/TransformControls.js";
+
+const $ = id => document.getElementById(id);
+const viewport = $("viewport");
+
+const WIDTH = 1.4;
+const BOX = { length: 0.65, height: 0.55, width: 0.55 };
+const BOX_GAP = 0.82;
+const POSITION_LIMIT = 35;
+const DEFAULT_ELEV = 0.8;
+const MIN_ELEV = 0.3;
+const MAX_ELEV = 4;
+const SNAP_DISTANCE = 0.9;
+const CHEVRON = 0.5;
+const CURVE_SAMPLES = 40;
+const FEED_INTERVAL = 2.5;
+const STORAGE_KEY = "atelier-convoyeurs-v2";
+
+const RAIL_COLOR = 0x477fa5;
+const SELECTED_COLOR = 0x2dd4bf;
+
+const INVALID_MESSAGE =
+  "Impossible : la ligne sortirait de la zone (±35 m) " +
+  "ou de la plage de hauteur (0,3 à 4 m).";
+
+// Pièces proposées par la palette.
+const PIECES = {
+  straight: { type: "straight", length: 4, label: "Convoyeur droit" },
+  left: { type: "curve", turn: -90, radius: 2, label: "Virage à gauche" },
+  right: { type: "curve", turn: 90, radius: 2, label: "Virage à droite" },
+  up: { type: "slope", length: 4, rise: 1, label: "Pente montante" },
+  down: { type: "slope", length: 4, rise: -1, label: "Pente descendante" }
+};
+
+const SHAPE_KEYS = [
+  "id", "type", "x", "z", "angle", "elev",
+  "length", "radius", "turn", "rise", "speed", "sensor"
+];
+
+const conveyors = [];
+const cartons = [];
+const undoStack = [];
+const redoStack = [];
+
+let selected = null;
+let running = false;
+let nextId = 1;
+let drag = null;
+let feedTimer = 0;
+let delivered = 0;
+
+let ignoreSelectionClick = false;
+
+// --------------------------------------------------
+// Scène, caméra et rendu
+// --------------------------------------------------
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color("#182333");
+scene.fog = new THREE.Fog("#182333", 40, 110);
+
+const camera = new THREE.PerspectiveCamera(48, 1, 0.1, 200);
+camera.position.set(15, 16, 20);
+
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+viewport.appendChild(renderer.domElement);
+
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.target.set(0, 0, 2);
+controls.enableDamping = true;
+controls.minPolarAngle = 0;
+controls.maxPolarAngle = Math.PI / 2 - 0.05;
+controls.minDistance = 4;
+controls.maxDistance = 80;
+
+// Three.js 0.164.1 : ajout direct des TransformControls à la scène.
+const transform = new TransformControls(camera, renderer.domElement);
+transform.setSpace("world");
+transform.setSize(1.05);
+scene.add(transform);
+
+// --------------------------------------------------
+// Éclairage et sol
+// --------------------------------------------------
+
+scene.add(new THREE.HemisphereLight(0xd8ebff, 0x35412d, 2.3));
+
+const sun = new THREE.DirectionalLight(0xffffff, 3);
+sun.position.set(8, 18, 10);
+sun.castShadow = true;
+sun.shadow.mapSize.set(2048, 2048);
+sun.shadow.camera.left = -45;
+sun.shadow.camera.right = 45;
+sun.shadow.camera.top = 45;
+sun.shadow.camera.bottom = -45;
+sun.shadow.camera.far = 100;
+sun.shadow.normalBias = 0.03;
+scene.add(sun);
+
+const floor = new THREE.Mesh(
+  new THREE.PlaneGeometry(100, 100),
+  new THREE.MeshStandardMaterial({
+    color: 0x253345,
+    roughness: 0.95
+  })
+);
+
+floor.rotation.x = -Math.PI / 2;
+floor.receiveShadow = true;
+scene.add(floor);
+
+const grid = new THREE.GridHelper(80, 80, 0x64809a, 0x3c5064);
+grid.position.y = 0.005;
+scene.add(grid);
+
+// Texture du tapis : chevrons qui indiquent le sens et défilent.
+function createBeltTexture() {
+  const canvas = document.createElement("canvas");
+  canvas.width = 128;
+  canvas.height = 128;
+
+  const ctx = canvas.getContext("2d");
+  ctx.fillStyle = "#19212b";
+  ctx.fillRect(0, 0, 128, 128);
+
+  ctx.strokeStyle = "#36586a";
+  ctx.lineWidth = 13;
+  ctx.lineCap = "round";
+  ctx.lineJoin = "round";
+  ctx.beginPath();
+  ctx.moveTo(42, 20);
+  ctx.lineTo(86, 64);
+  ctx.lineTo(42, 108);
+  ctx.stroke();
+
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.wrapS = THREE.RepeatWrapping;
+  texture.wrapT = THREE.ClampToEdgeWrapping;
+  texture.colorSpace = THREE.SRGBColorSpace;
+  texture.anisotropy = renderer.capabilities.getMaxAnisotropy();
+
+  return texture;
+}
+
+const beltTexture = createBeltTexture();
+
+// --------------------------------------------------
+// Utilitaires
+// --------------------------------------------------
+
+const deg = THREE.MathUtils.radToDeg;
+const rad = THREE.MathUtils.degToRad;
+const clamp = THREE.MathUtils.clamp;
+
+function notify(text) {
+  $("message").textContent = text;
+}
+
+function normalizeAngle(angle) {
+  return round6(((angle % 360) + 360) % 360) % 360;
+}
+
+function angleDiff(a, b) {
+  return Math.abs(((a - b) % 360 + 540) % 360 - 180);
+}
+
+function round6(value) {
+  return Math.round(value * 1e6) / 1e6;
+}
+
+function clampPosition(value) {
+  return clamp(value, -POSITION_LIMIT, POSITION_LIMIT);
+}
+
+function displayNumber(value) {
+  return Number(value.toFixed(3));
+}
+
+function num(value, fallback) {
+  if (typeof value === "number" && Number.isFinite(value)) return value;
+
+  if (typeof value === "string" && value.trim() !== "") {
+    const parsed = Number(value);
+    if (Number.isFinite(parsed)) return parsed;
+  }
+
+  return fallback;
+}
+
+function material(color, metalness = 0) {
+  return new THREE.MeshStandardMaterial({
+    color,
+    metalness,
+    roughness: metalness ? 0.4 : 0.85
+  });
+}
+
+function part(parent, geometry, mat, x = 0, y = 0, z = 0) {
+  const mesh = new THREE.Mesh(geometry, mat);
+  mesh.position.set(x, y, z);
+  mesh.castShadow = true;
+  mesh.receiveShadow = true;
+  parent.add(mesh);
+  return mesh;
+}
+
+function disposeGroup(group) {
+  if (!group) return;
+
+  if (transform.object === group) {
+    transform.detach();
+  }
+
+  const geometries = new Set();
+  const materials = new Set();
+
+  group.traverse(object => {
+    if (!object.isMesh) return;
+
+    geometries.add(object.geometry);
+
+    const list = Array.isArray(object.material)
+      ? object.material
+      : [object.material];
+
+    list.forEach(mat => materials.add(mat));
+  });
+
+  geometries.forEach(geometry => geometry.dispose());
+
+  materials.forEach(mat => {
+    if (mat.map && mat.map !== beltTexture) mat.map.dispose();
+    mat.dispose();
+  });
+
+  group.removeFromParent();
+}
+
+function updateStats() {
+  const ended = cartons.filter(box => box.ended).length;
+
+  $("stats").textContent =
+    `${conveyors.length} convoyeur(s) · ${cartons.length} carton(s)` +
+    (ended ? ` · ${ended} en fin de ligne` : "") +
+    (delivered ? ` · ${delivered} évacué(s)` : "");
+}
+
+function setRunning(value) {
+  running = value;
+  $("play").textContent = running ? "⏸ Pause" : "▶ Démarrer";
+  $("state").textContent = running
+    ? "● Simulation active"
+    : "⏸ En pause";
+}
+
+function clearCartons() {
+  setRunning(false);
+  cartons.forEach(box => disposeGroup(box.group));
+  cartons.length = 0;
+  delivered = 0;
+  feedTimer = 0;
+  updateStats();
+}
+
+// --------------------------------------------------
+// Données d'un convoyeur
+// --------------------------------------------------
+
+function createConveyorData(spec = {}) {
+  const type = ["straight", "curve", "slope"].includes(spec.type)
+    ? spec.type
+    : "straight";
+
+  let turn = clamp(num(spec.turn, 90), -180, 180);
+  if (Math.abs(turn) < 5) turn = 90;
+
+  let rise = clamp(num(spec.rise, 1), -3, 3);
+  if (Math.abs(rise) < 0.05) rise = 1;
+
+  const elev = round6(clamp(num(spec.elev, DEFAULT_ELEV), MIN_ELEV, MAX_ELEV));
+
+  return {
+    id: Number.isInteger(spec.id) ? spec.id : nextId++,
+    type,
+    x: round6(num(spec.x, 0)),
+    z: round6(num(spec.z, 0)),
+    angle: normalizeAngle(num(spec.angle, 0)),
+    elev,
+    length: clamp(num(spec.length, 4), 1, 12),
+    radius: clamp(num(spec.radius, 2), 1, 6),
+    turn,
+    rise,
+    speed: clamp(num(spec.speed, 1.2), 0.2, 4),
+    sensor: !!spec.sensor,
+
+    // Données calculées
+    group: null,
+    samples: [],
+    pathLength: 0,
+    builtElev: elev,
+    next: null,
+    prev: null,
+    landing: null
+  };
+}
+
+function serializeConveyor(c) {
+  const data = {};
+  SHAPE_KEYS.forEach(key => { data[key] = c[key]; });
+  return data;
+}
+
+function sanitize(c) {
+  const clean = createConveyorData(serializeConveyor(c));
+  SHAPE_KEYS.forEach(key => { c[key] = clean[key]; });
+}
+
+function serialize() {
+  return JSON.stringify({
+    nextId,
+    selected: selected ? selected.id : null,
+    conveyors: conveyors.map(serializeConveyor)
+  });
+}
+
+function pieceName(c) {
+  if (c.type === "curve") {
+    return `Virage ${c.turn < 0 ? "gauche" : "droite"} ${Math.abs(c.turn)}°`;
+  }
+
+  if (c.type === "slope") {
+    return c.rise > 0 ? "Pente montante" : "Pente descendante";
+  }
+
+  return "Convoyeur droit";
+}
+
+// --------------------------------------------------
+// Géométrie du trajet
+// --------------------------------------------------
+// Repère local : origine à l'entrée, au sol, transport vers +X local.
+// Un angle positif tourne de +X vers +Z (sens horaire vu de dessus).
+
+function localPoint(c, u) {
+  if (c.type === "curve") {
+    const phi = rad(c.turn) * u;
+    const sign = Math.sign(c.turn) || 1;
+
+    return {
+      x: c.radius * Math.sin(Math.abs(phi)),
+      y: c.elev,
+      z: sign * c.radius * (1 - Math.cos(phi)),
+      heading: phi,
+      pitch: 0
+    };
+  }
+
+  if (c.type === "slope") {
+    // Profil en S : départ et arrivée à plat, raccord sans à-coup.
+    const y = c.elev + c.rise * (1 - Math.cos(Math.PI * u)) / 2;
+    const slope =
+      c.rise * Math.PI / (2 * c.length) * Math.sin(Math.PI * u);
+
+    return {
+      x: c.length * u,
+      y,
+      z: 0,
+      heading: 0,
+      pitch: Math.atan(slope)
+    };
+  }
+
+  return { x: c.length * u, y: c.elev, z: 0, heading: 0, pitch: 0 };
+}
+
+function computePath(c) {
+  const count = c.type === "straight" ? 8 : CURVE_SAMPLES;
+  const samples = [];
+
+  let s = 0;
+  let previous = null;
+
+  for (let i = 0; i <= count; i++) {
+    const p = localPoint(c, i / count);
+
+    if (previous) {
+      s += Math.hypot(
+        p.x - previous.x,
+        p.y - previous.y,
+        p.z - previous.z
+      );
+    }
+
+    p.s = s;
+    samples.push(p);
+    previous = p;
+  }
+
+  c.samples = samples;
+  c.pathLength = s;
+}
+
+function sampleLocal(c, s) {
+  const list = c.samples;
+  s = clamp(s, 0, c.pathLength);
+
+  let lo = 0;
+  let hi = list.length - 1;
+
+  while (hi - lo > 1) {
+    const mid = (lo + hi) >> 1;
+    if (list[mid].s <= s) lo = mid;
+    else hi = mid;
+  }
+
+  const a = list[lo];
+  const b = list[hi];
+  const t = b.s > a.s ? (s - a.s) / (b.s - a.s) : 0;
+  const mix = key => a[key] + (b[key] - a[key]) * t;
+
+  return {
+    x: mix("x"),
+    y: mix("y"),
+    z: mix("z"),
+    heading: mix("heading"),
+    pitch: mix("pitch")
+  };
+}
+
+// Convertit un point local en coordonnées monde.
+function toWorld(base, p) {
+  const a = rad(base.angle);
+  const cos = Math.cos(a);
+  const sin = Math.sin(a);
+
+  return {
+    x: base.x + p.x * cos - p.z * sin,
+    y: p.y,
+    z: base.z + p.x * sin + p.z * cos,
+    angle: base.angle + deg(p.heading || 0),
+    pitch: p.pitch || 0
+  };
+}
+
+// Pose d'une extrémité : position, hauteur du tapis et direction.
+function entryPose(c) {
+  return { x: c.x, z: c.z, y: c.elev, angle: normalizeAngle(c.angle) };
+}
+
+function exitPose(c, entry = entryPose(c)) {
+  const local = localPoint(c, 1);
+  const w = toWorld(entry, local);
+
+  return {
+    x: round6(w.x),
+    z: round6(w.z),
+    y: round6(entry.y + local.y - c.elev),
+    angle: normalizeAngle(w.angle)
+  };
+}
+
+// Entrée à donner à c pour que sa sortie tombe exactement sur target.
+function entryForExit(c, target) {
+  const local = localPoint(c, 1);
+  const angle = normalizeAngle(target.angle - deg(local.heading));
+  const a = rad(angle);
+
+  return {
+    x: round6(target.x - (local.x * Math.cos(a) - local.z * Math.sin(a))),
+    z: round6(target.z - (local.x * Math.sin(a) + local.z * Math.cos(a))),
+    y: round6(target.y - (local.y - c.elev)),
+    angle
+  };
+}
+
+function portsMatch(a, b) {
+  return (
+    Math.hypot(a.x - b.x, a.z - b.z) < 0.12 &&
+    Math.abs(a.y - b.y) < 0.06 &&
+    angleDiff(a.angle, b.angle) < 8
+  );
+}
+
+function poseValid(c) {
+  const ex = exitPose(c);
+  const limit = POSITION_LIMIT + 1e-6;
+
+  return (
+    [c.x, c.z, ex.x, ex.z].every(v => Math.abs(v) <= limit) &&
+    c.elev >= MIN_ELEV - 1e-6 &&
+    c.elev <= MAX_ELEV + 1e-6 &&
+    ex.y >= MIN_ELEV - 1e-6 &&
+    ex.y <= MAX_ELEV + 1e-6
+  );
+}
+
+// --------------------------------------------------
+// Raccordements entre convoyeurs
+// --------------------------------------------------
+
+function updateConnections() {
+  conveyors.forEach(c => {
+    c.next = null;
+    c.prev = null;
+    c.landing = null;
+  });
+
+  for (const c of conveyors) {
+    const ex = exitPose(c);
+    let best = null;
+    let bestDistance = Infinity;
+
+    for (const d of conveyors) {
+      if (d === c || d.prev) continue;
+
+      const en = entryPose(d);
+      if (!portsMatch(ex, en)) continue;
+
+      const distance = Math.hypot(ex.x - en.x, ex.z - en.z);
+
+      if (distance < bestDistance) {
+        best = d;
+        bestDistance = distance;
+      }
+    }
+
+    if (best) {
+      c.next = best;
+      best.prev = c;
+    }
+  }
+
+  // Sortie non raccordée : le carton peut tomber sur un autre tapis.
+  for (const c of conveyors) {
+    if (!c.next) c.landing = findLanding(c);
+  }
+
+  updateMarkers();
+  refreshConnectionInfo();
+}
+
+function findLanding(c) {
+  const point = exitPose(c);
+  let best = null;
+
+  for (const d of conveyors) {
+    if (d === c || !d.samples.length) continue;
+
+    const list = d.samples.map(p => ({ ...toWorld(d, p), s: p.s }));
+
+    for (let i = 0; i < list.length - 1; i++) {
+      const a = list[i];
+      const b = list[i + 1];
+      const sx = b.x - a.x;
+      const sz = b.z - a.z;
+      const lengthSq = sx * sx + sz * sz || 1e-9;
+
+      const t = clamp(
+        ((point.x - a.x) * sx + (point.z - a.z) * sz) / lengthSq,
+        0,
+        1
+      );
+
+      const qx = a.x + sx * t;
+      const qz = a.z + sz * t;
+      const qy = a.y + (b.y - a.y) * t;
+      const distance = Math.hypot(point.x - qx, point.z - qz);
+      const s = a.s + (b.s - a.s) * t;
+
+      if (
+        distance > WIDTH / 2 ||
+        Math.abs(point.y - qy) > 0.35 ||
+        s > d.pathLength - 0.3 ||
+        (best && distance >= best.distance)
+      ) {
+        continue;
+      }
+
+      const heading = rad(a.angle);
+      const side =
+        (point.x - qx) * -Math.sin(heading) +
+        (point.z - qz) * Math.cos(heading);
+
+      best = {
+        conveyor: d,
+        s,
+        lateral: clamp(side, -0.3, 0.3),
+        distance
+      };
+    }
+  }
+
+  return best;
+}
+
+// Convoyeurs raccordés en aval (sans la pièce elle-même).
+function downstream(c) {
+  const list = [];
+  const seen = new Set([c]);
+  let d = c.next;
+
+  while (d && !seen.has(d)) {
+    list.push(d);
+    seen.add(d);
+    d = d.next;
+  }
+
+  return list;
+}
+
+function lineStarts() {
+  return conveyors.filter(c => !c.prev);
+}
+
+function snapshotPose(c) {
+  return { c, x: c.x, z: c.z, angle: c.angle, elev: c.elev };
+}
+
+// Déplace rigidement une portion de ligne : la pose "from" devient "to".
+function transformChain(items, from, to) {
+  const delta = to.angle - from.angle;
+  const cos = Math.cos(rad(delta));
+  const sin = Math.sin(rad(delta));
+  const dy = to.y - from.y;
+
+  for (const item of items) {
+    const dx = item.x - from.x;
+    const dz = item.z - from.z;
+
+    item.c.x = round6(to.x + dx * cos - dz * sin);
+    item.c.z = round6(to.z + dx * sin + dz * cos);
+    item.c.angle = normalizeAngle(item.angle + delta);
+    item.c.elev = round6(item.elev + dy);
+  }
+}
+
+function refreshGroup(c) {
+  if (Math.abs(c.elev - c.builtElev) > 1e-9) buildConveyor(c);
+  else updateConveyorPose(c);
+}
+
+// --------------------------------------------------
+// Repères d'extrémités
+// --------------------------------------------------
+
+const markerGroup = new THREE.Group();
+scene.add(markerGroup);
+
+const markerGeometry = new THREE.TorusGeometry(0.34, 0.05, 8, 40);
+
+const markerMaterials = {
+  start: new THREE.MeshBasicMaterial({ color: 0x4ade80 }),
+  end: new THREE.MeshBasicMaterial({ color: 0xfbbf24 }),
+  append: new THREE.MeshBasicMaterial({ color: 0x22d3ee })
+};
+
+function addMarker(pose, kind) {
+  const marker = new THREE.Mesh(markerGeometry, markerMaterials[kind]);
+  marker.rotation.x = -Math.PI / 2;
+  marker.position.set(pose.x, pose.y + 0.1, pose.z);
+  marker.userData.kind = kind;
+  markerGroup.add(marker);
+}
+
+function updateMarkers() {
+  markerGroup.clear();
+
+  for (const c of conveyors) {
+    if (!c.prev) addMarker(entryPose(c), "start");
+
+    if (c === selected) addMarker(exitPose(c), "append");
+    else if (!c.next && !c.landing) addMarker(exitPose(c), "end");
+  }
+}
+
+// --------------------------------------------------
+// Construction 3D des convoyeurs
+// --------------------------------------------------
+
+// Balaye un profil rectangulaire le long du trajet.
+function sweepGeometry(samples, lateral, halfWidth, top, height) {
+  const ring = [[-1, 0], [1, 0], [1, -1], [-1, -1]];
+  const positions = [];
+  const indices = [];
+
+  const point = (p, side, vertical) => {
+    const offset = lateral + side * halfWidth;
+
+    return [
+      p.x - Math.sin(p.heading) * offset,
+      p.y + top + vertical * height,
+      p.z + Math.cos(p.heading) * offset
+    ];
+  };
+
+  for (let face = 0; face < 4; face++) {
+    const a = ring[face];
+    const b = ring[(face + 1) % 4];
+    const base = positions.length / 3;
+
+    samples.forEach(p => {
+      positions.push(...point(p, ...a), ...point(p, ...b));
+    });
+
+    for (let i = 0; i < samples.length - 1; i++) {
+      const a0 = base + i * 2;
+      indices.push(a0, a0 + 1, a0 + 2, a0 + 1, a0 + 3, a0 + 2);
+    }
+  }
+
+  [[samples[0], true], [samples[samples.length - 1], false]].forEach(
+    ([p, start]) => {
+      const base = positions.length / 3;
+      ring.forEach(corner => positions.push(...point(p, ...corner)));
+
+      if (start) {
+        indices.push(base, base + 2, base + 1, base, base + 3, base + 2);
+      } else {
+        indices.push(base, base + 1, base + 2, base, base + 2, base + 3);
+      }
+    }
+  );
+
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute(
+    "position",
+    new THREE.Float32BufferAttribute(positions, 3)
+  );
+  geometry.setIndex(indices);
+  geometry.computeVertexNormals();
+
+  return geometry;
+}
+
+// Surface du tapis avec coordonnées de texture le long du trajet.
+function ribbonGeometry(samples, halfWidth, top) {
+  const positions = [];
+  const uvs = [];
+  const indices = [];
+
+  samples.forEach((p, i) => {
+    const rx = -Math.sin(p.heading);
+    const rz = Math.cos(p.heading);
+
+    positions.push(
+      p.x - rx * halfWidth, p.y + top, p.z - rz * halfWidth,
+      p.x + rx * halfWidth, p.y + top, p.z + rz * halfWidth
+    );
+
+    uvs.push(p.s / CHEVRON, 1, p.s / CHEVRON, 0);
+
+    if (i < samples.length - 1) {
+      const a0 = i * 2;
+      indices.push(a0, a0 + 1, a0 + 2, a0 + 1, a0 + 3, a0 + 2);
+    }
+  });
+
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute(
+    "position",
+    new THREE.Float32BufferAttribute(positions, 3)
+  );
+  geometry.setAttribute("uv", new THREE.Float32BufferAttribute(uvs, 2));
+  geometry.setIndex(indices);
+  geometry.computeVertexNormals();
+
+  return geometry;
+}
+
+function buildConveyor(c) {
+  if (c.group) disposeGroup(c.group);
+
+  computePath(c);
+
+  const group = new THREE.Group();
+  c.group = group;
+  c.builtElev = c.elev;
+
+  const steel = material(0x8296aa, 0.7);
+  const rubber = material(0x17202a);
+  rubber.side = THREE.DoubleSide;
+
+  c.railMaterial = material(
+    c === selected ? SELECTED_COLOR : RAIL_COLOR,
+    0.5
+  );
+  c.railMaterial.side = THREE.DoubleSide;
+
+  c.beltTexture = beltTexture.clone();
+
+  const beltMaterial = new THREE.MeshStandardMaterial({
+    map: c.beltTexture,
+    roughness: 0.9
+  });
+
+  const samples = c.samples;
+
+  // Châssis, bande et garde-corps suivent le trajet (virages, pentes).
+  part(group, sweepGeometry(samples, 0, WIDTH / 2, -0.006, 0.16), rubber);
+  part(group, ribbonGeometry(samples, WIDTH / 2 - 0.03, 0.002), beltMaterial);
+
+  for (const side of [-1, 1]) {
+    part(
+      group,
+      sweepGeometry(samples, side * (WIDTH / 2 + 0.05), 0.05, 0.085, 0.2),
+      c.railMaterial
+    );
+  }
+
+  // Pieds jusqu'au sol, plus hauts sur les parties surélevées.
+  const length = c.pathLength;
+  const count = Math.max(2, Math.round(length / 2.2) + 1);
+
+  for (let i = 0; i < count; i++) {
+    const s = THREE.MathUtils.lerp(
+      Math.min(0.3, length / 4),
+      Math.max(length - 0.3, length * 3 / 4),
+      i / (count - 1)
+    );
+
+    const p = sampleLocal(c, s);
+    const legHeight = Math.max(0.1, p.y - 0.16);
+
+    const stand = new THREE.Group();
+    stand.position.set(p.x, 0, p.z);
+    stand.rotation.y = -p.heading;
+    group.add(stand);
+
+    for (const side of [-1, 1]) {
+      part(
+        stand,
+        new THREE.BoxGeometry(0.12, legHeight, 0.12),
+        steel,
+        0, legHeight / 2, side * 0.58
+      );
+
+      part(
+        stand,
+        new THREE.BoxGeometry(0.35, 0.06, 0.3),
+        steel,
+        0, 0.03, side * 0.58
+      );
+    }
+
+    if (legHeight > 1.1) {
+      part(
+        stand,
+        new THREE.BoxGeometry(0.08, 0.08, 1.16),
+        steel,
+        0, Math.min(0.45, legHeight / 3), 0
+      );
+    }
+  }
+
+  if (c.sensor) {
+    const p = sampleLocal(c, length / 2);
+    const yellow = material(0xfbbf24);
+
+    const gate = new THREE.Group();
+    gate.position.set(p.x, p.y, p.z);
+    gate.rotation.y = -p.heading;
+    group.add(gate);
+
+    for (const side of [-1, 1]) {
+      part(gate, new THREE.BoxGeometry(0.1, 0.8, 0.1), yellow, 0, 0.27, side * 0.83);
+    }
+
+    part(gate, new THREE.BoxGeometry(0.14, 0.1, 1.76), yellow, 0, 0.69, 0);
+    part(gate, new THREE.BoxGeometry(0.22, 0.13, 0.22), material(0xef4444), 0, 0.57, 0);
+  }
+
+  group.traverse(object => {
+    object.userData.conveyor = c;
+  });
+
+  scene.add(group);
+  updateConveyorPose(c);
+
+  if (c === selected) {
+    transform.attach(group);
+  }
+}
+
+function updateConveyorPose(c) {
+  // Décalage vertical provisoire pendant un glissement (reconstruit après).
+  c.group.position.set(c.x, c.elev - c.builtElev, c.z);
+  c.group.rotation.set(0, -rad(c.angle), 0);
+  c.group.updateMatrixWorld(true);
+}
+
+function removeAllConveyors() {
+  clearCartons();
+  select(null);
+  conveyors.forEach(c => disposeGroup(c.group));
+  conveyors.length = 0;
+}
+
+// --------------------------------------------------
+// Historique et sauvegarde
+// --------------------------------------------------
+
+function save() {
+  try {
+    localStorage.setItem(STORAGE_KEY, serialize());
+  } catch {
+    // Stockage indisponible : la ligne n'est simplement pas mémorisée.
+  }
+}
+
+function updateHistoryButtons() {
+  $("undo").disabled = !undoStack.length;
+  $("redo").disabled = !redoStack.length;
+}
+
+function pushHistory(before) {
+  if (before === serialize()) return;
+
+  undoStack.push(before);
+  if (undoStack.length > 100) undoStack.shift();
+  redoStack.length = 0;
+
+  save();
+  updateHistoryButtons();
+}
+
+function restore(json) {
+  const state = JSON.parse(json);
+
+  removeAllConveyors();
+
+  let maxId = 0;
+
+  for (const data of state.conveyors || []) {
+    const c = createConveyorData(data);
+    maxId = Math.max(maxId, c.id);
+    conveyors.push(c);
+    buildConveyor(c);
+  }
+
+  nextId = Math.max(num(state.nextId, 1), maxId + 1);
+
+  updateConnections();
+  select(conveyors.find(c => c.id === state.selected) || null);
+  updateStats();
+}
+
+function undo() {
+  if (!undoStack.length || drag) return;
+
+  redoStack.push(serialize());
+  restore(undoStack.pop());
+  save();
+  updateHistoryButtons();
+  notify("Modification annulée.");
+}
+
+function redo() {
+  if (!redoStack.length || drag) return;
+
+  undoStack.push(serialize());
+  restore(redoStack.pop());
+  save();
+  updateHistoryButtons();
+  notify("Modification rétablie.");
+}
+
+$("undo").onclick = undo;
+$("redo").onclick = redo;
+
+// --------------------------------------------------
+// Sélection et champs
+// --------------------------------------------------
+
+function refreshConnectionInfo() {
+  if (!selected) return;
+
+  const c = selected;
+
+  const entry = c.prev
+    ? `raccordée au n°${c.prev.id}`
+    : "libre (début de ligne)";
+
+  const exit = c.next
+    ? `raccordée au n°${c.next.id}`
+    : c.landing
+      ? `dépose sur le n°${c.landing.conveyor.id}`
+      : "libre (fin de ligne)";
+
+  $("connInfo").innerHTML =
+    `Entrée : <b>${entry}</b><br>Sortie : <b>${exit}</b>`;
+}
+
+function syncPositionFields(force = false) {
+  if (!selected) return;
+
+  const values = {
+    posX: selected.x,
+    posZ: selected.z,
+    direction: normalizeAngle(selected.angle),
+    elev: selected.elev
+  };
+
+  for (const [id, value] of Object.entries(values)) {
+    // Ne pas interrompre une saisie en cours.
+    if (!force && document.activeElement === $(id)) continue;
+    $(id).value = displayNumber(value);
+  }
+}
+
+function refreshEditor() {
+  if (!selected) return;
+
+  const c = selected;
+
+  $("selectionName").textContent = `N°${c.id} · ${pieceName(c)}`;
+  $("type").value = c.type;
+  $("length").value = c.length;
+  $("radius").value = c.radius;
+  $("turnDir").value = c.turn < 0 ? "left" : "right";
+  $("turnAngle").value = String(Math.abs(c.turn));
+  $("slopeDir").value = c.rise < 0 ? "down" : "up";
+  $("rise").value = displayNumber(Math.abs(c.rise));
+  $("speed").value = c.speed;
+  $("sensor").checked = c.sensor;
+
+  // Angle de virage hors liste (ancienne sauvegarde) : on l'ajoute.
+  if ($("turnAngle").value !== String(Math.abs(c.turn))) {
+    const option = new Option(`${Math.abs(c.turn)}°`, String(Math.abs(c.turn)));
+    $("turnAngle").add(option);
+    $("turnAngle").value = option.value;
+  }
+
+  document.querySelectorAll("#editor [data-show]").forEach(element => {
+    element.hidden = !element.dataset.show.split(" ").includes(c.type);
+  });
+
+  syncPositionFields(true);
+  refreshConnectionInfo();
+}
+
+function select(c) {
+  transform.detach();
+  selected = c;
+
+  conveyors.forEach(item => {
+    item.railMaterial?.color.set(
+      item === c ? SELECTED_COLOR : RAIL_COLOR
+    );
+  });
+
+  $("editor").hidden = !c;
+  $("empty").hidden = !!c;
+
+  [
+    "delete",
+    "duplicate",
+    "rotateLeft",
+    "rotateRight",
+    "flip"
+  ].forEach(id => {
+    $(id).disabled = !c;
+  });
+
+  updateMarkers();
+
+  if (!c) return;
+
+  refreshEditor();
+  transform.attach(c.group);
+}
+
+// --------------------------------------------------
+// Modifications (avec entraînement de l'aval et annulation)
+// --------------------------------------------------
+
+function editConveyor(c, mutate, options = {}) {
+  if (!c || drag) return false;
+
+  const follow = options.follow ?? $("followChain").checked;
+  const before = serialize();
+  const chain = follow ? downstream(c).map(snapshotPose) : [];
+  const oldExit = exitPose(c);
+
+  mutate(c);
+  sanitize(c);
+
+  if (chain.length) {
+    transformChain(chain, oldExit, exitPose(c));
+  }
+
+  const affected = [c, ...chain.map(item => item.c)];
+
+  if (!affected.every(poseValid)) {
+    restore(before);
+    notify(INVALID_MESSAGE);
+    return false;
+  }
+
+  if (before === serialize()) {
+    refreshEditor();
+    return false;
+  }
+
+  clearCartons();
+
+  buildConveyor(c);
+  chain.forEach(item => refreshGroup(item.c));
+
+  updateConnections();
+  refreshEditor();
+  pushHistory(before);
+
+  if (options.message) notify(options.message);
+
+  return true;
+}
+
+function setPose(x, z, angle) {
+  editConveyor(selected, c => {
+    c.x = clampPosition(x);
+    c.z = clampPosition(z);
+    c.angle = angle;
+  });
+}
+
+function changeElevation(delta) {
+  if (!selected) return;
+
+  editConveyor(
+    selected,
+    c => { c.elev = round6(c.elev + delta); },
+    {
+      message: `Hauteur du n°${selected.id} : ` +
+        `${displayNumber(clamp(selected.elev + delta, MIN_ELEV, MAX_ELEV))} m.`
+    }
+  );
+}
+
+// Champs de l'éditeur : appliqués dès validation.
+const fieldHandlers = {
+  type: (c, v) => { c.type = v; },
+  posX: (c, v) => { c.x = clampPosition(Number(v)); },
+  posZ: (c, v) => { c.z = clampPosition(Number(v)); },
+  direction: (c, v) => { c.angle = Number(v); },
+  elev: (c, v) => { c.elev = Number(v); },
+  length: (c, v) => { c.length = Number(v); },
+  radius: (c, v) => { c.radius = Number(v); },
+  turnDir: (c, v) => {
+    c.turn = Math.abs(c.turn) * (v === "left" ? -1 : 1);
+  },
+  turnAngle: (c, v) => {
+    c.turn = (c.turn < 0 ? -1 : 1) * Number(v);
+  },
+  slopeDir: (c, v) => {
+    c.rise = Math.abs(c.rise) * (v === "down" ? -1 : 1);
+  },
+  rise: (c, v) => {
+    c.rise = (c.rise < 0 ? -1 : 1) * Math.abs(Number(v));
+  },
+  speed: (c, v) => { c.speed = Number(v); },
+  sensor: (c, v) => { c.sensor = v; }
+};
+
+for (const [id, handler] of Object.entries(fieldHandlers)) {
+  const element = $(id);
+
+  element.addEventListener("change", () => {
+    if (!selected) return;
+
+    const value = element.type === "checkbox"
+      ? element.checked
+      : element.value;
+
+    if (
+      element.type === "number" &&
+      (value.trim() === "" || !Number.isFinite(Number(value)))
+    ) {
+      refreshEditor();
+      return;
+    }
+
+    editConveyor(selected, c => handler(c, value));
+  });
+
+  if (element.type === "number") {
+    element.addEventListener("keydown", event => {
+      if (event.key === "Enter") element.blur();
+    });
+
+    element.addEventListener("blur", () => syncPositionFields(true));
+  }
+}
+
+$("elevUp").onclick = () => changeElevation(0.25);
+$("elevDown").onclick = () => changeElevation(-0.25);
+
+// --------------------------------------------------
+// Palette : ajout de pièces à la suite
+// --------------------------------------------------
+
+function defaultAnchor() {
+  const step = Number($("moveStep").value);
+
+  return {
+    x: clampPosition(Math.round(controls.target.x / step) * step),
+    z: clampPosition(Math.round(controls.target.z / step) * step),
+    y: DEFAULT_ELEV,
+    angle: 0
+  };
+}
+
+function appendSpec(spec, label) {
+  if (drag) return;
+
+  const base = selected;
+  const anchor = base ? exitPose(base) : defaultAnchor();
+  spec = { ...spec };
+
+  // Une pente s'adapte à la place disponible en hauteur.
+  if (spec.type === "slope") {
+    const room = spec.rise > 0
+      ? MAX_ELEV - anchor.y
+      : anchor.y - MIN_ELEV;
+
+    const rise = Math.floor(Math.min(Math.abs(spec.rise), room) * 4 + 1e-6) / 4;
+
+    if (rise < 0.25) {
+      notify(
+        spec.rise > 0
+          ? "Hauteur maximale atteinte : impossible de monter encore."
+          : "Trop bas pour descendre : ajoute d’abord une pente montante."
+      );
+      return;
+    }
+
+    spec.rise = Math.sign(spec.rise) * rise;
+  }
+
+  if (base && spec.speed === undefined) spec.speed = base.speed;
+
+  const before = serialize();
+
+  const c = createConveyorData({
+    ...spec,
+    x: anchor.x,
+    z: anchor.z,
+    angle: anchor.angle,
+    elev: anchor.y
+  });
+
+  // Insertion au milieu d'une ligne : la suite est décalée.
+  const chain = base ? downstream(base).map(snapshotPose) : [];
+
+  if (chain.length) {
+    transformChain(chain, anchor, exitPose(c));
+  }
+
+  if (![c, ...chain.map(item => item.c)].every(poseValid)) {
+    restore(before);
+    notify(INVALID_MESSAGE);
+    return;
+  }
+
+  clearCartons();
+
+  conveyors.push(c);
+  buildConveyor(c);
+  chain.forEach(item => refreshGroup(item.c));
+
+  updateConnections();
+  select(c);
+  pushHistory(before);
+  updateStats();
+
+  notify(
+    chain.length
+      ? `${label} (n°${c.id}) inséré(e) : la suite de la ligne a été décalée.`
+      : base
+        ? `${label} (n°${c.id}) raccordé(e) à la sortie du n°${base.id}.`
+        : `${label} (n°${c.id}) posé(e) au centre de la vue. Continue avec 1–5.`
+  );
+}
+
+function appendPiece(kind) {
+  const { label, ...spec } = PIECES[kind];
+  appendSpec(spec, label);
+}
+
+$("pieceStraight").onclick = () => appendPiece("straight");
+$("pieceLeft").onclick = () => appendPiece("left");
+$("pieceRight").onclick = () => appendPiece("right");
+$("pieceUp").onclick = () => appendPiece("up");
+$("pieceDown").onclick = () => appendPiece("down");
+
+function duplicateSelected() {
+  if (!selected) return;
+
+  const { id, x, z, angle, elev, ...shape } = serializeConveyor(selected);
+  appendSpec(shape, "Copie");
+}
+
+$("duplicate").onclick = duplicateSelected;
+
+function flipSelected() {
+  if (!selected) return;
+
+  editConveyor(
+    selected,
+    c => {
+      const ex = exitPose(c);
+
+      c.x = ex.x;
+      c.z = ex.z;
+      c.elev = ex.y;
+      c.angle = ex.angle + 180;
+
+      if (c.type === "curve") c.turn = -c.turn;
+      if (c.type === "slope") c.rise = -c.rise;
+    },
+    {
+      follow: false,
+      message: "Sens du transport inversé."
+    }
+  );
+}
+
+$("flip").onclick = flipSelected;
+
+function deleteSelected() {
+  if (!selected || drag) return;
+
+  const before = serialize();
+  const c = selected;
+  const prev = c.prev;
+  const index = conveyors.indexOf(c);
+
+  // Recolle la suite de la ligne sur le convoyeur précédent.
+  let chain = $("followChain").checked && prev && c.next
+    ? downstream(c).map(snapshotPose)
+    : [];
+
+  if (chain.some(item => item.c === prev)) chain = [];
+
+  if (chain.length) {
+    transformChain(chain, exitPose(c), entryPose(c));
+
+    if (!chain.every(item => poseValid(item.c))) {
+      restore(before);
+      notify(INVALID_MESSAGE);
+      return;
+    }
+  }
+
+  clearCartons();
+  select(null);
+
+  disposeGroup(c.group);
+  conveyors.splice(index, 1);
+  chain.forEach(item => refreshGroup(item.c));
+
+  updateConnections();
+  select(prev || conveyors[Math.min(index, conveyors.length - 1)] || null);
+  pushHistory(before);
+  updateStats();
+
+  notify(
+    chain.length
+      ? "Convoyeur supprimé : la suite de la ligne a été recollée."
+      : "Convoyeur supprimé."
+  );
+}
+
+$("delete").onclick = deleteSelected;
+
+$("clearAll").onclick = () => {
+  if (!conveyors.length) return;
+
+  const before = serialize();
+  removeAllConveyors();
+  nextId = 1;
+  updateConnections();
+  pushHistory(before);
+  updateStats();
+  notify("Atelier vidé. Ctrl+Z pour annuler.");
+};
+
+// --------------------------------------------------
+// Manipulation directe (poignées)
+// --------------------------------------------------
+
+function updateSnapping() {
+  const enabled = $("snapEnabled").checked;
+  const moveStep = Number($("moveStep").value);
+  const angleStep = Number($("angleStep").value);
+
+  transform.setTranslationSnap(enabled ? moveStep : null);
+  transform.setRotationSnap(enabled ? rad(angleStep) : null);
+
+  $("posX").step = moveStep;
+  $("posZ").step = moveStep;
+  $("direction").step = angleStep;
+}
+
+function setManipulationMode(mode, showMessage = true) {
+  transform.setMode(mode);
+
+  const moving = mode === "translate";
+
+  // Déplacement sur X/Z seulement, rotation autour de Y seulement.
+  transform.showX = moving;
+  transform.showY = !moving;
+  transform.showZ = moving;
+
+  $("moveMode").classList.toggle("active", moving);
+  $("rotateMode").classList.toggle("active", !moving);
+
+  $("moveMode").setAttribute("aria-pressed", String(moving));
+  $("rotateMode").setAttribute("aria-pressed", String(!moving));
+
+  if (showMessage) {
+    notify(
+      moving
+        ? "Déplacement : tire les flèches ou la poignée plane. " +
+          "Approche une extrémité libre pour t’y raccorder."
+        : "Rotation : tire l’anneau horizontal (pivot à l’entrée)."
+    );
+  }
+}
+
+function findSnap(c, pose, moving, allowExit) {
+  let best = null;
+
+  const consider = (distance, snapPose, label) => {
+    if (
+      distance < SNAP_DISTANCE &&
+      snapPose.y >= MIN_ELEV - 1e-6 &&
+      snapPose.y <= MAX_ELEV + 1e-6 &&
+      (!best || distance < best.distance)
+    ) {
+      best = { distance, pose: snapPose, label };
+    }
+  };
+
+  const myExit = exitPose(c, pose);
+
+  for (const d of conveyors) {
+    if (moving.has(d)) continue;
+
+    // Entrée de la pièce sur une sortie libre.
+    if (!d.next || moving.has(d.next)) {
+      const ex = exitPose(d);
+
+      if (angleDiff(ex.angle, pose.angle) <= 100) {
+        consider(
+          Math.hypot(ex.x - pose.x, ex.z - pose.z),
+          ex,
+          `la sortie du n°${d.id}`
+        );
+      }
+    }
+
+    // Sortie de la pièce sur une entrée libre.
+    if (allowExit && (!d.prev || moving.has(d.prev))) {
+      const en = entryPose(d);
+
+      if (angleDiff(en.angle, myExit.angle) <= 100) {
+        consider(
+          Math.hypot(en.x - myExit.x, en.z - myExit.z),
+          entryForExit(c, en),
+          `l’entrée du n°${d.id}`
+        );
+      }
+    }
+  }
+
+  return best;
+}
+
+transform.addEventListener("mouseDown", () => {
+  ignoreSelectionClick = true;
+
+  if (!selected) return;
+
+  const chain = $("followChain").checked
+    ? downstream(selected).map(snapshotPose)
+    : [];
+
+  drag = {
+    before: serialize(),
+    conveyor: selected,
+    start: entryPose(selected),
+    exit: exitPose(selected),
+    chain,
+    moving: new Set([selected, ...chain.map(item => item.c)]),
+    changed: false,
+    snapLabel: null
+  };
+
+  markerGroup.visible = false;
+});
+
+transform.addEventListener("objectChange", () => {
+  if (!drag || transform.object !== drag.conveyor.group) return;
+
+  const c = drag.conveyor;
+  const group = c.group;
+  let pose = { ...drag.start };
+
+  if (transform.mode === "translate") {
+    pose.x = round6(clampPosition(group.position.x));
+    pose.z = round6(clampPosition(group.position.z));
+  } else {
+    const forward = new THREE.Vector3(1, 0, 0)
+      .applyQuaternion(group.quaternion);
+
+    pose.angle = normalizeAngle(deg(Math.atan2(forward.z, forward.x)));
+  }
+
+  let snap = null;
+
+  if (transform.mode === "translate" && $("autoConnect").checked) {
+    snap = findSnap(c, pose, drag.moving, drag.chain.length === 0);
+    if (snap) pose = snap.pose;
+  }
+
+  c.x = pose.x;
+  c.z = pose.z;
+  c.angle = pose.angle;
+  c.elev = pose.y;
+
+  if (drag.chain.length) {
+    transformChain(drag.chain, drag.exit, exitPose(c));
+  }
+
+  drag.moving.forEach(updateConveyorPose);
+
+  const changed =
+    Math.abs(c.x - drag.start.x) > 1e-6 ||
+    Math.abs(c.z - drag.start.z) > 1e-6 ||
+    Math.abs(c.elev - drag.start.y) > 1e-6 ||
+    angleDiff(c.angle, drag.start.angle) > 1e-6;
+
+  // Une seule réinitialisation par glissement.
+  if (changed && !drag.changed) {
+    clearCartons();
+    drag.changed = true;
+  }
+
+  const label = snap ? snap.label : null;
+
+  if (label !== drag.snapLabel) {
+    drag.snapLabel = label;
+    notify(
+      label
+        ? `🧲 Raccordement à ${label} — relâche pour valider.`
+        : "Déplacement libre."
+    );
+  }
+
+  syncPositionFields();
+});
+
+transform.addEventListener("dragging-changed", event => {
+  controls.enabled = !event.value;
+
+  if (event.value || !drag) return;
+
+  const d = drag;
+  drag = null;
+  markerGroup.visible = true;
+
+  if (!d.changed) {
+    updateMarkers();
+    return;
+  }
+
+  const affected = [...d.moving];
+
+  if (!affected.every(poseValid)) {
+    restore(d.before);
+    notify(INVALID_MESSAGE);
+    return;
+  }
+
+  affected.forEach(refreshGroup);
+  updateConnections();
+  refreshEditor();
+  pushHistory(d.before);
+
+  notify(
+    d.snapLabel
+      ? `✔ Raccordé à ${d.snapLabel}.`
+      : "Placement modifié. La simulation a été réinitialisée."
+  );
+});
+
+$("moveMode").onclick = () => setManipulationMode("translate");
+$("rotateMode").onclick = () => setManipulationMode("rotate");
+
+$("rotateLeft").onclick = () => {
+  if (selected) setPose(selected.x, selected.z, selected.angle - 90);
+};
+
+$("rotateRight").onclick = () => {
+  if (selected) setPose(selected.x, selected.z, selected.angle + 90);
+};
+
+["snapEnabled", "moveStep", "angleStep"].forEach(id => {
+  $(id).addEventListener("change", updateSnapping);
+});
+
+// --------------------------------------------------
+// Commandes de caméra
+// --------------------------------------------------
+
+function viewTarget() {
+  if (!selected) return new THREE.Vector3(0, 0, 2);
+
+  const middle = toWorld(
+    selected,
+    sampleLocal(selected, selected.pathLength / 2)
+  );
+
+  return new THREE.Vector3(middle.x, 0, middle.z);
+}
+
+function stopCameraInertia() {
+  const damping = controls.enableDamping;
+  controls.enableDamping = false;
+  controls.update();
+  controls.enableDamping = damping;
+}
+
+function setEditorView(top) {
+  if (transform.dragging) return;
+
+  stopCameraInertia();
+
+  const target = viewTarget();
+  controls.target.copy(target);
+
+  camera.position.copy(target).add(
+    top
+      ? new THREE.Vector3(0, 24, 0.01)
+      : new THREE.Vector3(15, 16, 20)
+  );
+
+  camera.lookAt(target);
+  controls.update();
+
+  notify(
+    top
+      ? "Vue de dessus : idéale pour placer et aligner les convoyeurs."
+      : "Vue 3D."
+  );
+}
+
+function fitView(showMessage = true) {
+  if (transform.dragging) return;
+
+  stopCameraInertia();
+
+  const box = new THREE.Box3();
+
+  conveyors.forEach(c => {
+    const en = entryPose(c);
+    const ex = exitPose(c);
+    box.expandByPoint(new THREE.Vector3(en.x, 0, en.z));
+    box.expandByPoint(new THREE.Vector3(ex.x, 0, ex.z));
+  });
+
+  if (box.isEmpty()) {
+    box.expandByPoint(new THREE.Vector3(0, 0, 0));
+  }
+
+  const center = box.getCenter(new THREE.Vector3());
+  const size = box.getSize(new THREE.Vector3());
+  const distance = clamp(Math.max(size.x, size.z) * 1.15 + 8, 12, 75);
+  const offset = camera.position.clone().sub(controls.target);
+
+  if (offset.lengthSq() < 1e-6) offset.set(15, 16, 20);
+
+  controls.target.copy(center);
+  camera.position.copy(center).add(offset.setLength(distance));
+  controls.update();
+
+  if (showMessage) notify("Vue d’ensemble de l’atelier.");
+}
+
+$("topView").onclick = () => setEditorView(true);
+$("perspectiveView").onclick = () => setEditorView(false);
+$("fitView").onclick = () => fitView();
+
+$("focusView").onclick = () => {
+  if (transform.dragging) return;
+
+  stopCameraInertia();
+
+  const target = viewTarget();
+  const offset = camera.position.clone().sub(controls.target);
+
+  controls.target.copy(target);
+  camera.position.copy(target).add(offset);
+  controls.update();
+
+  notify(
+    selected
+      ? `Vue centrée sur le convoyeur n°${selected.id}.`
+      : "Vue centrée sur l’atelier."
+  );
+};
+
+// --------------------------------------------------
+// Cartons
+// --------------------------------------------------
+
+function buildCartonMesh() {
+  const group = new THREE.Group();
+  group.rotation.order = "YZX";
+
+  part(
+    group,
+    new THREE.BoxGeometry(BOX.length, BOX.height, BOX.width),
+    material(0xbd874d)
+  );
+
+  const tape = material(0xd9b77d);
+
+  part(group, new THREE.BoxGeometry(0.66, 0.008, 0.095), tape, 0, 0.279, 0);
+
+  for (const side of [-1, 1]) {
+    part(group, new THREE.BoxGeometry(0.008, 0.55, 0.095), tape, side * 0.329, 0, 0);
+  }
+
+  part(
+    group,
+    new THREE.BoxGeometry(0.23, 0.009, 0.18),
+    material(0xf5f2e8),
+    0.08, 0.286, 0.14
+  );
+
+  const ink = material(0x26303a);
+
+  for (let i = 0; i < 8; i++) {
+    part(
+      group,
+      new THREE.BoxGeometry(i % 2 ? 0.009 : 0.015, 0.003, 0.1),
+      ink,
+      -0.01 + i * 0.023,
+      0.292,
+      0.14
+    );
+  }
+
+  return group;
+}
+
+const upVector = new THREE.Vector3();
+
+function placeCarton(box) {
+  const c = box.conveyor;
+  const p = sampleLocal(c, box.s);
+  const w = toWorld(c, p);
+  const a = rad(w.angle);
+
+  box.group.rotation.set(0, -a, p.pitch);
+  upVector.set(0, BOX.height / 2 + 0.004, 0).applyEuler(box.group.rotation);
+
+  box.group.position
+    .set(
+      w.x - Math.sin(a) * box.lateral,
+      w.y,
+      w.z + Math.cos(a) * box.lateral
+    )
+    .add(upVector);
+}
+
+function spawnCarton(c, quiet = false) {
+  const s0 = BOX.length / 2 + 0.05;
+
+  const blocked = cartons.some(box =>
+    (box.conveyor === c && box.s < s0 + BOX_GAP) ||
+    (c.prev && box.conveyor === c.prev &&
+      c.prev.pathLength - box.s < BOX_GAP - s0)
+  );
+
+  if (blocked) {
+    if (!quiet) {
+      notify("L’entrée de ce convoyeur est occupée. Fais avancer le carton.");
+    }
+    return false;
+  }
+
+  const box = {
+    group: buildCartonMesh(),
+    conveyor: c,
+    s: s0,
+    lateral: 0,
+    wait: 0,
+    triggered: new Set(),
+    ended: false,
+    endTime: 0
+  };
+
+  placeCarton(box);
+  scene.add(box.group);
+  cartons.push(box);
+  updateStats();
+
+  if (!quiet) notify(`Carton ajouté sur le convoyeur n°${c.id}.`);
+
+  return true;
+}
+
+function createCarton() {
+  const c = selected || lineStarts()[0] || conveyors[0];
+
+  if (!c) {
+    notify("Ajoute d’abord un convoyeur.");
+    return;
+  }
+
+  spawnCarton(c);
+}
+
+// --------------------------------------------------
+// Simulation
+// --------------------------------------------------
+
+function gapAhead(box) {
+  const c = box.conveyor;
+  let gap = Infinity;
+
+  for (const other of cartons) {
+    if (other === box) continue;
+
+    if (other.conveyor === c) {
+      if (
+        other.s > box.s &&
+        Math.abs(other.lateral - box.lateral) < 0.6
+      ) {
+        gap = Math.min(gap, other.s - box.s);
+      }
+    } else if (c.next && other.conveyor === c.next) {
+      gap = Math.min(gap, c.pathLength - box.s + other.s);
+    } else if (!c.next && c.landing && other.conveyor === c.landing.conveyor) {
+      const ahead = other.s - c.landing.s;
+
+      if (ahead > -BOX_GAP) {
+        gap = Math.min(gap, c.pathLength - box.s + Math.max(0, ahead));
+      }
+    }
+  }
+
+  return gap;
+}
+
+function simulate(dt) {
+  for (const c of conveyors) {
+    c.beltTexture.offset.x =
+      (c.beltTexture.offset.x - c.speed * dt / CHEVRON) % 1;
+  }
+
+  const autoFeed = $("autoFeed").checked;
+
+  if (autoFeed) {
+    feedTimer -= dt;
+
+    if (feedTimer <= 0) {
+      feedTimer = FEED_INTERVAL;
+      lineStarts().forEach(c => spawnCarton(c, true));
+    }
+  }
+
+  let removed = false;
+
+  for (const box of cartons) {
+    if (box.ended) {
+      // En alimentation automatique, les cartons arrivés sont évacués.
+      if (autoFeed) {
+        box.endTime += dt;
+        if (box.endTime > 1.5) {
+          box.remove = true;
+          removed = true;
+        }
+      }
+      continue;
+    }
+
+    if (box.wait > 0) {
+      box.wait = Math.max(0, box.wait - dt);
+      continue;
+    }
+
+    const c = box.conveyor;
+    let step = c.speed * dt;
+
+    step = Math.min(step, Math.max(0, gapAhead(box) - BOX_GAP));
+
+    const middle = c.pathLength / 2;
+
+    if (
+      c.sensor &&
+      !box.triggered.has(c.id) &&
+      box.s <= middle &&
+      box.s + step >= middle
+    ) {
+      step = middle - box.s;
+      box.triggered.add(c.id);
+      box.wait = 2;
+
+      notify(`Capteur n°${c.id} : carton arrêté pendant 2 secondes.`);
+    }
+
+    const end = c.next || c.landing
+      ? Infinity
+      : c.pathLength - BOX.length / 2;
+
+    if (box.s + step >= end) {
+      box.s = end;
+      box.ended = true;
+      updateStats();
+      notify("Un carton est arrivé en fin de ligne.");
+    } else {
+      box.s += step;
+    }
+
+    if (box.s > c.pathLength) {
+      const overflow = box.s - c.pathLength;
+
+      if (c.next) {
+        box.conveyor = c.next;
+        box.s = Math.min(overflow, c.next.pathLength);
+      } else {
+        box.conveyor = c.landing.conveyor;
+        box.s = c.landing.s + overflow;
+        box.lateral = c.landing.lateral;
+      }
+    }
+
+    // Guidage progressif vers le centre du tapis.
+    if (step > 0) {
+      box.lateral *= Math.max(0, 1 - dt * 3);
+    }
+
+    placeCarton(box);
+  }
+
+  if (removed) {
+    for (let i = cartons.length - 1; i >= 0; i--) {
+      if (!cartons[i].remove) continue;
+
+      disposeGroup(cartons[i].group);
+      cartons.splice(i, 1);
+      delivered++;
+    }
+
+    updateStats();
+  }
+}
+
+// --------------------------------------------------
+// Boutons de simulation
+// --------------------------------------------------
+
+function togglePlay() {
+  if (!conveyors.length) {
+    notify("Ajoute un convoyeur avant de démarrer.");
+    return;
+  }
+
+  setRunning(!running);
+}
+
+$("play").onclick = togglePlay;
+
+$("reset").onclick = () => {
+  clearCartons();
+  notify("Simulation réinitialisée. La ligne est conservée.");
+};
+
+$("carton").onclick = createCarton;
+
+// --------------------------------------------------
+// Exemple
+// --------------------------------------------------
+
+const DEMO = [
+  { type: "straight", length: 4 },
+  { type: "slope", length: 4, rise: 1 },
+  { type: "straight", length: 3, sensor: true },
+  { type: "curve", turn: 90, radius: 2 },
+  { type: "straight", length: 4 },
+  { type: "curve", turn: 90, radius: 2 },
+  { type: "slope", length: 4, rise: -1 },
+  { type: "curve", turn: -90, radius: 2 },
+  { type: "straight", length: 4 }
+];
+
+function loadDemo() {
+  const before = conveyors.length ? serialize() : null;
+
+  removeAllConveyors();
+  nextId = 1;
+
+  let pose = { x: -8, z: -4, y: DEFAULT_ELEV, angle: 0 };
+  let first = null;
+
+  for (const spec of DEMO) {
+    const c = createConveyorData({
+      ...spec,
+      x: pose.x,
+      z: pose.z,
+      angle: pose.angle,
+      elev: pose.y
+    });
+
+    conveyors.push(c);
+    buildConveyor(c);
+    first = first || c;
+    pose = exitPose(c);
+  }
+
+  updateConnections();
+  select(first);
+  setManipulationMode("translate", false);
+  spawnCarton(first, true);
+
+  if (before) pushHistory(before);
+  else save();
+
+  updateStats();
+  fitView(false);
+
+  notify(
+    "Exemple chargé : démarre la simulation, ou sélectionne une pièce " +
+    "et ajoute virages et pentes avec la palette."
+  );
+}
+
+$("demo").onclick = loadDemo;
+
+// --------------------------------------------------
+// Raccourcis clavier
+// --------------------------------------------------
+
+function selectNeighbor(forward) {
+  if (!conveyors.length) return;
+
+  if (!selected) {
+    select(lineStarts()[0] || conveyors[0]);
+    return;
+  }
+
+  const target = forward ? selected.next : selected.prev;
+
+  if (target) {
+    select(target);
+    notify(`Convoyeur n°${target.id} sélectionné.`);
+  } else {
+    notify(forward ? "Fin de ligne." : "Début de ligne.");
+  }
+}
+
+const PIECE_CODES = {
+  Digit1: "straight", Numpad1: "straight",
+  Digit2: "left", Numpad2: "left",
+  Digit3: "right", Numpad3: "right",
+  Digit4: "up", Numpad4: "up",
+  Digit5: "down", Numpad5: "down"
+};
+
+window.addEventListener("keydown", event => {
+  const target = event.target;
+
+  if (
+    target instanceof Element &&
+    target.closest("input, select, textarea, [contenteditable]")
+  ) {
+    return;
+  }
+
+  // Sur un bouton, Espace et Entrée gardent leur rôle habituel.
+  if (
+    target instanceof Element &&
+    target.closest("button") &&
+    (event.key === " " || event.key === "Enter")
+  ) {
+    return;
+  }
+
+  const key = event.key.toLowerCase();
+
+  if ((event.ctrlKey || event.metaKey) && !event.altKey) {
+    if (key === "z" && !event.shiftKey) {
+      event.preventDefault();
+      undo();
+    } else if (key === "y" || (key === "z" && event.shiftKey)) {
+      event.preventDefault();
+      redo();
+    } else if (key === "d") {
+      event.preventDefault();
+      duplicateSelected();
+    }
+    return;
+  }
+
+  if (event.ctrlKey || event.metaKey || event.altKey || drag || transform.dragging) {
+    return;
+  }
+
+  if (PIECE_CODES[event.code]) {
+    event.preventDefault();
+    appendPiece(PIECE_CODES[event.code]);
+    return;
+  }
+
+  if (event.key === " ") {
+    event.preventDefault();
+    togglePlay();
+    return;
+  }
+
+  const actions = {
+    g: () => setManipulationMode("translate"),
+    r: () => setManipulationMode("rotate"),
+    h: () => fitView(),
+    n: () => selectNeighbor(true),
+    p: () => selectNeighbor(false)
+  };
+
+  if (actions[key]) {
+    event.preventDefault();
+    actions[key]();
+    return;
+  }
+
+  if (event.key === "Escape") {
+    select(null);
+    return;
+  }
+
+  if (!selected) return;
+
+  const selectionActions = {
+    a: () => setPose(selected.x, selected.z, selected.angle - 90),
+    e: () => setPose(selected.x, selected.z, selected.angle + 90),
+    f: flipSelected,
+    delete: deleteSelected,
+    backspace: deleteSelected,
+    pageup: () => changeElevation(0.25),
+    pagedown: () => changeElevation(-0.25)
+  };
+
+  if (selectionActions[key]) {
+    event.preventDefault();
+    selectionActions[key]();
+    return;
+  }
+
+  const offsets = {
+    ArrowLeft: [-1, 0],
+    ArrowRight: [1, 0],
+    ArrowUp: [0, -1],
+    ArrowDown: [0, 1]
+  };
+
+  const offset = offsets[event.key];
+  if (!offset) return;
+
+  event.preventDefault();
+
+  const step =
+    Number($("moveStep").value) *
+    (event.shiftKey ? 10 : 1);
+
+  setPose(
+    selected.x + offset[0] * step,
+    selected.z + offset[1] * step,
+    selected.angle
+  );
+});
+
+// --------------------------------------------------
+// Sélection et ajout dans la scène
+// --------------------------------------------------
+
+const raycaster = new THREE.Raycaster();
+const pointer = new THREE.Vector2();
+
+function cast(event) {
+  const rect = renderer.domElement.getBoundingClientRect();
+
+  pointer.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+  pointer.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+
+  camera.updateMatrixWorld();
+  scene.updateMatrixWorld(true);
+  raycaster.setFromCamera(pointer, camera);
+}
+
+function conveyorUnderPointer(event) {
+  cast(event);
+
+  const hits = raycaster.intersectObjects(
+    conveyors.map(c => c.group),
+    true
+  );
+
+  return hits.length ? hits[0].object.userData.conveyor : null;
+}
+
+let downX = 0;
+let downY = 0;
+let selectionPointerId = null;
+let pointerMoved = false;
+
+renderer.domElement.addEventListener("pointerdown", event => {
+  if (!event.isPrimary || event.button !== 0) {
+    // Une interaction à plusieurs doigts ne doit pas sélectionner.
+    selectionPointerId = null;
+    return;
+  }
+
+  downX = event.clientX;
+  downY = event.clientY;
+  selectionPointerId = event.pointerId;
+  pointerMoved = false;
+
+  // Avant les contrôles : ceux-ci pourront ensuite le passer à true.
+  ignoreSelectionClick = false;
+}, { capture: true });
+
+renderer.domElement.addEventListener("pointermove", event => {
+  if (event.pointerId === selectionPointerId) {
+    if (Math.hypot(event.clientX - downX, event.clientY - downY) > 5) {
+      pointerMoved = true;
+    }
+    return;
+  }
+
+  // Curseur main au survol d'un convoyeur (souris uniquement).
+  if (event.pointerType === "mouse" && !event.buttons && !transform.axis) {
+    renderer.domElement.style.cursor =
+      conveyorUnderPointer(event) ? "pointer" : "";
+  }
+});
+
+renderer.domElement.addEventListener("pointerup", event => {
+  if (event.button !== 0 || event.pointerId !== selectionPointerId) {
+    return;
+  }
+
+  selectionPointerId = null;
+
+  if (
+    ignoreSelectionClick ||
+    transform.dragging ||
+    pointerMoved ||
+    Math.hypot(event.clientX - downX, event.clientY - downY) > 5
+  ) {
+    return;
+  }
+
+  select(conveyorUnderPointer(event));
+});
+
+renderer.domElement.addEventListener("pointercancel", () => {
+  selectionPointerId = null;
+  ignoreSelectionClick = true;
+
+  // Termine aussi une éventuelle manipulation tactile interrompue.
+  if (transform.dragging) {
+    transform.pointerUp({ button: 0 });
+  }
+
+  controls.enabled = true;
+});
+
+renderer.domElement.addEventListener("dblclick", event => {
+  if (
+    ignoreSelectionClick ||
+    transform.dragging ||
+    transform.axis ||
+    pointerMoved
+  ) {
+    return;
+  }
+
+  if (conveyorUnderPointer(event)) return;
+
+  const hit = raycaster.intersectObject(floor)[0];
+  if (!hit) return;
+
+  let x = hit.point.x;
+  let z = hit.point.z;
+
+  if ($("snapEnabled").checked) {
+    const step = Number($("moveStep").value);
+
+    x = Math.round(x / step) * step;
+    z = Math.round(z / step) * step;
+  }
+
+  if (Math.abs(x) > POSITION_LIMIT || Math.abs(z) > POSITION_LIMIT) {
+    notify("Ajoute le convoyeur dans la zone de −35 à 35 mètres.");
+    return;
+  }
+
+  const before = serialize();
+
+  clearCartons();
+
+  const c = createConveyorData({ type: "straight", x, z });
+  conveyors.push(c);
+  buildConveyor(c);
+  updateConnections();
+  select(c);
+  setManipulationMode("translate", false);
+  pushHistory(before);
+  updateStats();
+
+  notify("Convoyeur posé. Continue la ligne avec les touches 1–5.");
+});
+
+// --------------------------------------------------
+// Redimensionnement et animation
+// --------------------------------------------------
+
+const resizeObserver = new ResizeObserver(() => {
+  const width = viewport.clientWidth;
+  const height = viewport.clientHeight;
+
+  if (!width || !height) return;
+
+  camera.aspect = width / height;
+  camera.updateProjectionMatrix();
+  renderer.setSize(width, height);
+});
+
+resizeObserver.observe(viewport);
+
+const clock = new THREE.Clock();
+
+function animate() {
+  requestAnimationFrame(animate);
+
+  const dt = Math.min(clock.getDelta(), 0.04);
+
+  if (running) {
+    simulate(dt);
+  }
+
+  // Pulsation du point d'ajout.
+  const pulse = 1 + Math.sin(clock.elapsedTime * 4) * 0.12;
+
+  markerGroup.children.forEach(marker => {
+    if (marker.userData.kind === "append") marker.scale.setScalar(pulse);
+  });
+
+  // Évite que l'inertie de la caméra gêne la manipulation.
+  if (!transform.dragging) {
+    controls.update();
+  }
+
+  renderer.render(scene, camera);
+}
+
+// --------------------------------------------------
+// Démarrage
+// --------------------------------------------------
+
+setManipulationMode("translate", false);
+updateSnapping();
+updateHistoryButtons();
+
+let restored = false;
+
+try {
+  const saved = localStorage.getItem(STORAGE_KEY);
+
+  if (saved) {
+    restore(saved);
+    restored = conveyors.length > 0;
+  }
+} catch {
+  restored = false;
+}
+
+if (restored) {
+  fitView(false);
+  notify(
+    "Ligne précédente restaurée. Sélectionne une pièce puis " +
+    "ajoute la suite avec la palette (touches 1–5)."
+  );
+} else {
+  loadDemo();
+}
+
+animate();
+</script>
+</body>
+</html>
