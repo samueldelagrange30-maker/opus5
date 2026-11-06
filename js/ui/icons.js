@@ -1,0 +1,103 @@
+/* =====================================================================
+ * Convoy3D — Icônes SVG (trait 24×24, couleur héritée)
+ * ===================================================================== */
+(function (C) {
+  'use strict';
+  const P = {
+    new: '<path d="M6 2h8l4 4v16H6z"/><path d="M14 2v4h4"/><path d="M12 11v6M9 14h6"/>',
+    open: '<path d="M3 7h6l2 2h10v10H3z"/><path d="M3 7V5h6"/>',
+    save: '<path d="M4 4h13l3 3v13H4z"/><path d="M8 4v5h8V4"/><rect x="8" y="13" width="8" height="5"/>',
+    import: '<path d="M12 3v12M7 10l5 5 5-5"/><path d="M4 17v3h16v-3"/>',
+    export: '<path d="M12 15V3M7 8l5-5 5 5"/><path d="M4 17v3h16v-3"/>',
+    undo: '<path d="M9 14L4 9l5-5"/><path d="M4 9h10a6 6 0 010 12h-3"/>',
+    redo: '<path d="M15 14l5-5-5-5"/><path d="M20 9H10a6 6 0 000 12h3"/>',
+    copy: '<rect x="8" y="8" width="12" height="12" rx="1"/><path d="M4 16V4h12"/>',
+    paste: '<rect x="5" y="4" width="14" height="17" rx="1"/><path d="M9 4V2h6v2"/>',
+    duplicate: '<rect x="3" y="3" width="12" height="12" rx="1"/><rect x="9" y="9" width="12" height="12" rx="1"/>',
+    delete: '<path d="M4 6h16M9 6V3h6v3M6 6l1 15h10l1-15"/><path d="M10 10v8M14 10v8"/>',
+    select: '<path d="M5 3l14 8-6 2-2 6z"/>',
+    move: '<path d="M12 2v20M2 12h20M12 2l-3 3M12 2l3 3M12 22l-3-3M12 22l3-3M2 12l3-3M2 12l3 3M22 12l-3-3M22 12l-3 3"/>',
+    rotate: '<path d="M20 12a8 8 0 11-3-6.2"/><path d="M20 3v5h-5"/>',
+    measure: '<path d="M3 17L17 3l4 4L7 21z"/><path d="M7 13l2 2M10 10l2 2M13 7l2 2"/>',
+    group: '<rect x="3" y="3" width="8" height="8"/><rect x="13" y="13" width="8" height="8"/><path d="M2 2h20v20H2z" stroke-dasharray="2 2"/>',
+    ungroup: '<rect x="3" y="3" width="8" height="8"/><rect x="13" y="13" width="8" height="8"/>',
+    conveyor: '<rect x="2" y="8" width="20" height="6" rx="1"/><circle cx="6" cy="11" r="1.5"/><circle cx="12" cy="11" r="1.5"/><circle cx="18" cy="11" r="1.5"/><path d="M5 14v6M19 14v6"/>',
+    curve: '<path d="M4 20V12a8 8 0 018-8h8"/><path d="M9 20v-8a3 3 0 013-3h8"/>',
+    slope: '<path d="M2 20L22 8"/><path d="M2 16l20-12"/><path d="M6 18v4M18 11v11"/>',
+    carton: '<path d="M3 7l9-4 9 4v10l-9 4-9-4z"/><path d="M3 7l9 4 9-4M12 11v10"/>',
+    obstacle: '<path d="M12 3l10 18H2z"/><path d="M12 10v5M12 18v.5"/>',
+    equipment: '<circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M5 19l2-2M17 7l2-2"/>',
+    play: '<path d="M7 4l13 8-13 8z" fill="currentColor"/>',
+    pause: '<rect x="6" y="4" width="4" height="16" fill="currentColor"/><rect x="14" y="4" width="4" height="16" fill="currentColor"/>',
+    stop: '<rect x="5" y="5" width="14" height="14" fill="currentColor"/>',
+    rewind: '<path d="M11 6l-8 6 8 6z" fill="currentColor"/><path d="M20 6l-8 6 8 6z" fill="currentColor"/>',
+    camera: '<path d="M3 7h4l2-3h6l2 3h4v13H3z"/><circle cx="12" cy="13" r="4"/>',
+    top: '<rect x="4" y="4" width="16" height="16"/><path d="M4 12h16M12 4v16" stroke-dasharray="2 2"/>',
+    front: '<rect x="4" y="8" width="16" height="10"/><path d="M4 18h16" stroke-width="3"/>',
+    side: '<rect x="7" y="6" width="10" height="12"/><path d="M17 6v12" stroke-width="3"/>',
+    iso: '<path d="M12 2l9 5v10l-9 5-9-5V7z"/><path d="M12 12l9-5M12 12v10M12 12L3 7"/>',
+    persp: '<path d="M3 20L9 4h6l6 16z"/><path d="M6 12h12"/>',
+    fit: '<path d="M3 9V3h6M21 9V3h-6M3 15v6h6M21 15v6h-6"/><rect x="8" y="8" width="8" height="8"/>',
+    grid: '<path d="M3 3h18v18H3zM3 9h18M3 15h18M9 3v18M15 3v18"/>',
+    magnet: '<path d="M5 3v8a7 7 0 0014 0V3h-4v8a3 3 0 01-6 0V3z"/><path d="M5 7h4M15 7h4"/>',
+    analysis: '<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>',
+    bom: '<rect x="4" y="3" width="16" height="18" rx="1"/><path d="M8 8h8M8 12h8M8 16h5"/>',
+    print: '<path d="M6 9V3h12v6"/><rect x="3" y="9" width="18" height="8" rx="1"/><path d="M6 14h12v7H6z"/>',
+    image: '<rect x="3" y="4" width="18" height="16" rx="1"/><circle cx="9" cy="10" r="2"/><path d="M21 17l-6-6-9 9"/>',
+    settings: '<circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/>',
+    help: '<circle cx="12" cy="12" r="10"/><path d="M9 9a3 3 0 115 2c-1 1-2 1.5-2 3M12 17v.5"/>',
+    reverse: '<path d="M4 8h14l-3-3M20 16H6l3 3"/>',
+    link: '<path d="M10 14a5 5 0 007 0l3-3a5 5 0 00-7-7l-1 1"/><path d="M14 10a5 5 0 00-7 0l-3 3a5 5 0 007 7l1-1"/>',
+    eye: '<path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z"/><circle cx="12" cy="12" r="3"/>',
+    list: '<path d="M8 6h13M8 12h13M8 18h13M3 6h.5M3 12h.5M3 18h.5"/>',
+    chart: '<path d="M3 3v18h18"/><path d="M7 15l4-4 3 3 6-7"/>',
+    close: '<path d="M5 5l14 14M19 5L5 19"/>',
+    plus: '<path d="M12 5v14M5 12h14"/>',
+    chevron: '<path d="M9 6l6 6-6 6"/>',
+    menu: '<path d="M3 6h18M3 12h18M3 18h18"/>',
+    panel: '<rect x="3" y="4" width="18" height="16" rx="1"/><path d="M9 4v16"/>',
+    panelR: '<rect x="3" y="4" width="18" height="16" rx="1"/><path d="M15 4v16"/>',
+    heat: '<path d="M12 2c0 4-5 6-5 11a5 5 0 0010 0c0-3-2-4-2-6-1 2-3 2-3 2s2-3 0-7z"/>'
+  };
+  C.icon = function (name, size) {
+    const s = size || 18;
+    return `<svg class="ico" width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">${P[name] || P.equipment}</svg>`;
+  };
+
+  /* Pictogrammes de la bibliothèque (vue de dessus schématique, 40×28) */
+  const L = {
+    rollers: '<rect x="2" y="7" width="36" height="14" rx="1"/>' + [6, 11, 16, 21, 26, 31, 36].map(x => `<path d="M${x - 1} 8v12"/>`).join(''),
+    belt: '<rect x="2" y="7" width="36" height="14" rx="3"/><path d="M6 14h28" stroke-dasharray="3 3"/>',
+    mat: '<rect x="2" y="7" width="36" height="14" rx="1"/>' + [7, 12, 17, 22, 27, 32].map(x => `<path d="M${x} 7v14"/>`).join('') + '<path d="M2 14h36"/>',
+    chain: '<rect x="2" y="7" width="36" height="14" rx="1"/><path d="M4 11h32M4 17h32" stroke-width="2.5" stroke-dasharray="2 1.5"/>',
+    free: '<rect x="2" y="7" width="36" height="14" rx="1" stroke-dasharray="2 2"/>' + [7, 13, 19, 25, 31].map(x => `<circle cx="${x}" cy="14" r="1.6"/>`).join(''),
+    curve45: '<path d="M2 22h14l14-14"/><path d="M2 12h10l10-10" opacity=".6"/>',
+    curve90: '<path d="M2 24h10a14 14 0 0014-14V2"/><path d="M2 14h6a6 6 0 006-6V2" opacity=".6"/>',
+    curve180: '<path d="M8 4h12a10 10 0 010 20H8"/><path d="M8 9h12a5 5 0 010 10H8" opacity=".6"/>',
+    curvec: '<path d="M2 24c12 0 22-6 26-18"/><path d="M2 16c8 0 14-4 17-11" opacity=".6"/><circle cx="32" cy="22" r="3"/>',
+    curveb: '<path d="M2 24h10a14 14 0 0014-14V2" stroke-width="3"/>',
+    curver: '<path d="M2 4h10a14 14 0 0114 14v8"/><path d="M2 14h6a6 6 0 016 6v6" opacity=".6"/>',
+    up: '<path d="M2 24L38 6"/><path d="M28 6h10v8"/>',
+    down: '<path d="M2 6l36 18"/><path d="M28 24h10v-8"/>',
+    slope: '<path d="M2 22l36-12"/><path d="M6 22h28" stroke-dasharray="2 2"/><path d="M30 22a8 8 0 00-2-6"/>',
+    dh: '<path d="M2 22h10l14-14h12"/>',
+    spiral: '<ellipse cx="20" cy="18" rx="16" ry="6"/><ellipse cx="20" cy="11" rx="16" ry="6"/><path d="M20 4v20"/>',
+    transfer: '<rect x="8" y="2" width="24" height="24"/><path d="M20 14V4M17 7l3-3 3 3M20 14v10M17 21l3 3 3-3M2 14h6"/>',
+    turntable: '<circle cx="20" cy="14" r="12"/><path d="M10 14h20M27 11l3 3-3 3"/>',
+    elevator: '<rect x="12" y="2" width="16" height="24"/><path d="M20 20V8M17 11l3-3 3 3M2 22h10M28 6h10"/>',
+    gravity: '<path d="M2 8l36 14"/>' + [8, 16, 24, 32].map(x => `<circle cx="${x}" cy="${8 + x * 0.39}" r="1.6"/>`).join(''),
+    stop: '<rect x="2" y="7" width="36" height="14"/><path d="M30 5v18" stroke-width="3"/>',
+    guide: '<path d="M2 8h36M2 20h36" stroke-width="2.5"/>',
+    separator: '<rect x="2" y="7" width="36" height="14"/><rect x="6" y="10" width="8" height="8"/><rect x="24" y="10" width="8" height="8"/><path d="M19 4v20" stroke-dasharray="2 2"/>',
+    accu: '<rect x="2" y="7" width="36" height="14"/><path d="M11 7v14M20 7v14M29 7v14"/><rect x="4" y="10" width="5" height="8"/><rect x="13" y="10" width="5" height="8"/>',
+    station: '<rect x="2" y="13" width="36" height="10"/><rect x="12" y="2" width="16" height="8"/><circle cx="20" cy="6" r="2"/>',
+    table: '<rect x="4" y="5" width="32" height="18" rx="1"/><path d="M8 9v10M32 9v10"/>',
+    sorter: '<rect x="2" y="2" width="36" height="12"/><path d="M10 14v12M20 14v12M30 14v12"/><path d="M8 23l2 3 2-3M18 23l2 3 2-3M28 23l2 3 2-3"/>',
+    source: '<rect x="10" y="7" width="28" height="14"/><path d="M2 14h8M6 10l4 4-4 4"/><path d="M14 4v20" stroke-width="2.5"/>',
+    sink: '<rect x="2" y="7" width="28" height="14"/><path d="M30 14h8M34 10l4 4-4 4"/><path d="M26 4v20" stroke-width="2.5"/>',
+    obstacle: '<path d="M20 3l14 22H6z"/><path d="M20 11v7M20 21v.5"/>'
+  };
+  C.libIcon = function (name) {
+    return `<svg class="lib-ico" width="40" height="28" viewBox="0 0 40 28" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">${L[name] || L.rollers}</svg>`;
+  };
+})(window.C3D);

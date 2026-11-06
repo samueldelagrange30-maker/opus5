@@ -1,0 +1,638 @@
+/* =====================================================================
+ * Convoy3D — Construction des maillages 3D (Three.js)
+ *
+ * Scène en MÈTRES, axe Z vers le haut. Chaque élément produit un
+ * THREE.Group en coordonnées locales (origine = point d'entrée de la
+ * trajectoire, Z = 0 au niveau de la surface de convoyage).
+ * Les composants sont étiquetés par calque (userData.layer) pour
+ * pouvoir afficher / masquer : rollers, guides, structure, arrows.
+ * ===================================================================== */
+(function (C) {
+  'use strict';
+  const M = 0.001; // mm -> m
+
+  /* ------------------------- matériaux partagés ------------------------- */
+  const matCache = new Map();
+  function mat(key, opts) {
+    if (matCache.has(key)) return matCache.get(key);
+    const m = new THREE.MeshStandardMaterial(Object.assign({ roughness: 0.6, metalness: 0.2 }, opts));
+    matCache.set(key, m);
+    return m;
+  }
+  const texCache = new Map();
+  /** Texture procédurale (canvas) : lignes transversales (tapis, chaîne, bande). */
+  function stripeTex(kind) {
+    if (texCache.has(kind)) return texCache.get(kind);
+    const cv = document.createElement('canvas'); cv.width = 64; cv.height = 64;
+    const g = cv.getContext('2d');
+    if (kind === 'mat') {
+      g.fillStyle = '#3c4650'; g.fillRect(0, 0, 64, 64);
+      g.fillStyle = '#2a3138'; g.fillRect(0, 0, 6, 64);
+      g.fillStyle = '#56616c'; for (let i = 0; i < 4; i++) g.fillRect(14, 4 + i * 16, 40, 8);
+    } else if (kind === 'chain') {
+      g.fillStyle = '#5b6168'; g.fillRect(0, 0, 64, 64);
+      g.fillStyle = '#9aa2aa'; g.fillRect(4, 10, 56, 44);
+      g.fillStyle = '#3d4248'; g.beginPath(); g.arc(16, 32, 7, 0, 7); g.arc(48, 32, 7, 0, 7); g.fill();
+    } else if (kind === 'belt') {
+      g.fillStyle = '#23292e'; g.fillRect(0, 0, 64, 64);
+      for (let i = 0; i < 90; i++) { g.fillStyle = Math.random() < 0.5 ? '#1b2024' : '#2b3237'; g.fillRect(Math.random() * 64, Math.random() * 64, 2, 2); }
+    } else if (kind === 'hazard') {
+      g.fillStyle = '#f1c40f'; g.fillRect(0, 0, 64, 64);
+      g.fillStyle = '#222'; for (let i = -64; i < 128; i += 22) { g.beginPath(); g.moveTo(i, 0); g.lineTo(i + 11, 0); g.lineTo(i + 75, 64); g.lineTo(i + 64, 64); g.fill(); }
+    }
+    const t = new THREE.CanvasTexture(cv);
+    t.wrapS = t.wrapT = THREE.RepeatWrapping;
+    t.colorSpace = THREE.SRGBColorSpace;
+    texCache.set(kind, t);
+    return t;
+  }
+  const MAT = {
+    frame: c => mat('frame' + c, { color: c, metalness: 0.35, roughness: 0.5 }),
+    roller: () => mat('roller', { color: 0xc9ced6, metalness: 0.75, roughness: 0.3 }),
+    freeRoller: () => mat('froller', { color: 0xe8ebef, metalness: 0.4, roughness: 0.35 }),
+    belt: () => mat('belt', { map: stripeTex('belt'), color: 0xffffff, roughness: 0.95, metalness: 0 }),
+    mat: () => mat('mat', { map: stripeTex('mat'), color: 0xffffff, roughness: 0.8, metalness: 0.05 }),
+    chain: () => mat('chain', { map: stripeTex('chain'), color: 0xffffff, roughness: 0.4, metalness: 0.7 }),
+    leg: () => mat('leg', { color: 0x76838f, metalness: 0.5, roughness: 0.5 }),
+    guide: () => mat('guide', { color: 0xd5dbe1, metalness: 0.8, roughness: 0.25 }),
+    motor: () => mat('motor', { color: 0x30455c, metalness: 0.4, roughness: 0.5 }),
+    dark: () => mat('dark', { color: 0x2a2f35, metalness: 0.3, roughness: 0.7 }),
+    plate: () => mat('plate', { color: 0x9aa4ae, metalness: 0.6, roughness: 0.4 }),
+    hazard: () => mat('hazard', { map: stripeTex('hazard'), color: 0xffffff, roughness: 0.7 }),
+    arrow: () => mat('arrow', { color: 0x00e5ff, emissive: 0x00a5c0, emissiveIntensity: 0.6, roughness: 0.5, transparent: true, opacity: 0.85 }),
+    color: c => mat('col' + c, { color: c, roughness: 0.55, metalness: 0.15 }),
+    glow: c => mat('glow' + c, { color: c, emissive: c, emissiveIntensity: 0.5, roughness: 0.4 }),
+    wood: () => mat('wood', { color: 0xb08a5a, roughness: 0.85, metalness: 0 })
+  };
+  C.MAT = MAT;
+  C.stripeTex = stripeTex;
+
+  /* ----------------------- repères le long d'un chemin ------------------- */
+  /** Échantillons avec repère local : p (m), t, n (normale gauche), u (haut). */
+  function frames(path, maxAngle, maxLen) {
+    const sm = path.sample(maxAngle || 4, maxLen || 0);
+    let prevN = [0, 1, 0];
+    return sm.map(o => {
+      const t = o.t;
+      let n = [-t[1], t[0], 0];
+      const ln = Math.hypot(n[0], n[1]);
+      if (ln < 1e-3) n = prevN; else n = [n[0] / ln, n[1] / ln, 0];
+      prevN = n;
+      const u = [t[1] * n[2] - t[2] * n[1], t[2] * n[0] - t[0] * n[2], t[0] * n[1] - t[1] * n[0]];
+      return { s: o.s, p: [o.p[0] * M, o.p[1] * M, o.p[2] * M], t, n, u, vertical: o.vertical };
+    });
+  }
+
+  /**
+   * Balayage d'une section rectangulaire [y0,y1]×[z0,z1] (mm, repère n/u)
+   * le long des échantillons → géométrie fermée.
+   */
+  function sweep(fr, y0, y1, z0, z1, uvScale) {
+    const pos = [], uv = [];
+    const corner = (f, y, z) => [f.p[0] + (f.n[0] * y + f.u[0] * z) * M, f.p[1] + (f.n[1] * y + f.u[1] * z) * M, f.p[2] + (f.n[2] * y + f.u[2] * z) * M];
+    const cs = [[y0, z0], [y1, z0], [y1, z1], [y0, z1]];
+    const us = uvScale || 1;
+    for (let i = 0; i < fr.length - 1; i++) {
+      const a = fr[i], b = fr[i + 1];
+      for (let k = 0; k < 4; k++) {
+        const P = cs[k], Q = cs[(k + 1) % 4];
+        const Pi = corner(a, P[0], P[1]), Qi = corner(a, Q[0], Q[1]), Qj = corner(b, Q[0], Q[1]), Pj = corner(b, P[0], P[1]);
+        pos.push(...Pi, ...Qi, ...Qj, ...Pi, ...Qj, ...Pj);
+        const ua = a.s * M * us, ub = b.s * M * us;
+        uv.push(ua, 0, ua, 1, ub, 1, ua, 0, ub, 1, ub, 0);
+      }
+    }
+    // bouchons
+    const cap = (f, end) => {
+      const A = corner(f, y0, z0), B = corner(f, y1, z0), Cc = corner(f, y1, z1), Dd = corner(f, y0, z1);
+      if (end) pos.push(...A, ...B, ...Cc, ...A, ...Cc, ...Dd); else pos.push(...A, ...Cc, ...B, ...A, ...Dd, ...Cc);
+      uv.push(0, 0, 1, 0, 1, 1, 0, 0, 1, 1, 0, 1);
+    };
+    if (fr.length > 1) { cap(fr[0], false); cap(fr[fr.length - 1], true); }
+    const g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+    g.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2));
+    g.computeVertexNormals();
+    return g;
+  }
+
+  function tag(obj, layer) { obj.userData.layer = layer; return obj; }
+  function meshOf(geo, material, layer, shadow = true) {
+    const m = new THREE.Mesh(geo, material);
+    m.castShadow = shadow; m.receiveShadow = true;
+    return tag(m, layer);
+  }
+  /** Boîte centrée en (x,y,z) mm, dimensions mm. */
+  function box(lx, ly, lz, x, y, z, material, layer) {
+    const m = meshOf(new THREE.BoxGeometry(lx * M, ly * M, lz * M), material, layer);
+    m.position.set(x * M, y * M, z * M);
+    return m;
+  }
+  function cyl(r, h, material, layer, seg) {
+    return meshOf(new THREE.CylinderGeometry(r * M, r * M, h * M, seg || 20), material, layer);
+  }
+
+  /** Point local d'un chemin à l'abscisse s → {p(mm), t, n, u} */
+  function localFrame(path, s) {
+    const r = path.at(s);
+    let n = [-r.t[1], r.t[0], 0];
+    const l = Math.hypot(n[0], n[1]) || 1; n = [n[0] / l, n[1] / l, 0];
+    const t = r.t;
+    const u = [t[1] * n[2] - t[2] * n[1], t[2] * n[0] - t[0] * n[2], t[0] * n[1] - t[1] * n[0]];
+    return { p: r.p, t, n, u };
+  }
+  const _m4 = new THREE.Matrix4(), _vx = new THREE.Vector3(), _vy = new THREE.Vector3(), _vz = new THREE.Vector3();
+  /** Matrice d'instance alignée sur un repère (x=t, y=n, z=u) au point p(mm) + décalages. */
+  function frameMatrix(f, dy, dz, scaleY) {
+    _vx.set(f.t[0], f.t[1], f.t[2]); _vy.set(f.n[0], f.n[1], f.n[2]); _vz.set(f.u[0], f.u[1], f.u[2]);
+    _m4.makeBasis(_vx, _vy, _vz);
+    if (scaleY && scaleY !== 1) _m4.scale(new THREE.Vector3(1, scaleY, 1));
+    _m4.setPosition((f.p[0] + f.n[0] * dy + f.u[0] * dz) * M, (f.p[1] + f.n[1] * dy + f.u[1] * dz) * M, (f.p[2] + f.n[2] * dy + f.u[2] * dz) * M);
+    return _m4;
+  }
+
+  /* --------------------------- composants communs ------------------------ */
+  /** Rouleaux le long d'un chemin (instanciés). Coniques en virage. */
+  function addRollers(g, path, p, opts) {
+    opts = opts || {};
+    const L = path.length;
+    const pitch = Math.max(15, p.rollerPitch || 100);
+    const n = Math.max(1, Math.floor(L / pitch));
+    const d = p.rollerDiam || 50;
+    const Wu = opts.width || p.usefulWidth;
+    let geo;
+    const curve = opts.radius ? opts : null;
+    if (curve) {
+      const sgn = curve.left ? 1 : -1, R = curve.radius;
+      const rTop = d / 2 * Math.max(0.3, (R - sgn * Wu / 2) / R), rBot = d / 2 * Math.max(0.3, (R + sgn * Wu / 2) / R);
+      geo = new THREE.CylinderGeometry(rTop * M, rBot * M, Wu * M, 14);
+    } else geo = new THREE.CylinderGeometry(d / 2 * M, d / 2 * M, Wu * M, 14);
+    const im = new THREE.InstancedMesh(geo, opts.free ? MAT.freeRoller() : MAT.roller(), n);
+    for (let i = 0; i < n; i++) {
+      const s = (i + 0.5) * L / n;
+      const f = localFrame(path, s);
+      im.setMatrixAt(i, frameMatrix(f, 0, -d / 2));
+    }
+    im.castShadow = true; im.receiveShadow = true;
+    tag(im, 'rollers');
+    g.add(im);
+    // axes / arbres (pour les rouleaux libres : roulettes plus claires)
+    return im;
+  }
+
+  /** Longerons latéraux. */
+  function addFrames(g, fr, p, opts) {
+    opts = opts || {};
+    const W = opts.width || p.width, Wu = opts.useful || p.usefulWidth;
+    const ft = Math.max(12, (W - Wu) / 2);
+    const top = opts.top !== undefined ? opts.top : -4;
+    const bot = -(p.frameH || 160);
+    const material = MAT.frame(p.color || '#2f6fd0');
+    const a = meshOf(sweep(fr, W / 2 - ft, W / 2, bot, top), material, 'structure');
+    const b = meshOf(sweep(fr, -W / 2, -W / 2 + ft, bot, top), material, 'structure');
+    a.userData.isFrame = b.userData.isFrame = true;
+    g.add(a, b);
+  }
+
+  /** Guides latéraux sur poteaux. */
+  function addGuides(g, fr, path, p, opts) {
+    const gh = p.guideH || 0;
+    if (gh <= 0) return;
+    opts = opts || {};
+    const W = opts.width || p.width, Wu = opts.useful || p.usefulWidth;
+    const yg = Wu / 2 + Math.max(4, (W - Wu) / 4);
+    const z1 = gh, z0 = Math.max(4, gh - 30);
+    g.add(meshOf(sweep(fr, yg, yg + 8, z0, z1), MAT.guide(), 'guides'));
+    g.add(meshOf(sweep(fr, -yg - 8, -yg, z0, z1), MAT.guide(), 'guides'));
+    const L = path.length, np = Math.max(2, Math.ceil(L / 1000) + 1);
+    const postH = gh + 4;
+    const geo = new THREE.BoxGeometry(10 * M, 10 * M, postH * M);
+    const im = new THREE.InstancedMesh(geo, MAT.guide(), np * 2);
+    let k = 0;
+    for (let i = 0; i < np; i++) {
+      const s = C.clamp(L * i / (np - 1), 30, L - 30);
+      const f = localFrame(path, s);
+      for (const side of [1, -1]) im.setMatrixAt(k++, frameMatrix(f, side * (yg + 4), postH / 2 - 8));
+    }
+    tag(im, 'guides'); g.add(im);
+  }
+
+  /** Pieds de structure (du sol jusque sous le châssis). */
+  function addLegs(g, path, p, elZ, opts) {
+    opts = opts || {};
+    const W = opts.width || p.width;
+    const L = path.length;
+    const fh = p.frameH || 160;
+    const n = Math.max(2, Math.ceil(L / 1500) + 1);
+    const items = [];
+    for (let i = 0; i < n; i++) {
+      const s = C.clamp(L * i / (n - 1), Math.min(120, L / 2), Math.max(L - 120, L / 2));
+      const f = localFrame(path, s);
+      const zTop = f.p[2] - fh;            // local
+      const zFloor = -elZ;                 // local (sol)
+      const h = zTop - zFloor;
+      if (h < 60) continue;
+      items.push({ f, h, zTop });
+    }
+    if (!items.length) return;
+    const geo = new THREE.BoxGeometry(40 * M, 40 * M, 1);
+    const im = new THREE.InstancedMesh(geo, MAT.leg(), items.length * 2);
+    const brace = new THREE.InstancedMesh(new THREE.BoxGeometry(30 * M, 1, 30 * M), MAT.leg(), items.length);
+    let k = 0;
+    const yl = W / 2 - 25;
+    items.forEach((it, i) => {
+      for (const side of [1, -1]) {
+        const x = it.f.p[0] + it.f.n[0] * side * yl, y = it.f.p[1] + it.f.n[1] * side * yl;
+        _m4.makeScale(1, 1, it.h * M);
+        _m4.setPosition(x * M, y * M, (it.zTop - it.h / 2) * M);
+        im.setMatrixAt(k++, _m4);
+      }
+      // traverse
+      const ang = Math.atan2(it.f.t[1], it.f.t[0]);
+      _m4.makeRotationZ(ang);
+      _m4.scale(new THREE.Vector3(1, W * 0.92 * M, 1));
+      _m4.setPosition(it.f.p[0] * M, it.f.p[1] * M, (it.zTop - Math.min(it.h * 0.6, 250)) * M);
+      brace.setMatrixAt(i, _m4);
+    });
+    im.castShadow = true; brace.castShadow = true;
+    tag(im, 'structure'); tag(brace, 'structure');
+    g.add(im); g.add(brace);
+  }
+
+  /** Motoréducteur sous le châssis. */
+  function addMotor(g, path, p, s) {
+    const f = localFrame(path, s !== undefined ? s : Math.max(0, path.length - 250));
+    const fh = p.frameH || 160;
+    const side = -1;
+    const grp = new THREE.Group();
+    const bx = box(220, 160, 160, 0, 0, 0, MAT.motor(), 'structure');
+    const cy = cyl(70, 200, MAT.motor(), 'structure'); cy.position.set(0, 160 * M * 0.9, 0);
+    grp.add(bx, cy);
+    grp.position.set((f.p[0] + f.n[0] * side * (p.width / 2 + 90)) * M, (f.p[1] + f.n[1] * side * (p.width / 2 + 90)) * M, (f.p[2] - fh - 40) * M);
+    grp.rotation.z = Math.atan2(f.t[1], f.t[0]);
+    tag(grp, 'structure');
+    g.add(grp);
+  }
+
+  /** Flèches de sens de circulation (sur le chemin de flux, éventuellement inversé). */
+  function addArrows(g, flowPath, p, zOff) {
+    const L = flowPath.length;
+    const n = Math.max(1, Math.round(L / 900));
+    const w = Math.min(220, (p.usefulWidth || 400) * 0.4);
+    const shape = new THREE.Shape();
+    shape.moveTo(w * 0.6 * M, 0); shape.lineTo(-w * 0.4 * M, w * 0.5 * M); shape.lineTo(-w * 0.15 * M, 0); shape.lineTo(-w * 0.4 * M, -w * 0.5 * M); shape.closePath();
+    const geo = new THREE.ShapeGeometry(shape);
+    for (let i = 0; i < n; i++) {
+      const s = L * (i + 0.5) / n;
+      const f = localFrame(flowPath, s);
+      const m = new THREE.Mesh(geo, MAT.arrow());
+      _vx.set(f.t[0], f.t[1], f.t[2]); _vy.set(f.n[0], f.n[1], f.n[2]); _vz.set(f.u[0], f.u[1], f.u[2]);
+      m.matrix.makeBasis(_vx, _vy, _vz);
+      m.matrix.setPosition(f.p[0] * M + f.u[0] * (zOff || 6) * M, f.p[1] * M + f.u[1] * (zOff || 6) * M, f.p[2] * M + f.u[2] * (zOff || 6) * M);
+      m.matrixAutoUpdate = false;
+      m.renderOrder = 2;
+      tag(m, 'arrows');
+      g.add(m);
+    }
+  }
+
+  /** Surface de convoyage selon la technologie. */
+  function addSurface(g, path, fr, p, opts) {
+    opts = opts || {};
+    const Wu = opts.width || p.usefulWidth;
+    const surf = p.surface;
+    if (surf === 'rollers' || surf === 'freerollers') {
+      addRollers(g, path, p, Object.assign({}, opts, { free: surf === 'freerollers' }));
+      // longrine de support basse
+    } else if (surf === 'belt' || surf === 'mat') {
+      const thick = surf === 'mat' ? 18 : 6;
+      g.add(meshOf(sweep(fr, -Wu / 2, Wu / 2, -thick, 0, surf === 'mat' ? 20 : 2), surf === 'mat' ? MAT.mat() : MAT.belt(), 'rollers'));
+      // retour de bande
+      g.add(meshOf(sweep(fr, -Wu / 2 + 10, Wu / 2 - 10, -(p.frameH || 160) + 25, -(p.frameH || 160) + 25 + thick), MAT.dark(), 'rollers', false));
+      // tambours d'extrémité
+      if (!opts.noDrums) {
+        for (const s of [0, path.length]) {
+          const f = localFrame(path, s);
+          const dr = Math.min(60, (p.frameH || 160) / 3);
+          const c = new THREE.Mesh(new THREE.CylinderGeometry(dr * M, dr * M, Wu * M, 18), MAT.roller());
+          c.matrixAutoUpdate = false;
+          c.matrix.copy(frameMatrix(f, 0, -dr - thick * 0.2));
+          tag(c, 'rollers'); g.add(c);
+        }
+      }
+    } else if (surf === 'chain') {
+      const nStr = Wu > 700 ? 3 : 2;
+      for (let i = 0; i < nStr; i++) {
+        const y = -Wu / 2 + 60 + i * (Wu - 120) / (nStr - 1);
+        g.add(meshOf(sweep(fr, y - 25, y + 25, -22, 0, 25), MAT.chain(), 'rollers'));
+        g.add(meshOf(sweep(fr, y - 35, y + 35, -60, -22), MAT.plate(), 'structure'));
+      }
+    }
+  }
+
+  /** Convoyeur générique (droit, virage, pente, spirale, modules spéciaux). */
+  function buildConveyor(el, model, g, opts) {
+    const p = el.params;
+    const tr = model.tracks.main;
+    const path = new C.Path(tr.segs, null, false);
+    const flow = new C.Path(tr.segs, null, !!tr.reversed);
+    const fr = frames(path, 3);
+    const curve = el.type === 'curve' || el.type === 'spiral';
+    let copt = {};
+    if (el.type === 'curve') copt = { radius: p.radius, left: p.side !== 'right' };
+    if (curve && p.surface === 'rollers' || curve && p.surface === 'freerollers') {
+      // en spirale : rouleaux coniques le long de l'hélice uniquement sur la partie courbe
+      if (el.type === 'spiral') {
+        addRollers(g, path, p, { radius: p.radius, left: p.side !== 'right', free: p.surface === 'freerollers' });
+      } else addRollers(g, path, p, Object.assign(copt, { free: p.surface === 'freerollers' }));
+    } else addSurface(g, path, fr, p, copt);
+    addFrames(g, fr, p);
+    addGuides(g, fr, path, p);
+    if (el.type === 'spiral') {
+      // colonne centrale + bras
+      const seg = tr.segs.find(s => s.type === 'arc');
+      if (seg) {
+        const zMin = Math.min(seg.z0, seg.z1), zMax = Math.max(seg.z0, seg.z1);
+        const h = zMax + el.z + 300;
+        const col = cyl(120, h, MAT.leg(), 'structure');
+        col.rotation.x = Math.PI / 2;
+        col.position.set(seg.c[0] * M, seg.c[1] * M, (-el.z + h / 2) * M);
+        g.add(col);
+        const nArms = Math.ceil(Math.abs(seg.sweep) / (Math.PI / 2)) + 1;
+        for (let i = 0; i < nArms; i++) {
+          const u = i / (nArms - 1);
+          const phi = seg.a0 + seg.sweep * u, z = seg.z0 + (seg.z1 - seg.z0) * u - (p.frameH || 160);
+          const arm = box(seg.r + p.width / 2, 40, 40, 0, 0, 0, MAT.leg(), 'structure');
+          arm.position.set((seg.c[0] + Math.cos(phi) * (seg.r + p.width / 2) / 2) * M, (seg.c[1] + Math.sin(phi) * (seg.r + p.width / 2) / 2) * M, z * M);
+          arm.rotation.z = phi;
+          g.add(arm);
+        }
+        void zMin;
+      }
+      // pieds sous les parties droites
+      const t0 = new C.Path(tr.segs.filter(s => s.type === 'line'), null, false);
+      if (t0.length > 0) {
+        for (const sg of tr.segs.filter(s => s.type === 'line')) addLegs(g, new C.Path([sg], null, false), p, el.z);
+      }
+    } else addLegs(g, path, p, el.z);
+    if (p.surface !== 'freerollers') addMotor(g, path, p);
+    addArrows(g, flow, p, p.surface === 'mat' ? 22 : 8);
+    return path;
+  }
+
+  /* ----------------------------- équipements ---------------------------- */
+  const builders = {};
+  builders.straight = builders.curve = builders.heightchange = builders.spiral = (el, m, g) => { buildConveyor(el, m, g); };
+
+  builders.transfer = (el, m, g) => {
+    const p = el.params;
+    buildConveyor(el, m, g);
+    // chaînes de transfert transversales (relevables)
+    const nCh = Math.max(2, Math.round(p.length / 250));
+    for (let i = 0; i < nCh; i++) {
+      const x = p.length * (i + 0.5) / nCh;
+      const c = box(30, p.usefulWidth + 30, 22, x, 0, 4, MAT.chain(), 'rollers');
+      g.add(c);
+    }
+    // flèches latérales
+    const sideArrow = (sgn) => {
+      const a = box(60, 140, 4, p.length / 2, sgn * (p.usefulWidth / 2 - 90), 30, MAT.arrow(), 'arrows');
+      g.add(a);
+    };
+    if (p.sides !== 'right') sideArrow(1);
+    if (p.sides !== 'left') sideArrow(-1);
+    // vérin de levage
+    g.add(box(160, 160, 120, p.length / 2, 0, -(p.frameH || 160) - 60, MAT.motor(), 'structure'));
+  };
+
+  builders.sorter = (el, m, g) => {
+    const p = el.params;
+    buildConveyor(el, m, g);
+    // rangées de roulettes de déviation au droit de chaque sortie
+    const geo = new THREE.CylinderGeometry(22 * M, 22 * M, 18 * M, 12);
+    for (const dv of m.diverts) {
+      const tr = m.tracks[dv.to];
+      const seg = tr.segs[0];
+      const ang = Math.atan2(seg.b[1] - seg.a[1], seg.b[0] - seg.a[0]);
+      const sk = (seg.a[0] + seg.b[0]) / 2;
+      const rows = 4, cols = Math.max(3, Math.floor(p.usefulWidth / 90));
+      const im = new THREE.InstancedMesh(geo, MAT.glow(0xff6b4a), rows * cols);
+      let k = 0;
+      for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) {
+        const x = sk - 120 + r * 80, y = -p.usefulWidth / 2 + (c + 0.5) * p.usefulWidth / cols;
+        _m4.makeRotationZ(ang); _m4.multiply(new THREE.Matrix4().makeRotationZ(Math.PI / 2));
+        _m4.setPosition(x * M, y * M, 4 * M);
+        im.setMatrixAt(k++, _m4);
+      }
+      tag(im, 'rollers'); g.add(im);
+      // flèche de sortie
+      const path = new C.Path(tr.segs, null, false);
+      addArrows(g, path, Object.assign({}, p, { usefulWidth: 260 }), 12);
+    }
+  };
+
+  builders.turntable = (el, m, g) => {
+    const p = el.params, R = p.diameter / 2, fh = p.frameH || 160;
+    // socle fixe
+    const base = cyl(R * 0.98, fh, MAT.frame(p.color), 'structure', 40);
+    base.rotation.x = Math.PI / 2; base.position.set(R * M, 0, (-fh / 2 - 25) * M);
+    g.add(base);
+    // plateau rotatif
+    const spin = new THREE.Group();
+    spin.position.set(R * M, 0, 0);
+    const disc = cyl(R * 0.96, 16, MAT.plate(), 'rollers', 40);
+    disc.rotation.x = Math.PI / 2; disc.position.z = (-p.rollerDiam - 12) * M;
+    spin.add(disc);
+    const sp = new THREE.Group(); // rouleaux du plateau
+    const len = Math.min(p.usefulWidth, R * 1.6);
+    const n = Math.max(3, Math.floor(R * 1.6 / (p.rollerPitch || 100)));
+    const geo = new THREE.CylinderGeometry(p.rollerDiam / 2 * M, p.rollerDiam / 2 * M, len * M, 14);
+    const im = new THREE.InstancedMesh(geo, MAT.roller(), n);
+    for (let i = 0; i < n; i++) {
+      const x = -R * 0.8 + (i + 0.5) * R * 1.6 / n;
+      _m4.makeTranslation(x * M, 0, -p.rollerDiam / 2 * M);
+      im.setMatrixAt(i, _m4);
+    }
+    tag(im, 'rollers'); sp.add(im);
+    // longerons du plateau
+    sp.add(box(R * 1.7, 20, 50, 0, len / 2 + 15, -30, MAT.frame(p.color), 'structure'));
+    sp.add(box(R * 1.7, 20, 50, 0, -len / 2 - 15, -30, MAT.frame(p.color), 'structure'));
+    const arr = box(R * 0.5, 30, 4, R * 0.2, 0, 12, MAT.arrow(), 'arrows'); sp.add(arr);
+    spin.add(sp);
+    spin.userData.isSpin = true;
+    g.add(spin);
+    g.userData.spin = spin;
+    // pieds
+    const zFloor = -el.z, h = -fh - 30 - zFloor;
+    if (h > 50) for (let i = 0; i < 4; i++) {
+      const a = Math.PI / 4 + i * Math.PI / 2;
+      const leg = box(50, 50, h, R + Math.cos(a) * R * 0.6, Math.sin(a) * R * 0.6, zFloor + h / 2, MAT.leg(), 'structure');
+      g.add(leg);
+    }
+    // flèches des sorties
+    for (const id in m.tracks) if (id !== 'in') addArrows(g, new C.Path(m.tracks[id].segs, null, false), Object.assign({}, p, { usefulWidth: 200 }), 40);
+  };
+
+  builders.elevator = (el, m, g) => {
+    const p = el.params, bed = p.bedLength, H = p.elevH, W = p.width;
+    const zLow = Math.min(0, H), zHigh = Math.max(0, H);
+    const zFloor = -el.z;
+    // plateau d'entrée (bas) et de sortie (haut)
+    const rp = Object.assign({}, p);
+    const mk = (x0, x1, z) => {
+      const t = new C.Turtle(x0, 0, z, x1 > x0 ? 0 : Math.PI); t.line(Math.abs(x1 - x0));
+      const path = new C.Path(t.segs, null, false), fr = frames(path);
+      addRollers(g, path, rp); addFrames(g, fr, rp);
+    };
+    mk(0, bed / 2, 0);
+    if (p.config === 'C') mk(bed / 2, 0, H); else mk(bed * 1.5, bed * 2, H);
+    // tours
+    const towerH = zHigh - zFloor + 400;
+    for (const x of [bed / 2 - 40, bed * 1.5 + 40]) for (const y of [W / 2 + 50, -W / 2 - 50]) {
+      g.add(box(80, 80, towerH, x, y, zFloor + towerH / 2, MAT.frame(p.color), 'structure'));
+    }
+    g.add(box(bed + 160, 60, 60, bed, W / 2 + 50, zFloor + towerH, MAT.frame(p.color), 'structure'));
+    g.add(box(bed + 160, 60, 60, bed, -W / 2 - 50, zFloor + towerH, MAT.frame(p.color), 'structure'));
+    g.add(box(300, 300, 250, bed * 1.5 + 40, W / 2 + 230, zFloor + towerH - 125, MAT.motor(), 'structure'));
+    // nacelle mobile
+    const car = new THREE.Group();
+    const cp = Object.assign({}, p, { color: '#ffb000' });
+    const t = new C.Turtle(bed / 2, 0, 0, 0); t.line(bed);
+    const cpath = new C.Path(t.segs, null, false);
+    addRollers(car, cpath, cp); addFrames(car, frames(cpath), Object.assign({}, cp, { frameH: 120 }));
+    car.position.z = 0;
+    g.add(car);
+    g.userData.carriage = car;
+    g.userData.carriageRange = [zLow, zHigh];
+    // pieds des plateaux
+    for (const [x, z] of [[bed / 4, 0], [p.config === 'C' ? bed / 4 : bed * 1.75, H]]) {
+      const h = z - (p.frameH || 160) - zFloor;
+      if (h > 50) for (const y of [W / 2 - 25, -W / 2 + 25]) g.add(box(40, 40, h, x, y, zFloor + h / 2, MAT.leg(), 'structure'));
+    }
+    addArrows(g, new C.Path(m.tracks.main.segs.slice(0, 1), null, false), Object.assign({}, p, { usefulWidth: 250 }), 10);
+  };
+
+  builders.stop = (el, m, g) => {
+    const p = el.params;
+    buildConveyor(el, m, g);
+    const blade = box(30, p.usefulWidth * 0.9, 90, p.length - 20, 0, 30, MAT.glow(0xe74c3c), 'rollers');
+    g.add(blade);
+    blade.userData.z0 = 30;
+    g.userData.stopBlade = blade;
+    g.add(box(120, 120, 100, p.length - 20, 0, -(p.frameH || 160) - 50, MAT.motor(), 'structure'));
+  };
+
+  builders.separator = (el, m, g) => {
+    const p = el.params;
+    buildConveyor(el, m, g);
+    // cellule photoélectrique + faisceau
+    for (const sgn of [1, -1]) g.add(box(40, 40, 120, p.length - 60, sgn * (p.width / 2 + 30), 80, MAT.color('#f1c40f'), 'structure'));
+    const beam = box(6, p.width + 40, 6, p.length - 60, 0, 90, MAT.glow(0xff2020), 'arrows');
+    g.add(beam);
+  };
+
+  builders.accumulation = (el, m, g) => {
+    const p = el.params;
+    buildConveyor(el, m, g);
+    const nz = Math.max(1, Math.floor(p.length / Math.max(100, p.zoneLength)));
+    const markers = [];
+    for (let i = 0; i < nz; i++) {
+      const x = (i + 0.5) * p.length / nz;
+      const mk = box(p.length / nz - 30, 14, 14, x, p.width / 2 + 10, -20, new THREE.MeshStandardMaterial({ color: 0x2ecc71, emissive: 0x145a32, emissiveIntensity: 0.6 }), 'structure');
+      g.add(mk); markers.push(mk);
+      // capteur de zone
+      g.add(box(30, 20, 40, (i + 1) * p.length / nz - 40, -p.width / 2 - 15, 10, MAT.color('#f1c40f'), 'structure'));
+    }
+    g.userData.zoneMarkers = markers;
+  };
+
+  builders.workstation = (el, m, g) => {
+    const p = el.params;
+    buildConveyor(el, m, g);
+    const side = p.opSide === 'right' ? -1 : 1;
+    const xs = p.length * p.stopPos;
+    const zFloor = -el.z;
+    // table opérateur
+    const tz = zFloor + 900;
+    g.add(box(1200, 700, 40, xs, side * (p.width / 2 + 400), tz, MAT.wood(), 'structure'));
+    for (const dx of [-550, 550]) for (const dy of [-300, 300]) g.add(box(40, 40, 880, xs + dx, side * (p.width / 2 + 400) + dy, zFloor + 440, MAT.leg(), 'structure'));
+    // écran / scanner
+    g.add(box(40, 300, 220, xs, side * (p.width / 2 + 700), tz + 250, MAT.dark(), 'structure'));
+    // butée de poste
+    const blade = box(20, p.usefulWidth * 0.8, 60, xs + 220, 0, 20, MAT.glow(0xf39c12), 'rollers');
+    blade.userData.z0 = 20; g.add(blade); g.userData.stopBlade = blade;
+    // silhouette d'opérateur (repère d'encombrement)
+    const op = new THREE.Group();
+    const body = cyl(180, 1100, MAT.color('#3b5998'), 'structure'); body.rotation.x = Math.PI / 2; body.position.z = (1100 / 2 + 600) * M;
+    const head = new THREE.Mesh(new THREE.SphereGeometry(110 * M, 16, 12), MAT.color('#f0c8a0')); head.position.z = 1800 * M; tag(head, 'structure');
+    const legsO = cyl(140, 600, MAT.color('#2c3e50'), 'structure'); legsO.rotation.x = Math.PI / 2; legsO.position.z = 300 * M;
+    op.add(body, head, legsO);
+    op.position.set(xs * M, side * (p.width / 2 + 1050) * M, zFloor * M);
+    g.add(op);
+  };
+
+  builders.source = (el, m, g) => {
+    const p = el.params;
+    buildConveyor(el, m, g);
+    const arch = (x) => {
+      const h = 900;
+      for (const sgn of [1, -1]) g.add(box(50, 50, h, x, sgn * (p.width / 2 + 40), h / 2 - (p.frameH || 160), MAT.glow(0x2ecc71), 'structure'));
+      g.add(box(50, p.width + 130, 50, x, 0, h - (p.frameH || 160), MAT.glow(0x2ecc71), 'structure'));
+    };
+    arch(80);
+  };
+
+  builders.sink = (el, m, g) => {
+    const p = el.params;
+    buildConveyor(el, m, g);
+    const h = 900;
+    for (const sgn of [1, -1]) g.add(box(50, 50, h, p.length - 80, sgn * (p.width / 2 + 40), h / 2 - (p.frameH || 160), MAT.glow(0xe74c3c), 'structure'));
+    g.add(box(50, p.width + 130, 50, p.length - 80, 0, h - (p.frameH || 160), MAT.glow(0xe74c3c), 'structure'));
+    g.add(box(40, p.width, 120, p.length + 10, 0, 40, MAT.hazard(), 'structure'));
+  };
+
+  builders.obstacle = (el, m, g) => {
+    const p = el.params;
+    g.add(box(p.length, p.width, p.height, 0, 0, p.height / 2, MAT.hazard(), 'body'));
+  };
+
+  builders.table = (el, m, g) => {
+    const p = el.params;
+    g.add(box(p.length, p.width, 40, 0, 0, p.height - 20, MAT.wood(), 'body'));
+    for (const sx of [-1, 1]) for (const sy of [-1, 1]) g.add(box(50, 50, p.height - 40, sx * (p.length / 2 - 60), sy * (p.width / 2 - 60), (p.height - 40) / 2, MAT.frame(p.color), 'body'));
+    g.add(box(p.length - 120, 30, 30, 0, 0, 200, MAT.frame(p.color), 'body'));
+  };
+
+  builders.guide = (el, m, g) => {
+    const p = el.params;
+    g.add(box(p.length, p.thickness, p.height, p.length / 2, 0, p.height / 2, MAT.guide(), 'body'));
+    const n = Math.max(2, Math.ceil(p.length / 1000) + 1);
+    for (let i = 0; i < n; i++) {
+      const x = C.clamp(p.length * i / (n - 1), 20, p.length - 20);
+      const h = el.z;
+      if (h > 20) g.add(box(30, 30, h, x, 0, -h / 2, MAT.leg(), 'structure'));
+    }
+  };
+
+  /**
+   * Construit le groupe 3D d'un élément. Le groupe est positionné et orienté
+   * dans la scène (Z vers le haut, mètres).
+   */
+  C.buildElementMesh = function (el) {
+    const def = C.Types.get(el.type);
+    const g = new THREE.Group();
+    g.name = el.name;
+    const model = C.Types.model(el);
+    try {
+      (builders[el.type] || builders.straight)(el, model, g);
+    } catch (e) { console.error('Construction 3D', el.type, e); }
+    g.position.set(el.x * M, el.y * M, el.z * M);
+    g.rotation.z = (el.rot || 0) * C.DEG;
+    g.userData.elementId = el.id;
+    g.userData.def = def;
+    g.traverse(o => { if (o !== g) o.userData.elementId = el.id; });
+    return g;
+  };
+
+  C.geo = { frames, sweep, localFrame, box, M };
+})(window.C3D);
