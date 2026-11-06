@@ -1,0 +1,868 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Simulation Automatisation 3D</title>
+<style>
+  :root{
+    --bg:#0f141b; --panel:rgba(18,24,33,.88); --line:rgba(255,255,255,.10);
+    --txt:#e8edf3; --muted:#93a1b3; --accent:#3d8bfd; --ok:#3ecf8e; --err:#ff5d5d;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%;overflow:hidden;background:var(--bg);color:var(--txt);
+    font:13px/1.4 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+  #view{position:fixed;inset:0}
+  .panel{position:fixed;background:var(--panel);border:1px solid var(--line);border-radius:10px;
+    padding:12px 14px;backdrop-filter:blur(6px);box-shadow:0 6px 24px rgba(0,0,0,.35)}
+  #ctrl{top:12px;left:12px;width:270px;max-height:calc(100% - 24px);overflow:auto}
+  #stats{top:12px;right:12px;width:250px;max-height:calc(100% - 24px);overflow:auto}
+  h1{font-size:15px;margin:0 0 2px}
+  h2{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:12px 0 6px;font-weight:600}
+  .sub{color:var(--muted);font-size:12px;margin-bottom:6px}
+  .row{display:flex;align-items:center;gap:8px;margin:6px 0}
+  .row label{flex:1;color:var(--muted)}
+  .row output{min-width:44px;text-align:right;font-variant-numeric:tabular-nums}
+  input[type=range]{width:100%}
+  .btns{display:flex;flex-wrap:wrap;gap:6px}
+  button{background:#233041;color:var(--txt);border:1px solid var(--line);border-radius:7px;
+    padding:6px 9px;font:inherit;cursor:pointer}
+  button:hover{background:#2d3d53}
+  button.on{background:var(--accent);border-color:var(--accent)}
+  table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
+  td{padding:2px 0}
+  td:last-child{text-align:right;font-weight:600}
+  .kpi{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+  .kpi div{background:rgba(255,255,255,.04);border:1px solid var(--line);border-radius:8px;padding:6px 8px}
+  .kpi b{display:block;font-size:18px;font-variant-numeric:tabular-nums}
+  .kpi span{color:var(--muted);font-size:11px}
+  .bar{height:6px;background:rgba(255,255,255,.08);border-radius:3px;overflow:hidden;margin-top:2px}
+  .bar i{display:block;height:100%;background:var(--accent)}
+  #info{left:50%;bottom:12px;transform:translateX(-50%);min-width:280px;display:none}
+  #info .t{font-weight:700;font-size:14px;margin-bottom:4px}
+  #info .close{position:absolute;right:8px;top:6px;background:none;border:none;color:var(--muted);font-size:16px}
+  .legend{display:grid;grid-template-columns:14px 1fr;gap:4px 8px;align-items:center}
+  .sw{width:14px;height:10px;border-radius:2px}
+  #toggle{display:none;position:fixed;top:12px;left:12px;z-index:5}
+  .hint{color:var(--muted);font-size:11px;margin-top:8px}
+  @media (max-width:760px){
+    #toggle{display:block}
+    #ctrl{top:52px;width:calc(100% - 24px);max-height:45%;display:none}
+    #ctrl.open{display:block}
+    #stats{top:auto;bottom:12px;right:12px;left:12px;width:auto;max-height:32%}
+    #info{bottom:auto;top:52px;width:calc(100% - 24px)}
+  }
+</style>
+<script type="importmap">
+{ "imports": {
+  "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+  "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+}}
+</script>
+</head>
+<body>
+<div id="view"></div>
+<button id="toggle">☰ Commandes</button>
+
+<div id="ctrl" class="panel">
+  <h1>Automatisation – Vue 3D</h1>
+  <div class="sub">Formage → GtP → Contrôle poids → Fermeture → Étiquetage → Expédition</div>
+
+  <h2>Simulation</h2>
+  <div class="btns">
+    <button id="play" class="on">⏸ Pause</button>
+    <button id="reset">↺ Réinitialiser</button>
+  </div>
+  <div class="row"><label for="speed">Vitesse</label><output id="speedV">×6</output></div>
+  <input id="speed" type="range" min="1" max="20" value="6">
+  <div class="row"><label for="rate">Cadence formeuse (colis/min)</label><output id="rateV">24</output></div>
+  <input id="rate" type="range" min="6" max="45" value="24">
+  <div class="row"><label for="pick">Temps de picking (s)</label><output id="pickV">8</output></div>
+  <input id="pick" type="range" min="2" max="20" value="8">
+  <div class="row"><label for="errp">Taux d'erreur poids (%)</label><output id="errV">3</output></div>
+  <input id="errp" type="range" min="0" max="20" value="3">
+
+  <h2>Caméra</h2>
+  <div class="btns">
+    <button data-cam="all">Vue globale</button>
+    <button data-cam="gtp">Stations GtP</button>
+    <button data-cam="close">Fermeture</button>
+    <button data-cam="disp">Expédition</button>
+  </div>
+  <div class="btns" style="margin-top:6px">
+    <button id="followRnd">🎯 Suivre un colis</button>
+    <button id="labels" class="on">Étiquettes</button>
+    <button id="autorot">Rotation auto</button>
+  </div>
+
+  <h2>Légende</h2>
+  <div class="legend">
+    <span class="sw" style="background:#a8b7c7"></span><span>Alimentation / boucles GtP</span>
+    <span class="sw" style="background:#8a96a8"></span><span>Retour stations → contrôle poids</span>
+    <span class="sw" style="background:#8fd14f"></span><span>Zone fermeture cartons</span>
+    <span class="sw" style="background:#2f7de1"></span><span>Tri expédition / rampes</span>
+    <span class="sw" style="background:#f2d43a"></span><span>Boucle bacs (stockage)</span>
+  </div>
+  <div class="hint">Souris : clic gauche = rotation, clic droit = déplacement, molette = zoom. Cliquez sur un colis pour le suivre.</div>
+</div>
+
+<div id="stats" class="panel">
+  <h2 style="margin-top:0">Temps simulé <span id="clock" style="float:right;color:var(--txt)">00:00:00</span></h2>
+  <div class="kpi">
+    <div><b id="kCreated">0</b><span>Cartons formés</span></div>
+    <div><b id="kPicked">0</b><span>Commandes préparées</span></div>
+    <div><b id="kShipped">0</b><span>Colis expédiés</span></div>
+    <div><b id="kInSys">0</b><span>En circulation</span></div>
+    <div><b id="kRate">0</b><span>Colis / heure</span></div>
+    <div><b id="kErr" style="color:var(--err)">0</b><span>Rejets (erreur)</span></div>
+  </div>
+  <h2>Stations GtP (picks)</h2>
+  <table id="tStations"></table>
+  <h2>Rampes de palettisation</h2>
+  <table id="tRamps"></table>
+  <h2>Palettes complètes</h2>
+  <div class="kpi"><div style="grid-column:span 2"><b id="kPal">0</b><span>Palettes de 24 colis</span></div></div>
+</div>
+
+<div id="info" class="panel">
+  <button class="close" id="infoClose" title="Fermer">×</button>
+  <div class="t" id="iTitle">Colis</div>
+  <div id="iBody"></div>
+</div>
+
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+/* =========================================================
+   Repère : coordonnées en pixels du plan (x→droite, y→bas)
+   converties en unités 3D (≈ mètres).
+   ========================================================= */
+const S = 0.1, OX = 1000, OY = 600;
+const V = (x, y) => new THREE.Vector2((x - OX) * S, (y - OY) * S);
+const BELT_TOP = 0.8;
+const COL = { gtp:0xa8b7c7, ret:0x8a96a8, green:0x8fd14f, blue:0x2f7de1, yellow:0xf2d43a };
+
+/* ---------- Géométrie des trajets ---------- */
+function fillet(raw, r = 18 * S) {
+  const pts = raw.map(p => p.clone());
+  const out = [pts[0]];
+  for (let i = 1; i < pts.length - 1; i++) {
+    const p0 = pts[i-1], p1 = pts[i], p2 = pts[i+1];
+    const a = p0.clone().sub(p1), b = p2.clone().sub(p1);
+    const la = a.length(), lb = b.length();
+    if (la < 1e-6 || lb < 1e-6) continue;
+    a.divideScalar(la); b.divideScalar(lb);
+    if (a.dot(b) < -0.999) { out.push(p1.clone()); continue; }
+    const t = Math.min(r, la / 2, lb / 2);
+    const s = p1.clone().addScaledVector(a, t), e = p1.clone().addScaledVector(b, t);
+    const n = 10;
+    for (let k = 0; k <= n; k++) {
+      const u = k / n, w0 = (1-u)*(1-u), w1 = 2*(1-u)*u, w2 = u*u;
+      out.push(new THREE.Vector2(w0*s.x + w1*p1.x + w2*e.x, w0*s.y + w1*p1.y + w2*e.y));
+    }
+  }
+  out.push(pts[pts.length-1]);
+  return out.filter((p, i) => i === 0 || p.distanceTo(out[i-1]) > 1e-4);
+}
+
+class Path {
+  constructor(pts) {
+    this.p = pts; this.cum = [0];
+    for (let i = 1; i < pts.length; i++) this.cum.push(this.cum[i-1] + pts[i].distanceTo(pts[i-1]));
+    this.len = this.cum[this.cum.length-1];
+  }
+  sample(s, o) {
+    s = Math.max(0, Math.min(this.len, s));
+    let i = o.i || 0;
+    while (i < this.p.length - 2 && this.cum[i+1] < s) i++;
+    while (i > 0 && this.cum[i] > s) i--;
+    const a = this.p[i], b = this.p[i+1], seg = this.cum[i+1] - this.cum[i];
+    const u = seg > 0 ? (s - this.cum[i]) / seg : 0;
+    o.i = i; o.x = a.x + (b.x - a.x) * u; o.y = a.y + (b.y - a.y) * u;
+    o.dx = seg > 0 ? (b.x - a.x) / seg : 1; o.dy = seg > 0 ? (b.y - a.y) / seg : 0;
+    return o;
+  }
+  project(pt) {
+    let best = Infinity, bs = 0;
+    for (let i = 0; i < this.p.length - 1; i++) {
+      const a = this.p[i], b = this.p[i+1], ab = b.clone().sub(a), L2 = ab.lengthSq();
+      const u = L2 > 0 ? Math.max(0, Math.min(1, pt.clone().sub(a).dot(ab) / L2)) : 0;
+      const q = a.clone().addScaledVector(ab, u), d = q.distanceTo(pt);
+      if (d < best) { best = d; bs = this.cum[i] + u * Math.sqrt(L2); }
+    }
+    return bs;
+  }
+}
+
+/* ---------- Topologie (reprise du plan) ---------- */
+const P = a => a.map(([x, y]) => V(x, y));
+const STATIONS = [
+  { name:'PS05', xc:1295 }, { name:'PS04', xc:1425 }, { name:'PS03', xc:1560 },
+  { name:'PS02', xc:1690 }, { name:'PS01', xc:1825 }
+];
+const RAMPS = [
+  { name:'Rampe 1', y:785 }, { name:'Rampe 2', y:815 }, { name:'Rampe 3', y:890 },
+  { name:'Rampe 4', y:918 }, { name:'Rampe 5', y:992 }, { name:'Erreur', y:1020, err:true },
+  { name:'Rampe 6', end:true }
+];
+
+const infeedHead = [[60,250],[200,250],[280,200]];
+const stationEdge = xc => [[xc-90,200],[xc-50,200],[xc-50,450],[xc+30,450],[xc+30,230],[xc-10,230]];
+const returnLine = [[915,230],[915,500],[700,500]];
+const laneA = [[660,500],[660,300],[370,300],[370,480]];
+const laneB = [[660,500],[660,400],[370,400],[370,480]];
+const outbound = [[370,545],[515,545],[515,690],[980,690]];
+const rampTail = r => r.end ? [[980,1110]] : [[980, r.y],[830, r.y]];
+
+const conveyors = [
+  { pts:[...infeedHead,[1880,200]], color:COL.gtp },
+  ...STATIONS.map(s => ({ pts:stationEdge(s.xc), color:COL.gtp })),
+  { pts:[[1860,230],...returnLine], color:COL.ret },
+  { pts:[[700,500],...laneA], color:COL.green },
+  { pts:[[700,500],...laneB], color:COL.green },
+  { pts:[[370,470],...outbound,[980,1110]], color:COL.blue },
+  ...RAMPS.filter(r => !r.end).map(r => ({ pts:[[980, r.y-40], ...rampTail(r)], color:COL.blue })),
+];
+const toteLoopPts = fillet(P([[1150,110],[1350,110],[1350,175],[950,175],[950,110],[1150,110]]));
+
+/* ---------- Scène ---------- */
+const host = document.getElementById('view');
+const renderer = new THREE.WebGLRenderer({ antialias:true });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.setSize(innerWidth, innerHeight);
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+host.appendChild(renderer.domElement);
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x1a222d);
+scene.fog = new THREE.Fog(0x1a222d, 180, 420);
+
+const camera = new THREE.PerspectiveCamera(45, innerWidth / innerHeight, 0.1, 1000);
+camera.position.set(0, 95, 85);
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+controls.maxPolarAngle = Math.PI * 0.48;
+controls.target.set(0, 0, 0);
+
+scene.add(new THREE.HemisphereLight(0xdfe9ff, 0x3a3226, 0.85));
+const sun = new THREE.DirectionalLight(0xffffff, 1.6);
+sun.position.set(-40, 90, 40);
+sun.castShadow = true;
+sun.shadow.mapSize.set(4096, 4096);
+Object.assign(sun.shadow.camera, { left:-110, right:110, top:70, bottom:-70, near:10, far:250 });
+sun.shadow.bias = -0.0005;
+scene.add(sun);
+
+/* Sol et zones */
+function floorRect(x0, y0, x1, y1, color, y = 0, opts = {}) {
+  const a = V(x0, y0), b = V(x1, y1);
+  const m = new THREE.Mesh(new THREE.PlaneGeometry(Math.abs(b.x-a.x), Math.abs(b.y-a.y)),
+    new THREE.MeshStandardMaterial({ color, roughness:0.95, ...opts }));
+  m.rotation.x = -Math.PI / 2;
+  m.position.set((a.x+b.x)/2, y, (a.y+b.y)/2);
+  m.receiveShadow = true;
+  scene.add(m); return m;
+}
+floorRect(-200, -250, 2200, 1400, 0x59616b, -0.02);
+floorRect(25, 170, 850, 570, 0xb98a6c, 0);
+floorRect(855, 80, 1950, 565, 0xb98a6c, 0);
+floorRect(485, 590, 1100, 1155, 0x737c87, 0.002);
+// zones jaunes (circulations opérateurs)
+STATIONS.forEach(s => floorRect(s.xc-35, 250, s.xc+15, 435, 0xe2c13a, 0.005));
+floorRect(1360, 170, 1900, 185, 0xe2c13a, 0.005);
+floorRect(395, 320, 640, 330, 0xe2c13a, 0.005);
+floorRect(395, 375, 640, 385, 0xe2c13a, 0.005);
+floorRect(250, 380, 290, 520, 0xe2c13a, 0.005);
+
+// pointillés zone expédition
+{
+  const pts = P([[485,590],[1100,590],[1100,1155],[485,1155],[485,590]]).map(p => new THREE.Vector3(p.x, 0.03, p.y));
+  const line = new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts),
+    new THREE.LineDashedMaterial({ color:0xff4d4d, dashSize:1.2, gapSize:0.8 }));
+  line.computeLineDistances(); scene.add(line);
+}
+
+// façade (mur semi-transparent) avec ouverture pour le convoyeur
+const wallMat = new THREE.MeshStandardMaterial({ color:0xd7dde4, transparent:true, opacity:0.28, roughness:0.6 });
+function wall(x0, y0, x1, y1, h = 2.6) {
+  const a = V(x0, y0), b = V(x1, y1), L = a.distanceTo(b);
+  const m = new THREE.Mesh(new THREE.BoxGeometry(L, h, 0.25), wallMat);
+  m.position.set((a.x+b.x)/2, h/2, (a.y+b.y)/2);
+  m.rotation.y = -Math.atan2(b.y-a.y, b.x-a.x);
+  scene.add(m);
+}
+wall(25, 575, 500, 575); wall(535, 575, 1950, 575);
+wall(25, 165, 850, 165); wall(855, 75, 1950, 75); wall(1950, 75, 1950, 575);
+wall(25, 165, 25, 575);
+
+// poteaux
+const colGeo = new THREE.BoxGeometry(0.5, 7, 0.5), colMat = new THREE.MeshStandardMaterial({ color:0x9aa3ad });
+for (const x of [118, 485, 852, 1218, 1585, 1952]) for (const y of [168, 572, 1155]) {
+  const p = V(x, y), c = new THREE.Mesh(colGeo, colMat);
+  c.position.set(p.x, 3.5, p.y); c.castShadow = true; scene.add(c);
+}
+
+/* ---------- Étiquettes texte ---------- */
+const labelSprites = [];
+function label(text, x, y, h = 3, size = 1.6, color = '#ffffff', bg = 'rgba(20,30,45,.85)') {
+  const c = document.createElement('canvas'), g = c.getContext('2d');
+  const fs = 56; g.font = `600 ${fs}px system-ui, sans-serif`;
+  const w = Math.ceil(g.measureText(text).width) + 40;
+  c.width = w; c.height = fs + 28;
+  g.font = `600 ${fs}px system-ui, sans-serif`;
+  g.fillStyle = bg; g.beginPath(); g.roundRect(0, 0, c.width, c.height, 18); g.fill();
+  g.fillStyle = color; g.textBaseline = 'middle'; g.fillText(text, 20, c.height / 2 + 2);
+  const tex = new THREE.CanvasTexture(c); tex.colorSpace = THREE.SRGBColorSpace;
+  const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map:tex, depthTest:false, transparent:true }));
+  const p = V(x, y);
+  sp.position.set(p.x, h, p.y);
+  sp.scale.set(size * c.width / c.height, size, 1);
+  sp.renderOrder = 10;
+  scene.add(sp); labelSprites.push(sp);
+  return sp;
+}
+
+/* ---------- Convoyeurs (instanciés) ---------- */
+function buildConveyors(list) {
+  const segs = [], legs = [];
+  for (const cv of list) {
+    const pts = cv.pts[0] instanceof THREE.Vector2 ? cv.pts : fillet(P(cv.pts));
+    const path = new Path(pts);
+    for (let i = 0; i < pts.length - 1; i++) segs.push({ a:pts[i], b:pts[i+1], color:cv.color });
+    const o = {};
+    for (let s = 0.8; s < path.len; s += 2.6) { path.sample(s, o); legs.push({ ...o }); }
+  }
+  const n = segs.length;
+  const beltGeo = new THREE.BoxGeometry(1, 0.12, 0.8);
+  const railGeo = new THREE.BoxGeometry(1, 0.14, 0.07);
+  const belt = new THREE.InstancedMesh(beltGeo, new THREE.MeshStandardMaterial({ roughness:0.7, metalness:0.1 }), n);
+  const rail = new THREE.InstancedMesh(railGeo, new THREE.MeshStandardMaterial({ color:0x59626e, metalness:0.6, roughness:0.4 }), n * 2);
+  const m = new THREE.Matrix4(), q = new THREE.Quaternion(), sc = new THREE.Vector3(), pos = new THREE.Vector3(), up = new THREE.Vector3(0,1,0), col = new THREE.Color();
+  segs.forEach((sg, i) => {
+    const dx = sg.b.x - sg.a.x, dz = sg.b.y - sg.a.y, L = Math.hypot(dx, dz);
+    const ang = -Math.atan2(dz, dx); q.setFromAxisAngle(up, ang);
+    const mx = (sg.a.x + sg.b.x) / 2, mz = (sg.a.y + sg.b.y) / 2;
+    sc.set(L + 0.09, 1, 1);
+    pos.set(mx, BELT_TOP - 0.06, mz); m.compose(pos, q, sc); belt.setMatrixAt(i, m);
+    belt.setColorAt(i, col.setHex(sg.color));
+    const nx = -dz / L, nz = dx / L;
+    for (let k = 0; k < 2; k++) {
+      const sgn = k ? 1 : -1;
+      pos.set(mx + nx * 0.44 * sgn, BELT_TOP + 0.04, mz + nz * 0.44 * sgn);
+      m.compose(pos, q, sc); rail.setMatrixAt(i * 2 + k, m);
+    }
+  });
+  belt.castShadow = belt.receiveShadow = true; rail.castShadow = true;
+  scene.add(belt, rail);
+
+  const legGeo = new THREE.BoxGeometry(0.07, BELT_TOP - 0.12, 0.07);
+  const leg = new THREE.InstancedMesh(legGeo, new THREE.MeshStandardMaterial({ color:0x6b7480, metalness:0.5 }), legs.length * 2);
+  legs.forEach((l, i) => {
+    for (let k = 0; k < 2; k++) {
+      const sgn = k ? 1 : -1;
+      pos.set(l.x - l.dy * 0.33 * sgn, (BELT_TOP - 0.12) / 2, l.y + l.dx * 0.33 * sgn);
+      m.compose(pos, q.identity(), sc.set(1,1,1)); leg.setMatrixAt(i * 2 + k, m);
+    }
+  });
+  leg.castShadow = true; scene.add(leg);
+}
+buildConveyors([...conveyors, { pts:toteLoopPts, color:COL.yellow }]);
+
+/* ---------- Machines ---------- */
+const machines = {};
+const lampOff = new THREE.MeshStandardMaterial({ color:0x2b3a2b, emissive:0x000000 });
+const lampOn  = new THREE.MeshStandardMaterial({ color:0x58ff8a, emissive:0x33ff77, emissiveIntensity:1.5 });
+const lampErr = new THREE.MeshStandardMaterial({ color:0xff5555, emissive:0xff2222, emissiveIntensity:1.5 });
+function std(color, extra = {}) { return new THREE.MeshStandardMaterial({ color, roughness:0.6, metalness:0.2, ...extra }); }
+function box(w, h, d, mat, x, y, z, parent) {
+  const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat);
+  m.position.set(x, y, z); m.castShadow = true; m.receiveShadow = true; parent.add(m); return m;
+}
+function machine(id, px, py, orient, { len = 1.4, h = 1.9, color = 0x3f5d7d, tunnel = false, name } = {}) {
+  const g = new THREE.Group(); const p = V(px, py);
+  g.position.set(p.x, 0, p.y); if (orient === 'v') g.rotation.y = Math.PI / 2;
+  const mat = std(color);
+  const side = tunnel ? 0.35 : 0.18;
+  box(len, h, side, mat, 0, h/2, 0.62 + side/2 - 0.1, g);
+  box(len, h, side, mat, 0, h/2, -0.62 - side/2 + 0.1, g);
+  box(len, 0.35, 1.5 + side, mat, 0, h, 0, g);
+  if (tunnel) {
+    const glass = new THREE.MeshStandardMaterial({ color:0x9fd3ff, transparent:true, opacity:0.25 });
+    box(len * 0.98, h - 1.1, 1.3, glass, 0, (h + 1.1) / 2 - 0.05, 0, g).castShadow = false;
+  }
+  const lamp = new THREE.Mesh(new THREE.SphereGeometry(0.16, 16, 12), lampOff);
+  lamp.position.set(0, h + 0.33, 0); g.add(lamp);
+  scene.add(g);
+  machines[id] = { g, lamp, until:0, err:false };
+  if (name) label(name, px, py, h + 1.6, 1.1);
+  return machines[id];
+}
+machine('routing', 600, 200, 'h', { name:'Étiqueteuse routage', color:0x6b4fa0 });
+machine('weight', 915, 380, 'v', { name:'Contrôle poids W03', color:0x2f6f8f, h:1.5 });
+machine('packlist', 660, 455, 'v', { name:'Insertion bon de livraison', color:0x8f5a2f });
+machine('closeA', 515, 300, 'h', { name:'Fermeture auto 600×400', len:4.2, h:2.2, tunnel:true, color:0x2f7a4f });
+machine('closeB', 515, 400, 'h', { name:'Fermeture auto 400×300', len:4.2, h:2.2, tunnel:true, color:0x2f7a4f });
+machine('label', 370, 450, 'v', { name:'Imprimante étiquette transport', color:0x6b4fa0 });
+machine('scan', 760, 690, 'h', { name:'Scanner de tri', color:0x334455, h:1.5 });
+
+// poids : plateau
+{ const p = V(915, 380); const m = box(0.95, 0.06, 1.6, std(0x222a33), p.x, BELT_TOP + 0.005, p.y, scene); m.castShadow = false; }
+
+// Formeuses de cartons
+function caseFormer(px, py, rot) {
+  const g = new THREE.Group(), p = V(px, py);
+  g.position.set(p.x, 0, p.y); g.rotation.y = rot;
+  box(3.4, 2.4, 2.2, std(0x35577a), 0, 1.2, 0, g);
+  box(3.6, 0.2, 2.4, std(0xf2c230), 0, 2.5, 0, g);
+  box(1.2, 1.4, 1.6, std(0x9a7a55), -2.5, 0.7, 0, g); // magasin de flans
+  scene.add(g);
+}
+caseFormer(25, 250, 0);
+caseFormer(130, 300, -0.5);
+label('Formeuses automatiques', 80, 270, 4.5, 1.5, '#fff', 'rgba(40,60,120,.9)');
+// palettes de flans
+for (const [x, y] of [[50, 320], [150, 345], [60, 380]]) {
+  const p = V(x, y);
+  box(1.2, 0.15, 0.8, std(0x9c7b4f), p.x, 0.075, p.y, scene);
+  box(1.1, 0.9, 0.75, std(0xc49a6a), p.x, 0.6, p.y, scene);
+}
+
+// Stockage (racks navettes) en haut à droite
+{
+  const rackMat = std(0x8ea0b5, { metalness:0.5 }), beamMat = std(0xe67e22);
+  for (let i = 0; i < 10; i++) {
+    const p = V(1500 + i * 40, 40);
+    const g = new THREE.Group(); g.position.set(p.x, 0, p.y);
+    for (const dz of [-3.2, 3.2]) for (const dx of [-1.2, 1.2]) box(0.12, 8, 0.12, rackMat, dx, 4, dz, g);
+    for (let lv = 1; lv <= 8; lv++) {
+      box(0.1, 0.1, 6.5, beamMat, -1.2, lv, 0, g); box(0.1, 0.1, 6.5, beamMat, 1.2, lv, 0, g);
+      for (let k = -2; k <= 2; k++) if (Math.random() > 0.25)
+        box(0.9, 0.45, 0.6, std([0x2d6cdf, 0x2a9d8f, 0xe76f51][((i + lv + k) % 3 + 3) % 3]), 0, lv + 0.28, k * 1.2, g);
+    }
+    scene.add(g);
+  }
+  label('Stockage bacs (navettes)', 1680, 40, 10, 1.6);
+}
+
+// Stations GtP : poste opérateur
+const stationObj = [];
+const skin = std(0xe0b18f), vest = std(0xff7a1a), screenMat = new THREE.MeshStandardMaterial({ color:0x111, emissive:0x2a6fdb, emissiveIntensity:0.6 });
+STATIONS.forEach(s => {
+  const g = new THREE.Group(), p = V(s.xc - 50, 330);
+  g.position.set(p.x, 0, p.y);
+  box(1.0, 0.9, 1.8, std(0x4a5563), -1.05, 0.45, 0, g);           // établi
+  const tote = box(0.6, 0.35, 0.45, std(0x2d6cdf), -1.05, 1.08, -0.45, g); // bac source
+  box(0.05, 0.5, 0.7, screenMat, -1.5, 1.4, 0.45, g);            // écran
+  const body = box(0.45, 1.0, 0.35, vest, -1.95, 1.0, 0, g);      // opérateur
+  box(0.36, 0.55, 0.3, std(0x2b3440), -1.95, 0.28, 0, g);
+  const head = new THREE.Mesh(new THREE.SphereGeometry(0.17, 16, 12), skin); head.position.set(-1.95, 1.7, 0); g.add(head);
+  scene.add(g);
+  const lamp = new THREE.Mesh(new THREE.SphereGeometry(0.16, 16, 12), lampOff); lamp.position.set(-1.05, 2.2, 0.7); g.add(lamp);
+  machines['st' + s.name] = { g, lamp, until:0, err:false, tote, body };
+  stationObj.push({ ...s, load:0, picks:0, tote, body });
+  label(s.name, s.xc - 50, 300, 3.2, 1.3, '#fff', 'rgba(30,120,80,.92)');
+});
+label("5 stations Goods-to-Person", 1560, 500, 4, 1.6, '#fff', 'rgba(30,50,140,.92)');
+label('Zone fermeture cartons', 515, 250, 4, 1.6, '#fff', 'rgba(40,110,40,.92)');
+label('Palettisation expédition – 6 rampes + 1 erreur', 790, 650, 4, 1.6, '#fff', 'rgba(30,70,150,.92)');
+
+// Rampes : palettes
+const pallets = RAMPS.map(r => {
+  const p = r.end ? V(980, 1132) : V(812, r.y);
+  const g = new THREE.Group(); g.position.set(p.x, 0, p.y);
+  if (r.end) g.rotation.y = Math.PI / 2;
+  box(1.25, 0.15, 1.0, std(0x9c7b4f), 0, 0.075, 0, g);
+  scene.add(g);
+  label(r.name, r.end ? 1000 : 870, r.end ? 1110 : r.y, 2.2, 0.9, '#fff', r.err ? 'rgba(170,30,30,.92)' : 'rgba(30,70,150,.92)');
+  return { ...r, g, boxes:[], count:0, full:0 };
+});
+
+/* ---------- Textures colis ---------- */
+function canvasTex(w, h, draw) {
+  const c = document.createElement('canvas'); c.width = w; c.height = h;
+  draw(c.getContext('2d'), w, h);
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t;
+}
+const texOpen = canvasTex(128, 96, (g, w, h) => {
+  g.fillStyle = '#7a5530'; g.fillRect(0, 0, w, h);
+  g.fillStyle = '#4b3018'; g.fillRect(8, 8, w - 16, h - 16);
+});
+const texFilled = canvasTex(128, 96, (g, w, h) => {
+  g.fillStyle = '#7a5530'; g.fillRect(0, 0, w, h);
+  g.fillStyle = '#4b3018'; g.fillRect(8, 8, w - 16, h - 16);
+  const cols = ['#e63946', '#2a9d8f', '#f4a261', '#457b9d', '#e9c46a', '#ffffff'];
+  for (let i = 0; i < 7; i++) { g.fillStyle = cols[i % cols.length]; g.fillRect(12 + (i * 37) % 90, 12 + (i * 23) % 56, 26, 20); }
+});
+const texClosed = canvasTex(128, 96, (g, w, h) => {
+  g.fillStyle = '#c99a66'; g.fillRect(0, 0, w, h);
+  g.fillStyle = '#a77b4c'; g.fillRect(0, h / 2 - 1, w, 2);
+  g.fillStyle = 'rgba(230,210,170,.9)'; g.fillRect(0, h / 2 - 9, w, 18);
+});
+const texLabel = canvasTex(128, 96, (g, w, h) => {
+  g.fillStyle = '#fff'; g.fillRect(0, 0, w, h);
+  g.fillStyle = '#000';
+  for (let x = 10; x < w - 10; x += 3) if (Math.random() > 0.4) g.fillRect(x, 50, Math.random() > 0.5 ? 2 : 1, 36);
+  g.fillRect(10, 10, 70, 6); g.fillRect(10, 22, 50, 6); g.fillRect(10, 34, 80, 6);
+});
+const texBar = canvasTex(64, 32, (g, w, h) => {
+  g.fillStyle = '#fff'; g.fillRect(0, 0, w, h); g.fillStyle = '#000';
+  for (let x = 4; x < w - 4; x += 2) if (Math.random() > 0.45) g.fillRect(x, 4, 1, h - 8);
+});
+const M = {
+  body: std(0xc49a6a, { roughness:0.9, metalness:0 }),
+  bodyErr: std(0xd9645a, { roughness:0.9, metalness:0 }),
+  bodySel: std(0xffd27a, { roughness:0.8, metalness:0, emissive:0x553300 }),
+  open: new THREE.MeshStandardMaterial({ map:texOpen, roughness:1 }),
+  filled: new THREE.MeshStandardMaterial({ map:texFilled, roughness:1 }),
+  closed: new THREE.MeshStandardMaterial({ map:texClosed, roughness:0.9 }),
+  label: new THREE.MeshStandardMaterial({ map:texLabel, roughness:0.6 }),
+  bar: new THREE.MeshStandardMaterial({ map:texBar, roughness:0.6 }),
+};
+const SIZES = {
+  A: { L:0.62, W:0.42, H:0.40, lane:'A', name:'600×400' },
+  B: { L:0.42, W:0.32, H:0.30, lane:'B', name:'400×300' },
+};
+const geo = {
+  A: new THREE.BoxGeometry(SIZES.A.L, SIZES.A.H, SIZES.A.W),
+  B: new THREE.BoxGeometry(SIZES.B.L, SIZES.B.H, SIZES.B.W),
+  topA: new THREE.PlaneGeometry(SIZES.A.L * 0.98, SIZES.A.W * 0.98),
+  topB: new THREE.PlaneGeometry(SIZES.B.L * 0.98, SIZES.B.W * 0.98),
+  lab: new THREE.PlaneGeometry(0.2, 0.14),
+  bar: new THREE.PlaneGeometry(0.16, 0.08),
+};
+
+/* ---------- Routes ---------- */
+const routeCache = new Map();
+function getRoute(si, lane, ri) {
+  const key = `${si}|${lane}|${ri}`;
+  if (routeCache.has(key)) return routeCache.get(key);
+  const st = STATIONS[si], rp = RAMPS[ri];
+  const raw = [...infeedHead, ...stationEdge(st.xc), ...returnLine, ...(lane === 'A' ? laneA : laneB), ...outbound, ...rampTail(rp)];
+  const path = new Path(fillet(P(raw)));
+  const ev = (type, x, y, dur, mach) => ({ type, s: path.project(V(x, y)), dur, mach });
+  const events = [
+    ev('routing', 600, 200, 0.7, 'routing'),
+    ev('pick', st.xc - 50, 330, null, 'st' + st.name),
+    ev('weight', 915, 380, 0.9, 'weight'),
+    ev('packlist', 660, 455, 0.9, 'packlist'),
+    ev('close', 515, lane === 'A' ? 300 : 400, 2.2, lane === 'A' ? 'closeA' : 'closeB'),
+    ev('label', 370, 450, 1.0, 'label'),
+    ev('scan', 760, 690, 0.25, 'scan'),
+    { type:'pallet', s: path.len, dur:1.2 },
+  ].sort((a, b) => a.s - b.s);
+  const r = { path, events };
+  routeCache.set(key, r); return r;
+}
+
+/* ---------- Simulation ---------- */
+const STATUS = {
+  routing:'Étiquette de routage', pick:'Picking en station', weight:'Pesée', packlist:'Insertion bon de livraison',
+  close:'Fermeture du carton', label:'Impression étiquette transport', scan:'Lecture code-barres', pallet:'Palettisation'
+};
+const sim = {
+  t:0, running:true, speed:6, rate:24, pickTime:8, errPct:3, spawnAcc:0, nextId:1,
+  parcels:[], created:0, picked:0, shipped:0, errors:0, palletsFull:0, shipLog:[],
+};
+const SPEED = 1.6; // vitesse convoyeur (u/s)
+const parcelGroup = new THREE.Group(); scene.add(parcelGroup);
+let selected = null;
+
+function chooseStation() {
+  let best = 0;
+  stationObj.forEach((s, i) => { if (s.load < stationObj[best].load || (s.load === stationObj[best].load && Math.random() < 0.3)) best = i; });
+  return best;
+}
+
+function spawn() {
+  const start = V(60, 250);
+  for (const q of sim.parcels) if (Math.abs(q.x - start.x) + Math.abs(q.y - start.y) < 1.3) return false;
+  const size = Math.random() < 0.6 ? 'A' : 'B', sz = SIZES[size];
+  const si = chooseStation();
+  const isErr = Math.random() * 100 < sim.errPct;
+  const ri = isErr ? 5 : [0, 1, 2, 3, 4, 6][Math.floor(Math.random() * 6)];
+  const route = getRoute(si, sz.lane, ri);
+  const g = new THREE.Group();
+  const body = new THREE.Mesh(geo[size], M.body); body.position.y = sz.H / 2; body.castShadow = true; body.receiveShadow = true;
+  const top = new THREE.Mesh(size === 'A' ? geo.topA : geo.topB, M.open); top.rotation.x = -Math.PI / 2; top.position.y = sz.H + 0.003;
+  const lab = new THREE.Mesh(geo.lab, M.label); lab.rotation.x = -Math.PI / 2; lab.position.set(-sz.L * 0.18, sz.H + 0.006, 0); lab.visible = false;
+  const bar = new THREE.Mesh(geo.bar, M.bar); bar.position.set(0, sz.H * 0.6, sz.W / 2 + 0.003); bar.visible = false;
+  g.add(body, top, lab, bar);
+  parcelGroup.add(g);
+  const p = { id: sim.nextId++, size, sz, si, ri, isErr, route, s:0, ev:0, wait:0, cur:null, x:start.x, y:start.y, dx:1, dy:0,
+    o:{}, g, body, top, lab, bar, blocker:null, status:'Formage du carton', born: sim.t };
+  body.userData.parcel = p;
+  stationObj[si].load++;
+  sim.parcels.push(p); sim.created++;
+  place(p);
+  return true;
+}
+
+function place(p) {
+  p.route.path.sample(p.s, p.o);
+  p.x = p.o.x; p.y = p.o.y; p.dx = p.o.dx; p.dy = p.o.dy;
+  p.g.position.set(p.x, BELT_TOP, p.y);
+  p.g.rotation.y = -Math.atan2(p.dy, p.dx);
+}
+
+function startEvent(p, e) {
+  const dur = e.type === 'pick' ? sim.pickTime * (0.7 + Math.random() * 0.6) : e.dur;
+  p.wait = dur; p.cur = e; p.status = STATUS[e.type] || e.type;
+  const mc = e.mach && machines[e.mach];
+  if (mc) { mc.until = Math.max(mc.until, sim.t + dur); mc.err = e.type === 'weight' && p.isErr; }
+}
+
+function finishEvent(p, e) {
+  switch (e.type) {
+    case 'routing': p.bar.visible = true; break;
+    case 'pick': p.top.material = M.filled; stationObj[p.si].load--; stationObj[p.si].picks++; sim.picked++; break;
+    case 'weight': if (p.isErr) { p.body.material = M.bodyErr; sim.errors++; } break;
+    case 'close': p.top.material = M.closed; break;
+    case 'label': p.lab.visible = true; break;
+    case 'pallet': return palletize(p);
+  }
+  p.status = p.isErr && e.s > 0 && e.type !== 'routing' && e.type !== 'pick' ? 'Rejeté → rampe erreur' : 'En transport';
+  p.cur = null; p.ev++;
+}
+
+function palletize(p) {
+  const pal = pallets[p.ri];
+  const n = pal.boxes.length, layer = Math.floor(n / 6), k = n % 6;
+  const bx = new THREE.Mesh(geo[p.size], p.body.material);
+  bx.position.set(-0.4 + (k % 3) * 0.4, 0.15 + layer * 0.42 + p.sz.H / 2, -0.22 + Math.floor(k / 3) * 0.44);
+  bx.scale.set(0.39 / p.sz.L, 1, 0.42 / p.sz.W);
+  bx.castShadow = true; pal.g.add(bx); pal.boxes.push(bx);
+  pal.count++;
+  if (pal.boxes.length >= 24) { pal.boxes.forEach(b => pal.g.remove(b)); pal.boxes = []; pal.full++; sim.palletsFull++; }
+  sim.shipped++; sim.shipLog.push(sim.t);
+  removeParcel(p);
+}
+
+function removeParcel(p) {
+  parcelGroup.remove(p.g);
+  p.dead = true;
+  if (selected === p) selectParcel(null);
+}
+
+const grid = new Map();
+const cellKey = (x, y) => (Math.floor(x / 2) + 500) * 10000 + (Math.floor(y / 2) + 500);
+function buildGrid() {
+  grid.clear();
+  for (const p of sim.parcels) {
+    const k = cellKey(p.x, p.y);
+    let a = grid.get(k); if (!a) grid.set(k, a = []); a.push(p);
+  }
+}
+function freeAhead(p) {
+  let limit = Infinity, blocker = null;
+  const cx = Math.floor(p.x / 2), cy = Math.floor(p.y / 2);
+  for (let i = -1; i <= 1; i++) for (let j = -1; j <= 1; j++) {
+    const a = grid.get((cx + i + 500) * 10000 + (cy + j + 500)); if (!a) continue;
+    for (const q of a) {
+      if (q === p) continue;
+      const rx = q.x - p.x, ry = q.y - p.y;
+      const along = rx * p.dx + ry * p.dy;
+      if (along <= 0) continue;
+      const lat = Math.abs(-rx * p.dy + ry * p.dx);
+      if (lat > 0.55) continue;
+      if (q.dx * p.dx + q.dy * p.dy < 0.3) continue;
+      if (q.blocker === p && p.id < q.id) continue; // casse les interblocages
+      const gap = (p.sz.L + q.sz.L) / 2 + 0.22;
+      const free = along - gap;
+      if (free < limit) { limit = free; blocker = q; }
+    }
+  }
+  p.blocker = limit < 0.001 ? blocker : null;
+  return Math.max(0, limit);
+}
+
+function step(dt) {
+  sim.t += dt;
+  sim.spawnAcc += dt * sim.rate / 60;
+  if (sim.spawnAcc >= 1) { if (spawn()) sim.spawnAcc -= 1; else sim.spawnAcc = 1; }
+  buildGrid();
+  for (const p of sim.parcels) {
+    if (p.dead) continue;
+    if (p.cur) {
+      p.wait -= dt;
+      if (p.wait <= 0) finishEvent(p, p.cur);
+      continue;
+    }
+    let target = p.s + SPEED * dt;
+    const e = p.route.events[p.ev];
+    let hit = false;
+    if (e && target >= e.s) { target = e.s; hit = true; }
+    const free = freeAhead(p);
+    if (target - p.s > free) { target = p.s + free; hit = false; }
+    p.s = target;
+    if (p.s < 2) p.status = 'Formage du carton'; else if (!p.cur && p.status === 'Formage du carton') p.status = 'En transport';
+    place(p);
+    if (hit) { startEvent(p, e); if (p.wait <= 0) finishEvent(p, e); }
+  }
+  sim.parcels = sim.parcels.filter(p => !p.dead);
+}
+
+/* Bacs sur la boucle jaune (décor animé) */
+const totePath = new Path(toteLoopPts);
+const totes = [];
+for (let i = 0; i < 26; i++) {
+  const m = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.32, 0.42), std([0x2d6cdf, 0x2a9d8f, 0xe76f51][i % 3]));
+  m.castShadow = true; scene.add(m);
+  totes.push({ m, s: i * totePath.len / 26, o:{} });
+}
+function stepTotes(dt) {
+  for (const t of totes) {
+    t.s = (t.s + SPEED * dt) % totePath.len;
+    totePath.sample(t.s, t.o);
+    t.m.position.set(t.o.x, BELT_TOP + 0.16, t.o.y);
+    t.m.rotation.y = -Math.atan2(t.o.dy, t.o.dx);
+  }
+}
+
+/* ---------- Interaction ---------- */
+const $ = id => document.getElementById(id);
+const marker = new THREE.Mesh(new THREE.ConeGeometry(0.25, 0.6, 16), new THREE.MeshStandardMaterial({ color:0xff3355, emissive:0xaa1133 }));
+marker.rotation.x = Math.PI; marker.visible = false; scene.add(marker);
+let follow = false;
+
+function selectParcel(p) {
+  if (selected && !selected.dead && selected.body.material === M.bodySel) selected.body.material = selected.prevMat;
+  selected = p;
+  marker.visible = !!p;
+  $('info').style.display = p ? 'block' : 'none';
+  if (p) { p.prevMat = p.body.material; follow = true; }
+  else follow = false;
+}
+
+const ray = new THREE.Raycaster(), mouse = new THREE.Vector2();
+let downAt = null;
+renderer.domElement.addEventListener('pointerdown', e => downAt = [e.clientX, e.clientY]);
+renderer.domElement.addEventListener('pointerup', e => {
+  if (!downAt || Math.hypot(e.clientX - downAt[0], e.clientY - downAt[1]) > 5) return;
+  mouse.set(e.clientX / innerWidth * 2 - 1, -(e.clientY / innerHeight) * 2 + 1);
+  ray.setFromCamera(mouse, camera);
+  const hits = ray.intersectObjects(sim.parcels.map(p => p.body), false);
+  if (hits.length) {
+    const p = hits[0].object.userData.parcel;
+    selectParcel(p);
+    flyTo(new THREE.Vector3(p.x, 0, p.y), 14);
+  }
+});
+$('infoClose').onclick = () => selectParcel(null);
+$('followRnd').onclick = () => {
+  const c = sim.parcels.filter(p => p.s > 3);
+  if (!c.length) return;
+  const p = c[Math.floor(Math.random() * c.length)];
+  selectParcel(p); flyTo(new THREE.Vector3(p.x, 0, p.y), 14);
+};
+
+let fly = null;
+function flyTo(target, dist, dir = new THREE.Vector3(0.35, 0.8, 0.7)) {
+  const t = target.clone();
+  const pos = t.clone().addScaledVector(dir.clone().normalize(), dist);
+  fly = { t0: performance.now(), from:{ p:camera.position.clone(), t:controls.target.clone() }, to:{ p:pos, t }, dur:900 };
+}
+const CAMS = {
+  all:  () => flyTo(new THREE.Vector3(0, 0, 5), 125, new THREE.Vector3(0, 0.8, 0.6)),
+  gtp:  () => flyTo(new THREE.Vector3(V(1560, 330).x, 0, V(1560, 330).y), 45),
+  close:() => flyTo(new THREE.Vector3(V(520, 380).x, 0, V(520, 380).y), 35),
+  disp: () => flyTo(new THREE.Vector3(V(870, 880).x, 0, V(870, 880).y), 50),
+};
+document.querySelectorAll('[data-cam]').forEach(b => b.onclick = () => { selectParcel(null); CAMS[b.dataset.cam](); });
+
+const bindRange = (id, out, fmt, set) => { const el = $(id); const f = () => { set(+el.value); $(out).textContent = fmt(+el.value); }; el.oninput = f; f(); };
+bindRange('speed', 'speedV', v => '×' + v, v => sim.speed = v);
+bindRange('rate', 'rateV', v => v, v => sim.rate = v);
+bindRange('pick', 'pickV', v => v, v => sim.pickTime = v);
+bindRange('errp', 'errV', v => v, v => sim.errPct = v);
+$('play').onclick = e => { sim.running = !sim.running; e.target.textContent = sim.running ? '⏸ Pause' : '▶ Lecture'; e.target.classList.toggle('on', sim.running); };
+$('reset').onclick = () => {
+  sim.parcels.forEach(p => parcelGroup.remove(p.g));
+  Object.assign(sim, { t:0, spawnAcc:0, parcels:[], created:0, picked:0, shipped:0, errors:0, palletsFull:0, shipLog:[] });
+  stationObj.forEach(s => { s.load = 0; s.picks = 0; });
+  pallets.forEach(p => { p.boxes.forEach(b => p.g.remove(b)); p.boxes = []; p.count = 0; p.full = 0; });
+  selectParcel(null);
+};
+$('labels').onclick = e => { const on = e.target.classList.toggle('on'); labelSprites.forEach(s => s.visible = on); };
+$('autorot').onclick = e => { controls.autoRotate = e.target.classList.toggle('on'); controls.autoRotateSpeed = 0.6; };
+$('toggle').onclick = () => $('ctrl').classList.toggle('open');
+
+/* ---------- Statistiques ---------- */
+function fmtTime(t) { t = Math.floor(t); return [t / 3600 | 0, (t / 60 | 0) % 60, t % 60].map(n => String(n).padStart(2, '0')).join(':'); }
+let lastUI = 0;
+function updateUI() {
+  $('clock').textContent = fmtTime(sim.t);
+  $('kCreated').textContent = sim.created;
+  $('kPicked').textContent = sim.picked;
+  $('kShipped').textContent = sim.shipped;
+  $('kInSys').textContent = sim.parcels.length;
+  $('kErr').textContent = sim.errors;
+  $('kPal').textContent = sim.palletsFull;
+  const win = Math.min(600, sim.t);
+  const recent = sim.shipLog.filter(t => t > sim.t - 600).length;
+  $('kRate').textContent = win > 30 ? Math.round(recent / win * 3600) : '–';
+  const maxP = Math.max(1, ...stationObj.map(s => s.picks));
+  $('tStations').innerHTML = [...stationObj].reverse().map(s =>
+    `<tr><td>${s.name} <span style="color:var(--muted)">(file ${s.load})</span><div class="bar"><i style="width:${s.picks / maxP * 100}%"></i></div></td><td>${s.picks}</td></tr>`).join('');
+  $('tRamps').innerHTML = pallets.map(p =>
+    `<tr><td style="${p.err ? 'color:var(--err)' : ''}">${p.name} <span style="color:var(--muted)">(${p.boxes.length}/24)</span></td><td>${p.count}</td></tr>`).join('');
+  if (selected && !selected.dead) {
+    const p = selected;
+    $('iTitle').textContent = `Colis #${String(p.id).padStart(5, '0')}`;
+    $('iBody').innerHTML = `
+      <div>Format : <b>${p.sz.name}</b></div>
+      <div>Station : <b>${STATIONS[p.si].name}</b> · Destination : <b style="${p.isErr ? 'color:var(--err)' : ''}">${RAMPS[p.ri].name}</b></div>
+      <div>Statut : <b>${p.status}</b></div>
+      <div>Temps dans le système : <b>${fmtTime(sim.t - p.born)}</b></div>
+      <div class="bar" style="margin-top:6px"><i style="width:${(p.s / p.route.path.len * 100).toFixed(1)}%"></i></div>`;
+  }
+}
+
+/* ---------- Boucle ---------- */
+const clock = new THREE.Clock();
+CAMS.all();
+function animate() {
+  requestAnimationFrame(animate);
+  const rdt = Math.min(clock.getDelta(), 0.05);
+  if (sim.running) {
+    let simDt = rdt * sim.speed;
+    const n = Math.ceil(simDt / 0.08);
+    for (let i = 0; i < n; i++) { step(simDt / n); stepTotes(simDt / n); }
+  }
+  // machines
+  for (const k in machines) {
+    const mc = machines[k], active = mc.until > sim.t;
+    mc.lamp.material = active ? (mc.err ? lampErr : lampOn) : lampOff;
+    if (mc.tote) { mc.tote.position.y = 1.08 + (active ? Math.abs(Math.sin(sim.t * 4)) * 0.08 : 0);
+                   mc.body.rotation.y = active ? Math.sin(sim.t * 3) * 0.35 : 0; }
+  }
+  // fly / follow
+  if (fly) {
+    const u = Math.min(1, (performance.now() - fly.t0) / fly.dur), e = u < 0.5 ? 2 * u * u : 1 - Math.pow(-2 * u + 2, 2) / 2;
+    camera.position.lerpVectors(fly.from.p, fly.to.p, e);
+    controls.target.lerpVectors(fly.from.t, fly.to.t, e);
+    if (u >= 1) fly = null;
+  } else if (follow && selected && !selected.dead) {
+    const tgt = new THREE.Vector3(selected.x, BELT_TOP, selected.y);
+    const d = tgt.clone().sub(controls.target).multiplyScalar(0.12);
+    controls.target.add(d); camera.position.add(d);
+  }
+  if (selected && !selected.dead) {
+    marker.position.set(selected.x, BELT_TOP + selected.sz.H + 0.7 + Math.sin(performance.now() / 200) * 0.1, selected.y);
+  }
+  controls.update();
+  const now = performance.now();
+  if (now - lastUI > 250) { lastUI = now; updateUI(); }
+  renderer.render(scene, camera);
+}
+animate();
+
+addEventListener('resize', () => {
+  camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth, innerHeight);
+});
+window.__sim = sim; window.__step = step;
+</script>
+</body>
+</html>
