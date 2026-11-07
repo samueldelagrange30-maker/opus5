@@ -232,12 +232,25 @@ class World:
                 t[ok] = ts[ok]
                 kind[ok] = SIGN
                 aux[ok] = bi
-        door = self.state.get('door') if with_door else None
-        dres = None
-        if door is not None:
-            dres = self._door_hit(O, D, t, kind, door)
+        doors = []
+        if with_door:
+            if self.state.get('door') is not None:
+                doors.append(self.state['door'])
+            doors += list(self.state.get('doors', []))
+        dlist = []
+        did = np.full(n, -1, dtype=np.int16)
+        for i, door in enumerate(doors):
+            if not door.get('visible', True):
+                continue
+            t_b = t.copy()
+            k_b = kind.copy()
+            res = self._door_hit(O, D, t, kind, door)
+            ch = (t != t_b) | (kind != k_b)
+            did[ch] = len(dlist)
+            dlist.append((door, res))
         P = O[None, :] + D * np.where(np.isfinite(t), t, 0)[:, None]
-        return dict(t=t, kind=kind, aux=aux, P=P, D=D, door=dres)
+        return dict(t=t, kind=kind, aux=aux, P=P, D=D, door=dlist[0][1] if dlist else None,
+                    doors=dlist, did=did)
 
     # --------------------------------------------------------------- door
     def door_shape(self, u, v, door, grow=0.0):
@@ -358,8 +371,9 @@ class World:
         if len(m):
             emi[m] = self._sky(D[m], styleB)
         # ---------------- door
-        if hit.get('door') is not None:
-            self._door_shade(hit, alb, emi, nrm)
+        if hit.get('doors'):
+            for i, (door, dres) in enumerate(hit['doors']):
+                self._door_shade(hit, alb, emi, nrm, door, dres, hit['did'] == i)
 
         # ---------------- lighting
         amb = st.get('ambient', np.array([0.10, 0.08, 0.17]) if not styleB else np.array([0.07, 0.09, 0.10]))
@@ -437,7 +451,7 @@ class World:
                 kind[ok] = SIGN
                 aux[ok] = bi
         P = O + D * np.where(np.isfinite(t), t, 0)[:, None]
-        return dict(t=t, kind=kind, aux=aux, P=P, D=D, door=None)
+        return dict(t=t, kind=kind, aux=aux, P=P, D=D, door=None, doors=[])
 
     # --------------------------------------------------------------- facades
     def _wall(self, side, Z, Y, fp, styleB):
@@ -858,14 +872,13 @@ class World:
         return col * st.get('sky_level', 1.0)
 
     # --------------------------------------------------------------- door shade
-    def _door_shade(self, hit, alb, emi, nrm):
+    def _door_shade(self, hit, alb, emi, nrm, door, dres, sel):
         st = self.state
-        door = st['door']
-        dres = hit['door']
         kind = hit['kind']
         tt = door['t']
         glowl = door.get('glow', 1.0)
-        mf = np.nonzero(kind == DOOR_FRAME)[0]
+        tint = np.asarray(door.get('tint', (1.0, 1.0, 1.0)), float)
+        mf = np.nonzero((kind == DOOR_FRAME) & sel)[0]
         if len(mf):
             u = dres['u'][mf]
             v = dres['v'][mf]
@@ -880,8 +893,8 @@ class World:
             outer, _, _ = self.door_shape(u, v, door, grow=0.12)
             neon = inner | ~outer
             e = np.where(neon[:, None], cc * (1.2 + 0.8 * glowl), cc * 0.15 * glowl)
-            emi[mf] = e
-        mp = np.nonzero(kind == DOOR_PANEL)[0]
+            emi[mf] = e * tint
+        mp = np.nonzero((kind == DOOR_PANEL) & sel)[0]
         if len(mp):
             a = dres['pa'][mp]
             v = dres['pv'][mp]
@@ -906,4 +919,4 @@ class World:
             back = ~dres['front'][mp]
             e[back] *= 0.25
             alb[mp] = 0.0
-            emi[mp] = e * glowl * (1 + door.get('white', 0.0) * 2) + door.get('white', 0.0) * 1.5
+            emi[mp] = (e * glowl * (1 + door.get('white', 0.0) * 2) + door.get('white', 0.0) * 1.5) * tint

@@ -242,7 +242,8 @@ def draw_character(ctx, pose, pos, yaw, face=None, head_look=(0, 0), rim=None, g
     # horizontal scale from distance, vertical from projected height
     ppu = cam.f / zc
     theta = yaw - cam.yaw
-    spr = puppet.raster(pose, theta, ppu, ax, ay, roll=cam.roll, head_look=head_look, face=face)
+    spr = puppet.raster(pose, theta, ppu, ax, ay, roll=cam.roll, head_look=head_look, face=face,
+                        window=(-2, -2, W + 2, H + 2))
     if spr is None:
         return None
     x0, y0, gw, gh = spr['x0'], spr['y0'], spr['w'], spr['h']
@@ -474,6 +475,14 @@ def post(img, p):
         offy = (wa * np.sin(xs * 0.05 + t * 5.0) * 5).astype(int)
         yy2 = (np.arange(H)[:, None] - offy[None, :]).clip(0, H - 1)
         out = out[yy2, np.arange(W)[None, :]]
+    # whip-pan smear
+    hb = int(p.get('hblur', 0))
+    if hb > 0:
+        acc = np.zeros_like(out)
+        ks = range(-hb, hb + 1, max(1, hb // 6))
+        for k in ks:
+            acc += np.roll(out, k, axis=1)
+        out = acc / len(ks)
     # glitch slices
     g = p.get('glitch', 0.0)
     if g > 0:

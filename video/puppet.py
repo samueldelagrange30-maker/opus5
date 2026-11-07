@@ -266,8 +266,11 @@ def raster(pose, theta, ppu, ax, ay, roll=0.0, head_look=(0.0, 0.0), face=None,
     for k, col in MAT.items():
         alb[mb == k] = col
     hc = head_c
+    eyeM = np.zeros(n, bool)
+    irisM = np.zeros(n, bool)
     # ---- head details
     hm = (mb == SKIN) | (mb == HAIR)
+    hm_idx = np.nonzero(hm)[0]
     if hm.any():
         q = (Pl[hm] - hc) / hr
         yaw, pit = head_look
@@ -295,6 +298,8 @@ def raster(pose, theta, ppu, ax, ay, roll=0.0, head_look=(0.0, 0.0), face=None,
             a[eye] = hexc('eef3ff')
             ir = eye & ((ex - gx * 0.07) ** 2 + (ey - gy * 0.05) ** 2 < 0.085 ** 2)
             a[ir] = hexc('130d24')
+            eyeM[hm_idx[eye]] = True
+            irisM[hm_idx[ir]] = True
             if fd.get('glint', 0) > 0:
                 gl = eye & ((ex - gx * 0.07 + 0.03) ** 2 + (ey - gy * 0.05 - 0.035) ** 2 < 0.03 ** 2)
                 e[gl] = np.array([1.0, 0.15, 0.2]) * fd['glint']
@@ -328,6 +333,31 @@ def raster(pose, theta, ppu, ax, ay, roll=0.0, head_look=(0.0, 0.0), face=None,
         e[patch] = hexc('22d3d0') * 0.25
         alb[jm] = a
         emi[jm] = e
+    # ---- ghost (a hollow, colourless copy of the hero) and the draining effect
+    ghost = pose.get('ghost', 0.0)
+    drain = pose.get('drain')
+    gm = np.zeros(n, bool)
+    if ghost >= 0.5:
+        gm |= hit
+    if drain is not None:
+        gm |= hit & (Pl[:, 1] < drain)
+    if gm.any():
+        lum = alb[gm] @ np.array([0.3, 0.5, 0.2])
+        alb[gm] = (alb[gm] * 0.45 + lum[:, None] * 0.55) * 0.4 * np.array([0.8, 0.85, 1.05]) + 0.008
+        emi[gm] *= 0.15
+        ge = gm & eyeM
+        alb[ge] = np.array([0.03, 0.02, 0.04])
+        gi = gm & irisM
+        emi[gi] = np.array([1.0, 0.12, 0.18]) * pose.get('eye_lvl', 2.2)
+        alb[gi] = 0
+    if (face or {}).get('red_eyes', 0) > 0:
+        emi[irisM] = np.array([1.0, 0.12, 0.18]) * face['red_eyes']
+    if drain is not None and 0 < drain < Hh + 0.1:
+        band = hit & (np.abs(Pl[:, 1] - drain) < 0.028)
+        emi[band] = np.array([1.0, 0.3, 0.45]) * 1.8
+        sp = hit & (Pl[:, 1] > drain) & (Pl[:, 1] < drain + 0.25) & \
+            (hash2(np.floor(Pl[:, 0] * 60), np.floor(Pl[:, 1] * 60) + np.floor(drain * 300), 3) > 0.93)
+        emi[sp] = np.array([0.9, 0.95, 1.0]) * 1.2
     if pose.get('sil'):
         # glowing eyes
         hs = mb == SIL
