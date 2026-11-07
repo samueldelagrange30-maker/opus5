@@ -1,0 +1,6 @@
+__pycache__/
+.cache_lut.npy
+output/*.wav
+output/video_raw.mp4
+test_*.py
+sheet.py
