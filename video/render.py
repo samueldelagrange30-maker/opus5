@@ -25,7 +25,7 @@ def main(out_path, wav_path, workers=4, start=0, end=None, story_name='story'):
     end = NFRAMES if end is None else end
     if not os.path.exists(wav_path):
         import importlib
-        importlib.import_module('audio2' if story_name == 'story2' else 'audio').write_wav(wav_path)
+        importlib.import_module({'story2': 'audio2', 'story3': 'audio3'}.get(story_name, 'audio')).write_wav(wav_path)
     cmd = ['ffmpeg', '-y', '-loglevel', 'error',
            '-f', 'rawvideo', '-pix_fmt', 'rgb24', '-s', f'{W}x{H}', '-r', str(FPS), '-i', '-',
            '-i', wav_path,

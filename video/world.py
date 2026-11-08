@@ -216,7 +216,10 @@ class World:
                 tn = np.where(dz > 1e-7, (self.end_far - O[2]) / dz, np.inf)
                 xn = O[0] + tn * dx
                 yn = O[1] + tn * dy
-                ok = (tn < t) & (np.abs(xn) <= A) & (yn < 17.0) & (yn > -0.01)
+                if self.state.get('glass') is not None:
+                    ok = (tn < t) & (yn < 60.0)
+                else:
+                    ok = (tn < t) & (np.abs(xn) <= A) & (yn < 17.0) & (yn > -0.01)
                 t[ok] = tn[ok]
                 kind[ok] = END_F
             for bi, b in enumerate(self.blades):
@@ -344,6 +347,11 @@ class World:
             if len(m) == 0:
                 continue
             self._scr_uv = None
+            if kd == END_F and st.get('glass') is not None:
+                alb[m] = 0
+                emi[m] = self._glass(P[m, 0], P[m, 1], D[m], fp[m])
+                nrm[m] = (0, 0, nz)
+                continue
             a, e = self._endwall(P[m, 0], P[m, 1], fp[m], styleB, near=(kd == END_N))
             if depth == 0 and self._scr_uv is not None:
                 kk, uu, vv = self._scr_uv
@@ -516,7 +524,7 @@ class World:
             wcol[blind] *= 0.45
             stripes = (np.floor((fv[k] - 0.3) * sy[k] * 14) % 2 == 0) & (hsh2[k] < 0.2)
             wcol[stripes] *= 0.6
-            emi[k] = wcol * 0.9
+            emi[k] = wcol * 0.9 * st.get('win_level', 1.0)
             alb[k] = 0.0
             kd = np.nonzero(dark)[0]
             refl_streak = ((fu[kd] + fv[kd] * 0.6) % 1.0) < 0.18
@@ -545,7 +553,7 @@ class World:
             avg = base * 0.7
             alb[far] = alb[far] * detail[far, None] + avg[far] * (1 - detail[far, None])
             if not styleB:
-                emi[far] = emi[far] * detail[far, None] + (f['tint'][b][far] * f['lit'][b][far, None] * 0.18) * (1 - detail[far, None])
+                emi[far] = emi[far] * detail[far, None] + (f['tint'][b][far] * f['lit'][b][far, None] * 0.18 * st.get('win_level', 1.0)) * (1 - detail[far, None])
         # sills
         sill = upper & (fv >= 0.86) & (fv < 0.9) & (fu > 0.18) & (fu < 0.82) & (col_i >= 0) & (col_i < ncol)
         alb[sill] = alb[sill] * 1.8 + 0.03
@@ -581,7 +589,7 @@ class World:
                 glowv = (0.55 + 0.45 * (1 - (yy - 0.3) / 1.15))
                 e1 = sc * glowv[:, None] * 0.75
                 e1[shelf] *= 0.4
-                e[m1] = e1[m1]
+                e[m1] = e1[m1] * st.get('win_level', 1.0)
                 a[m1] = 0
             else:
                 plank = (np.floor(yy * 7 + np.floor(uu * 0.7)) % 2 == 0)
@@ -607,7 +615,7 @@ class World:
             a[m4] = np.array([0.08, 0.06, 0.1])
             m5 = (s == 2) & (np.abs(uu - ww * 0.5) < 0.3) & (yy > 1.52) & (yy < 1.68)
             if not styleB:
-                e[m5] = np.array([1.0, 0.85, 0.5]) * 0.9
+                e[m5] = np.array([1.0, 0.85, 0.5]) * 0.9 * st.get('win_level', 1.0)
             alb[k] = a
             emi[k] = e
         # roof cornice + neon trims
@@ -849,11 +857,11 @@ class World:
         at = 0.0
         da = np.abs(np.angle(np.exp(1j * (az - at))))
         etop = 0.205
-        mast = (da < 0.0035 + 0.006 * clamp((etop - el) / etop)) & (el < etop) & (el > 0)
+        mast = (da < 0.0035 + 0.006 * clamp((etop - el) / etop)) & (el < etop) & (el > 0) & (not st.get('no_mast'))
         lattice = mast & ((((el * 400).astype(int) + (az * 900).astype(int)) % 3) != 0)
         col[lattice] = np.array([0.02, 0.015, 0.04])
         tl = st.get('tower', 0.0)
-        bulb = (da < 0.005) & (np.abs(el - (etop + 0.004)) < 0.005)
+        bulb = (da < 0.005) & (np.abs(el - (etop + 0.004)) < 0.005) & (not st.get('no_mast'))
         col[bulb] = np.array([1.0, 0.1, 0.12]) * (0.25 + 1.6 * tl) if not styleB else np.array([0.2, 0.05, 0.05])
         # stars in the dead city
         if styleB:
@@ -870,6 +878,43 @@ class World:
             bolt = (np.abs(az - xb) < 0.004) & (el > 0.08) & (el < 0.6)
             col[bolt] = np.array([1.0, 1.0, 1.0]) * (1 + lb)
         return col * st.get('sky_level', 1.0)
+
+    # --------------------------------------------------------------- the glass at the end of the world
+    def _glass(self, X, Y, D, fp):
+        """The end of the street is a pane of glass: the screen, seen from inside.
+        Behind it: the darkness of a room and the face of whoever is watching."""
+        g = self.state['glass']
+        rev = g.get('reveal', 0.0)
+        sky = self._sky(D, False)
+        col = sky
+        if rev > 0 or g.get('face', 0) > 0:
+            face = face_layer(D, g)
+            col = sky * (1 - rev) + face * rev
+            sheen = (((X * 0.35 + Y * 0.22) % 1.0) < 0.035) & (rev > 0)
+            col[sheen] += 0.05 * rev
+            # camera notch around the red light
+            yl = g.get('light_y', 14.0)
+            notch = (np.abs(X) < 1.5) & (np.abs(Y - yl) < 0.5)
+            notch &= ((np.maximum(np.abs(X) - 1.0, 0) ** 2 + (Y - yl) ** 2) < 0.25)
+            col[notch] = col[notch] * (1 - rev) + np.array([0.004, 0.004, 0.008]) * rev
+        # the red light itself (camera indicator)
+        yl = g.get('light_y', 14.0)
+        d = np.hypot(X, Y - yl)
+        lv = g.get('light', 1.0)
+        core = d < 0.22 + 0.004 * fp
+        col[core] = np.array([1.0, 0.1, 0.12]) * (0.25 + 1.8 * lv)
+        halo = (d < 0.6) & ~core
+        col[halo] += np.array([0.5, 0.03, 0.05]) * lv * (1 - d[halo, None] / 0.6)
+        # ripples from a hand pressed against it
+        for (rx, ry, age) in g.get('ripples', []):
+            r = np.hypot(X - rx, Y - ry)
+            for k in range(3):
+                rad = age * 1.6 - k * 0.35
+                if rad <= 0:
+                    continue
+                ring = np.abs(r - rad) < 0.035 + 0.01 * k
+                col[ring] += np.array([0.35, 0.9, 1.0]) * max(0.0, 1 - age / 1.2) * (1 - 0.25 * k)
+        return col * g.get('level', 1.0)
 
     # --------------------------------------------------------------- door shade
     def _door_shade(self, hit, alb, emi, nrm, door, dres, sel):
@@ -920,3 +965,48 @@ class World:
             e[back] *= 0.25
             alb[mp] = 0.0
             emi[mp] = (e * glowl * (1 + door.get('white', 0.0) * 2) + door.get('white', 0.0) * 1.5) * tint
+
+
+
+def face_layer(D, g):
+    """A colossal face beyond the glass (direction space), lit from below by a
+    screen.  Deliberately anonymous: anyone watching."""
+    n = len(D)
+    el = np.arcsin(clamp(D[:, 1], -1, 1))
+    az = np.arctan2(D[:, 0], D[:, 2])
+    s = g.get('scale', 1.0)
+    u = az / s
+    v = (el - g.get('el0', 0.47)) / s
+    lvl = g.get('face', 0.0)
+    blink = g.get('blink', 0.0)
+    col = np.tile(np.array([0.006, 0.007, 0.014]), (n, 1))
+    # faint room glow
+    col += np.array([0.01, 0.025, 0.035])[None] * clamp(1 - np.hypot(u, v + 0.3) / 1.4)[:, None] * lvl
+    head = (u / 0.36) ** 2 + ((v - 0.05) / 0.46) ** 2 < 1
+    neck = (np.abs(u) < 0.13) & (v < -0.3) & (v > -0.62)
+    shoulders = (u / 0.95) ** 2 + ((v + 0.92) / 0.42) ** 2 < 1
+    body = head | neck | shoulders
+    light = lvl * clamp(0.95 - (v + 0.45) * 0.75) * clamp(1 - np.abs(u) / 0.42) ** 0.6
+    skin = np.array([0.03, 0.045, 0.06]) + np.array([0.28, 0.62, 0.78]) * light[:, None]
+    col[body] = skin[body]
+    hair = head & ((v > 0.27 + 0.05 * np.cos(u * 11)) | ((np.abs(u) > 0.27) & (v > -0.12)))
+    col[hair] = np.array([0.01, 0.012, 0.02]) + np.array([0.04, 0.09, 0.12]) * light[hair, None] * 0.4
+    shirt = shoulders & ~neck & (v < -0.55)
+    col[shirt] = np.array([0.015, 0.02, 0.035]) + np.array([0.05, 0.12, 0.16]) * light[shirt, None]
+    for sgn in (-1, 1):
+        ex = u - sgn * 0.13
+        ey = v - 0.07
+        eh = 0.03 * (1 - blink) + 0.002
+        eye = head & ((ex / 0.075) ** 2 + (ey / eh) ** 2 < 1)
+        col[eye] = np.array([0.35, 0.5, 0.55]) * (0.3 + 0.7 * lvl)
+        iris = eye & (ex ** 2 + (ey / 1.0) ** 2 < 0.024 ** 2)
+        col[iris] = np.array([0.02, 0.025, 0.03])
+        refl = iris & (np.abs(ex - 0.005) < 0.0065) & (np.abs(ey + 0.002) < 0.011)
+        col[refl] = np.array([0.75, 1.0, 1.0]) * (0.4 + 1.2 * lvl)
+        brow = head & (((ex) / 0.09) ** 2 + ((v - 0.135) / 0.014) ** 2 < 1)
+        col[brow] = np.array([0.01, 0.012, 0.02])
+    nose = head & (np.abs(u + 0.012 * np.sign(u)) < 0.012) & (v > -0.14) & (v < 0.03)
+    col[nose] *= 0.7
+    mouth = head & (np.abs(u) < 0.08) & (np.abs(v + 0.23) < 0.009)
+    col[mouth] = np.array([0.02, 0.02, 0.03])
+    return col

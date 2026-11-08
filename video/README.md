@@ -6,6 +6,7 @@ générée par code : aucun asset externe, aucun watermark, aucun logo.
 Fichiers finaux :
 - Partie 1 : `output/la_porte_tiktok_9x16.mp4`
 - Partie 2 : `output/la_porte_partie2_tiktok_9x16.mp4`
+- Partie 3 : `output/la_porte_partie3_tiktok_9x16.mp4`
 
 ## Rendu
 
@@ -16,6 +17,9 @@ python3 render.py output/la_porte_tiktok_9x16.mp4 output/soundtrack.wav
 # partie 2
 python3 audio2.py output/soundtrack2.wav
 python3 render.py output/la_porte_partie2_tiktok_9x16.mp4 output/soundtrack2.wav story2
+# partie 3
+python3 audio3.py output/soundtrack3.wav
+python3 render.py output/la_porte_partie3_tiktok_9x16.mp4 output/soundtrack3.wav story3
 ```
 
 L'image est calculée en 270×480 (vrais pixels) puis agrandie ×4 au plus proche
@@ -51,6 +55,30 @@ l'œil brodé dans le dos de chaque copie ; les carillons descendent là où ils
 montaient dans la partie 1 ; le point rouge de la visière bat toujours au
 rythme de la lumière rouge du début.
 
+## Partie 3 — « La lumière rouge »
+
+Mêmes paramètres que les parties 1 et 2 (68 s, 9:16, 5 actes, 140 BPM dans
+l'action, silences, boucle parfaite), en la mineur avec un leitmotiv de 4 notes
+(le « thème de la lumière rouge ») qu'on entend dans les bips, les lampadaires,
+le lead et la cloche finale.
+
+| Temps | Scène | Ce qui se passe |
+|---|---|---|
+| 0–5,5 s | 1. Accroche | La rue est vide ; il entre dans le cadre et fixe la lumière rouge. « Depuis le début, une lumière rouge clignotait au loin. » |
+| 5,5–17 s | 2. Mystère | Il marche vers elle et ignore la porte qui s'entrouvre ; la lumière recule à chaque pas. Ses copies sur les toits. « Il a ignoré la porte… mais la lumière ne se rapprochait jamais. » |
+| 17–34 s | 3. Tension | Tout s'éteint ; une piste de lampadaires s'allume vers la lumière, une copie sous chacun. Elles se tournent toutes vers nous. « Et toutes ses copies… regardaient dans la même direction. » |
+| 34–54,6 s | 4. Accélération | Sprint à 140 BPM, l'écran se désagrège en blocs, flashs des parties 1 et 2. Au bout : une vitre, et derrière, un visage géant éclairé par un écran. La lumière rouge était le voyant de sa caméra. « Au bout de la rue… il n'y avait que toi. » |
+| 54,6–68 s | 5. Révélation | On passe de l'autre côté de la vitre — notre écran. Il frappe : l'écran se fissure, sa main traverse. Puis la rue est vide. « Il est sorti… ne te retourne pas. » La boucle recommence quand il rentre dans le cadre. |
+
+Améliorations : éclaboussures de pluie au sol, respiration des personnages au
+repos, plan latéral façon jeu de plateforme, désagrégation de l'image en blocs,
+mixage plus fort sans saturation.
+
+Détails cachés de la partie 3 : le visage apparaît deux images pendant un
+éclair à 2,4 s ; le pylône radio a disparu (la lumière n'était pas sur un
+pylône) ; l'encoche de caméra autour de la lumière rouge ; le reflet du héros
+dans la flaque en bas de l'image finale… et un pas, derrière, à 61,6 s.
+
 ## Détails cachés (partie 1)
 
 - Une silhouette minuscule au fond de la rue dès la scène 1 (1,6–3,4 s).
@@ -78,7 +106,7 @@ que le début : la boucle est aussi continue à l'oreille.
 - `puppet.py` — personnages 3D rendus directement en pixels (ombrage cel, contours).
 - `engine.py` — composition : lumières, faisceaux volumétriques, brouillard, pluie, bloom, effets.
 - `timeline.py` — tous les repères temporels et la batterie, partagés image/son.
-- `story.py` / `story2.py` — les plans des 5 scènes (partie 1 / partie 2).
-- `timeline2.py` — repères de la partie 2.
-- `audio.py` / `audio2.py` — les bandes-son.
+- `story.py` / `story2.py` / `story3.py` — les plans des 5 scènes de chaque partie.
+- `timeline2.py` / `timeline3.py` — repères des parties 2 et 3.
+- `audio.py` / `audio2.py` / `audio3.py` — les bandes-son.
 - `render.py` — rendu parallèle + encodage ffmpeg.

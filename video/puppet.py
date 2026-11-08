@@ -50,7 +50,8 @@ def build(p):
     crouch = p.get('crouch', 0.0)
     pelvis = np.array([0.0, 0.95 * s + bob - crouch * 0.12, 0.0])
     up = rx(np.array([0, 1.0, 0]), lean)
-    chest = pelvis + up * 0.36 * s
+    br = 0.007 * np.sin(p['breath']) if 'breath' in p else 0.0
+    chest = pelvis + up * (0.36 * s + br)
     neck = chest + up * 0.16 * s
     shrug = p.get('shrug', 0.0)
     head_c = neck + np.array([0, 0.13 * s, 0.015 * s]) + up * 0.0

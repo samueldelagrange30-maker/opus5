@@ -427,10 +427,21 @@ def rain(ctx, t, amount=1.0, cam_dx=0.0):
     ctx.col += acc[..., None] * (0.35 + 1.6 * lum[..., None]) * np.array([0.7, 0.8, 1.0]) * amount
 
 
-def rain_fast(ctx, t, amount=1.0):
-    """Vectorised rain streaks."""
+def rain_fast(ctx, t, amount=1.0, splash=False):
+    """Vectorised rain streaks (+ optional splashes on the ground)."""
     if amount <= 0:
         return
+    if splash:
+        rng = np.random.default_rng((int(round(t * 30)) + 100000) % 1000003)
+        ys = rng.integers(int(H * 0.55), H - 2, 260)
+        xs = rng.integers(1, W - 1, 260)
+        ok = (ctx.kind[ys, xs] == FLOOR) & (ctx.zc[ys, xs] < 14)
+        lum0 = ctx.col.mean(axis=2)
+        for y_, x_ in zip(ys[ok], xs[ok]):
+            b = (0.12 + 0.9 * lum0[y_, x_]) * np.array([0.75, 0.85, 1.0])
+            ctx.col[y_, x_] += b
+            ctx.col[y_ - 1, x_ - 1] += b * 0.6
+            ctx.col[y_ - 1, x_ + 1] += b * 0.6
     lum = ctx.col.mean(axis=2)
     n = int(len(_DROPS['x']) * amount)
     layer = _DROPS['layer'][:n]
@@ -475,6 +486,25 @@ def post(img, p):
         offy = (wa * np.sin(xs * 0.05 + t * 5.0) * 5).astype(int)
         yy2 = (np.arange(H)[:, None] - offy[None, :]).clip(0, H - 1)
         out = out[yy2, np.arange(W)[None, :]]
+    # the world falling apart in pixel blocks
+    cr = p.get('crumble')
+    if cr:
+        out = out.copy()
+        void = np.array([0.01, 0.012, 0.03])
+        for (bx, by, bw, bh, t0, spd) in cr['blocks']:
+            age = cr['t'] - t0
+            if age <= 0:
+                continue
+            off = int(spd * age * age)
+            src = out[by:by + bh, bx:bx + bw].copy()
+            out[by:by + bh, bx:bx + bw] = void
+            gy = by + np.arange(bh)
+            grid = ((gy % 6) == 0)[:, None] | ((np.arange(bx, bx + bw) % 6) == 0)[None, :]
+            out[by:by + bh, bx:bx + bw][grid] = np.array([0.05, 0.12, 0.2])
+            y0 = by + off
+            if y0 < H:
+                hh = min(bh, H - y0)
+                out[y0:y0 + hh, bx:bx + bw] = src[:hh]
     # whip-pan smear
     hb = int(p.get('hblur', 0))
     if hb > 0:
