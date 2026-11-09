@@ -160,6 +160,12 @@
   FL.convH = Object.assign({}, FL.z, { id: 'convH', label: 'Hauteur du convoyeur de sortie', group: 'Stockage à navettes', help: 'Hauteur (Z) du dessus des rouleaux du collecteur, mesurée depuis le sol. Les tours restent posées au sol.' });
   fld('returnOffset', 'Écart de la ligne de retour', 'number', { group: 'Stockage à navettes', unit: 'mm', min: 700, step: 50 });
   fld('endLength', 'Longueur du convoyeur de sortie', 'number', { group: 'Stockage à navettes', unit: 'mm', min: 300, step: 50 });
+  // --- Murs
+  fld('baseH', 'Hauteur du soubassement béton', 'number', { group: 'Mur', unit: 'mm', min: 0, step: 50 });
+  fld('autoOpenings', 'Ouvertures automatiques (convoyeurs, objets)', 'bool', { group: 'Mur' });
+  fld('clearance', 'Jeu autour des passages', 'number', { group: 'Mur', unit: 'mm', min: 0, max: 2000, step: 10 });
+  fld('passH', 'Hauteur libre au-dessus des convoyeurs', 'number', { group: 'Mur', unit: 'mm', min: 200, step: 50 });
+  fld('doors', 'Portes / ouvertures manuelles', 'textarea', { group: 'Mur', help: 'Une ligne par ouverture : centre ; largeur ; hauteur [; hauteur du bas] en mm, mesurés depuis le début du mur.\nExemple : 5000;4000;4500 (porte sectionnelle) ou 12000;1000;2100 (porte piétonne).' });
   fld('color', 'Couleur', 'color', { group: 'Apparence', live: true });
   fld('note', 'Commentaire', 'textarea', { group: 'Apparence' });
 
@@ -384,6 +390,14 @@
     }
   };
 
+  /* ---------------- Mur d'entrepôt ---------------- */
+  T.wall = {
+    label: 'Mur d\'entrepôt', cat: 'Bâtiment', conveyor: false, floor: true,
+    defaults: { length: 10000, height: 8000, thickness: 200, baseH: 1200, autoOpenings: true, clearance: 150, passH: 900, doors: '', color: '#c9ced6', note: '' },
+    fields: ['name', 'x', 'y', 'zBase', 'rot', 'length', 'height', 'thickness', 'baseH', 'autoOpenings', 'clearance', 'passH', 'doors', 'color', 'note'],
+    build: () => ({ tracks: {}, ports: [], diverts: [] })
+  };
+
   T.guide = {
     label: 'Guide latéral', cat: 'Équipements', conveyor: false,
     defaults: { length: 2000, height: 100, thickness: 20, color: '#bdc3c7', note: '' },
@@ -442,6 +456,7 @@
         return { L: p.bays * p.bayLength + 80, W: rows * p.depth + (rows - 1) * 200, H: Types.rackHeight(p) };
       }
       if (el.type === 'mezzanine') return { L: p.length, W: p.width, H: p.deckH + (p.railH || 0) };
+      if (el.type === 'wall') return { L: p.length, W: p.thickness, H: p.height };
       return { L: p.length, W: p.width || p.thickness || 0, H: p.height || 0 };
     },
     rackHeight(p) { return (p.firstOnFloor ? p.levels - 1 : p.levels) * p.levelH + p.loadH + 150; },
@@ -525,6 +540,14 @@
         { id: 'st-rack-ctn', label: 'Rack à cartons 4 niveaux', icon: 'rack', type: 'rack', params: { loadType: 'carton', depth: 800, bayLength: 1800, levelH: 1200, loadH: 800 } },
         { id: 'st-osr', label: 'Stockage à navettes OSR (1 tour)', icon: 'osr', type: 'osr', params: {} },
         { id: 'st-osr3', label: 'Stockage à navettes OSR (3 tours)', icon: 'osr', type: 'osr', params: { towers: 3 } }
+      ]
+    },
+    {
+      cat: 'Bâtiment', items: [
+        { id: 'bd-wall', label: 'Mur d\'entrepôt', icon: 'wall', type: 'wall', params: {} },
+        { id: 'bd-wall-door', label: 'Mur avec porte sectionnelle', icon: 'walldoor', type: 'wall', params: { doors: '5000;4000;4500' } },
+        { id: 'bd-wall-low', label: 'Cloison basse (3 m)', icon: 'wall', type: 'wall', params: { height: 3000, thickness: 100, baseH: 0, color: '#dfe3e8' } },
+        { id: 'bd-building', label: 'Entrepôt complet (4 murs)', icon: 'building', type: 'wall', params: {}, action: 'building' }
       ]
     },
     {

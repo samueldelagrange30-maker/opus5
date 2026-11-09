@@ -35,6 +35,36 @@
       }
       return false;
     }
+    /* ------------------------------ murs ------------------------------ */
+    /** Accrochage d'une extrémité de mur sur l'extrémité d'un autre mur (angles, prolongements). */
+    findWallSnap(el, tf, moving) {
+      const R = Math.max(500, this.project.settings.snapRadius || 300);
+      const mine = C.Walls.wallEnds(Object.assign({}, el, { x: tf.x, y: tf.y, rot: tf.rot }));
+      let best = null;
+      for (const w of this.project.elements) {
+        if (w.type !== 'wall' || w.id === el.id || (moving && moving.has(w.id))) continue;
+        for (const q of C.Walls.wallEnds(w)) mine.forEach((p, i) => {
+          const d = Math.hypot(q[0] - p[0], q[1] - p[1]);
+          if (d < R && (!best || d < best.d)) best = { d, x: C.round(tf.x + q[0] - p[0], 1), y: C.round(tf.y + q[1] - p[1], 1), label: `${i ? 'Fin' : 'Début'} du mur → extrémité de ${w.name}` };
+        });
+      }
+      return best;
+    }
+    /** Entrepôt complet : 4 murs sur le contour de la zone de travail (groupés). */
+    addBuilding() {
+      if (!this.guardSim()) return;
+      const st = this.project.settings, W = st.workW, Dp = st.workD;
+      const gid = C.uid('g');
+      const defs = [[0, 0, 0, W], [W, 0, 90, Dp], [W, Dp, 180, W], [0, Dp, 270, Dp]];
+      const els = [];
+      this.project.change('Entrepôt complet', () => defs.forEach(([x, y, rot, L], i) => {
+        const e = this.project.createElement('wall', i === 0 ? { length: L, doors: `${Math.round(W / 2)};4000;4500` } : { length: L }, { x, y, z: 0, rot, groupId: gid });
+        this.project.addElement(e); els.push(e);
+      }));
+      this.select(els.map(e => e.id));
+      C.toast(`Entrepôt ${C.fmt(W / 1000, 1)} × ${C.fmt(Dp / 1000, 1)} m créé (4 murs groupés). Les convoyeurs qui traversent un mur y percent automatiquement une ouverture.`, 'ok');
+    }
+
     /** Un rectangle (centre, cap, dimensions) chevauche-t-il un module existant de même niveau ? */
     mezzOverlap(x, y, rot, L, W, top, exclude) {
       const rect = (cx, cy, r, l, w) => {
@@ -405,6 +435,11 @@
     findSnap(ids, dx, dy, orig, dz0, primId) {
       const moving = new Set(ids);
       const prim = primId && this.project.getElement(primId);
+      if (prim && prim.type === 'wall') {
+        const o = orig.get(prim.id);
+        const sn = this.findWallSnap(prim, { x: o.x + dx, y: o.y + dy, z: o.z, rot: o.rot }, moving);
+        return sn ? { dx: sn.x - o.x, dy: sn.y - o.y, dz: 0, rot: null, label: sn.label } : null;
+      }
       if (prim && prim.type === 'mezzanine') {
         const o = orig.get(prim.id);
         const sn = this.findMezzSnap(prim, { x: o.x + dx, y: o.y + dy, z: o.z + (dz0 || 0), rot: o.rot }, moving, ids.length > 1);
@@ -455,6 +490,7 @@
       if (!this.guardSim()) return;
       const item = C.libraryItem(itemId);
       if (!item) return;
+      if (item.action === 'building') { this.addBuilding(); return; }
       const def = C.Types.get(item.type);
       const st = this.project.settings;
       if (opts.at) {
@@ -463,6 +499,10 @@
         const el = this.project.createElement(item.type, item.params);
         el.x = at[0]; el.y = at[1];
         el.z = (el.type === 'mezzanine' ? 0 : this.supportAt(at[0], at[1])) + (def.conveyor ? st.defaultZ : 0);
+        if (el.type === 'wall' && st.snapPorts) {
+          const sn = this.findWallSnap(el, el);
+          if (sn) { el.x = sn.x; el.y = sn.y; }
+        }
         if (el.type === 'mezzanine' && st.snapPorts) {
           const sn = this.findMezzSnap(el, el);
           if (sn) { el.x = sn.x; el.y = sn.y; el.z = sn.z; el.rot = sn.rot; }

@@ -100,6 +100,8 @@
             Object.assign({ label: 'Guides latéraux' }, tog('guides')),
             Object.assign({ label: 'Structures (châssis, pieds)' }, tog('structure')),
             Object.assign({ label: 'Ombres' }, tog('shadows')),
+            Object.assign({ label: 'Murs d\'entrepôt' }, tog('walls')),
+            Object.assign({ label: 'Murs translucides' }, tog('wallsGhost')),
             Object.assign({ label: 'Étiquettes' }, tog('labels')),
             { label: 'Cotes de tous les éléments', check: () => this.showDims, action: () => { this.showDims = !this.showDims; vp().updateLabels(); } },
             { label: 'Hauteurs des raccordements', check: () => this.showHeights, action: () => { this.showHeights = !this.showHeights; vp().updateLabels(); } }
@@ -267,7 +269,7 @@
       this.closeMenus();
       const cat = C.LIBRARY.find(c => c.cat === 'Équipements');
       const pop = h('div', { class: 'tb-pop dropdown' });
-      for (const it of cat.items.concat(...['Stockage', 'Entrées / sorties', 'Structures et divers'].map(k => C.LIBRARY.find(c => c.cat === k).items))) {
+      for (const it of cat.items.concat(...['Stockage', 'Bâtiment', 'Entrées / sorties', 'Structures et divers'].map(k => C.LIBRARY.find(c => c.cat === k).items))) {
         const b = h('button', { class: 'dd-item', html: `<span class="dd-ico">${C.libIcon(it.icon)}</span><span class="dd-label">${C.escape(it.label)}</span>` });
         b.addEventListener('click', () => { this.closeMenus(); this.app.addFromLibrary(it.id); });
         pop.appendChild(b);
@@ -297,6 +299,8 @@
         const txt = { select: '', place: 'Placement : cliquez pour poser · R tourner · Maj multiple · Échap annuler', measure: 'Mesure : cliquez deux points (accroche aux ports) · Échap pour quitter', carton: 'Pose de cartons : cliquez sur un convoyeur · Échap pour quitter' }[mode];
         mi.textContent = txt || ''; mi.style.display = txt ? '' : 'none';
       }
+      const wbtn = $('vbWalls');
+      if (wbtn) { const s = a.viewport.show; wbtn.classList.toggle('active', !s.walls || s.wallsGhost); wbtn.querySelector('span').textContent = !s.walls ? 'Murs masqués' : s.wallsGhost ? 'Murs translucides' : 'Murs'; }
       const vb = document.querySelectorAll('.vb-btn[data-proj]');
       vb.forEach(b => b.classList.toggle('active', (b.dataset.proj === 'ortho') === a.viewport.camera.isOrthographicCamera));
     }
@@ -315,6 +319,15 @@
         b.addEventListener('click', () => { vp.setProjection(p); this.refreshToolbar(); });
         vb.appendChild(b);
       }
+      const wb = h('button', { class: 'vb-btn', id: 'vbWalls', title: 'Murs : visibles → translucides → masqués', html: C.icon('wallv', 16) + '<span>Murs</span>' });
+      wb.addEventListener('click', () => {
+        const s = vp.show;
+        if (s.walls && !s.wallsGhost) vp.setShow('wallsGhost', true);
+        else if (s.walls) { vp.setShow('wallsGhost', false); vp.setShow('walls', false); }
+        else vp.setShow('walls', true);
+        this.refreshToolbar();
+      });
+      vb.appendChild(wb);
       const fit = h('button', { class: 'vb-btn', title: 'Cadrer tout (F)', html: C.icon('fit', 16) });
       fit.addEventListener('click', () => vp.fit());
       vb.appendChild(fit);
@@ -611,6 +624,24 @@
         const r = h('div', { class: 'link-row ok clickable', html: `<span class="pdot"></span><span>Posé sur</span><b>${C.escape(under.name)} (plancher ${C.fmt(top)} mm, +${C.fmt(el.z - top)} mm)</b>` });
         r.addEventListener('click', () => a.select([under.id]));
         sec.appendChild(r);
+      }
+      if (el.type === 'wall') {
+        const ops = C.Walls.wallOpenings(el, a.project.elements);
+        kv('Surface de mur', C.fmt(p.length * p.height / 1e6, 1) + ' m²');
+        kv('Ouvertures', ops.length);
+        if (ops.length) {
+          const links = h('div', { class: 'links' });
+          for (const o of ops) {
+            const tgt = a.project.elements.find(e => e.name === o.label);
+            const kind = o.kind === 'door' ? 'Porte' : o.kind === 'conv' ? 'Passage convoyeur' : 'Passage objet';
+            const row = h('div', { class: 'link-row ok' + (tgt ? ' clickable' : ''), html: `<span class="pdot"></span><span>${kind}${tgt ? ' ' + C.escape(tgt.name) : ''}</span><b>${C.fmt(o.x1 - o.x0)} × ${C.fmt(o.z1 - o.z0)} mm à ${C.fmt((o.x0 + o.x1) / 2)}</b>` });
+            if (tgt) row.addEventListener('click', () => a.select([tgt.id]));
+            links.appendChild(row);
+          }
+          sec.appendChild(links);
+        }
+        if (p.autoOpenings === false) sec.appendChild(h('p', { class: 'muted small', text: 'Ouvertures automatiques désactivées : les convoyeurs qui traversent ce mur seront signalés comme obstrués.' }));
+        return;
       }
       if (el.type === 'mezzanine') {
         const area = p.length * p.width / 1e6;
@@ -1212,6 +1243,7 @@
             <li>Déplacez un élément en le faisant glisser : il s'<b>accroche magnétiquement</b> aux ports libres proches (alignement, cap et hauteur). Alt : désactiver le magnétisme.</li>
             <li>Ports : <span class="pill ok">vert</span> raccordé, <span class="pill err">rouge</span> libre ou défaut, <span class="pill warn">orange</span> écart de hauteur, <span class="pill opt">gris</span> sortie optionnelle.</li>
             <li>Une sortie qui débouche sur le côté d'un convoyeur crée une <b>jonction</b> (fusion de flux).</li>
+            <li><b>Murs d'entrepôt</b> : un convoyeur (ou un objet) qui traverse un mur y perce automatiquement une ouverture. Portes : champ « Portes / ouvertures manuelles ». Bouton « Murs » en haut à droite : visibles / translucides / masqués.</li>
             <li><b>Mezzanine modulaire</b> : accolez des modules bord à bord (accrochage magnétique ou boutons « Étendre ») pour obtenir la surface voulue ; les garde-corps disparaissent sur les jonctions.</li>
             <li><b>Mezzanine</b> : tout objet placé ou glissé au-dessus du plancher s'y pose automatiquement (Alt : garder la hauteur). Déplacer la mezzanine emporte les objets posés dessus.</li>
             <li>Modifiez toutes les cotes dans le panneau <b>Propriétés</b> (longueur, largeur, pente en ° ou %, hauteur de sortie, rayon, rouleaux…).</li>

@@ -226,6 +226,12 @@
     for (const e of project.elements) {
       const tf = { x: e.x, y: e.y, z: e.z, rot: e.rot }, p = e.params;
       if (e.type === 'obstacle') res.push({ tf, cx: 0, cy: 0, L: p.length, W: p.width, z0: 0, z1: p.height, label: e.name });
+      if (e.type === 'wall') {
+        // panneaux pleins (les ouvertures laissent passer les cartons)
+        for (const pc of C.Walls.wallPieces(e, C.Walls.wallOpenings(e, project.elements))) {
+          res.push({ tf, cx: (pc.x0 + pc.x1) / 2, cy: 0, L: pc.x1 - pc.x0, W: p.thickness || 200, z0: pc.z0, z1: pc.z1, label: e.name });
+        }
+      }
       if (e.type === 'rack') {
         const sz = C.Types.staticSize(e);
         res.push({ tf, cx: 0, cy: 0, L: sz.L, W: sz.W, z0: 0, z1: sz.H, label: e.name });

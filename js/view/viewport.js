@@ -94,7 +94,7 @@
       this.width = container.clientWidth || 800;
       this.height = container.clientHeight || 600;
       this.mode = 'select';
-      this.show = { grid: true, axes: true, ports: true, labels: true, rollers: true, guides: true, structure: true, arrows: true, shadows: true };
+      this.show = { grid: true, axes: true, ports: true, labels: true, rollers: true, guides: true, structure: true, arrows: true, shadows: true, walls: true, wallsGhost: false };
       this.meshes = new Map();
       this.cartonMeshes = new Map();
 
@@ -269,10 +269,12 @@
       const ids = new Set(els.map(e => e.id));
       // les pieds / poteaux dépendent des planchers de mezzanine : signature commune
       const mz = JSON.stringify(els.filter(e => e.type === 'mezzanine').map(e => [e.x, e.y, e.z, e.rot, e.params.length, e.params.width, e.params.deckH]));
+      // les ouvertures des murs dépendent de tous les autres objets
+      const wallSig = els.some(e => e.type === 'wall') ? JSON.stringify(els.map(e => [e.id, e.type, e.x, e.y, e.z, e.rot, e.params])) : '';
       for (const id of Array.from(this.meshes.keys())) if (!ids.has(id)) this.removeElementMesh(id);
       for (const el of els) {
         const g = this.meshes.get(el.id);
-        const sig = JSON.stringify([el.type, el.params, el.x, el.y, el.z, el.rot, el.name]) + mz;
+        const sig = JSON.stringify([el.type, el.params, el.x, el.y, el.z, el.rot, el.name]) + mz + (el.type === 'wall' ? wallSig : '');
         if (!g || g.userData.sig !== sig || (changedIds && changedIds.has(el.id))) {
           const ng = this.rebuildElement(el);
           ng.userData.sig = sig;
@@ -287,6 +289,13 @@
         if (l in sh) o.visible = !!sh[l];
       });
       this.gPorts.visible = sh.ports;
+      // murs translucides (pour travailler à l'intérieur du bâtiment)
+      (root || this.scene).traverse(o => {
+        if (!o.material || !o.material.userData || !o.material.userData.wallMat) return;
+        o.material.transparent = sh.wallsGhost; o.material.opacity = sh.wallsGhost ? 0.25 : 1;
+        o.material.depthWrite = !sh.wallsGhost; o.castShadow = !sh.wallsGhost;
+        o.material.needsUpdate = true;
+      });
       this.renderer.shadowMap.enabled = sh.shadows;
       this.sun.castShadow = sh.shadows;
       this.labelLayer.style.display = sh.labels ? '' : 'none';
@@ -690,7 +699,7 @@
       if (!p) return;
       // changement de support (sol ↔ plancher de mezzanine) selon ce que vise la souris
       let zShift = 0;
-      if (!e.altKey && dr.prim.type !== 'mezzanine') {
+      if (!e.altKey && dr.prim.type !== 'mezzanine' && dr.prim.type !== 'wall') {
         const rel = o.z - dr.origSupport;
         let sup = this.deckUnderCursor(e, dr.exclude);
         if (sup === null) sup = app.supportAt(o.x + p[0] - dr.start[0], o.y + p[1] - dr.start[1], o.z, dr.exclude);
@@ -788,12 +797,12 @@
       this._lastGhostEvt = { clientX: e.clientX, clientY: e.clientY, altKey: e.altKey };
       const app = this.app, st = app.project.settings, el = this.ghost.el;
       const centered = C.Types.get(el.type).centered;
-      const zOff = centered ? 0 : st.defaultZ;
+      const zOff = centered || C.Types.get(el.type).floor ? 0 : st.defaultZ;
       let p = this.planePoint(e, zOff);
       if (!p) return;
       // pose sur le plancher de mezzanine visé (Alt : rester au sol)
       let base = 0;
-      if (!e.altKey && el.type !== 'mezzanine') {
+      if (!e.altKey && el.type !== 'mezzanine' && el.type !== 'wall') {
         const deck = this.deckUnderCursor(e, null);
         if (deck !== null) { base = deck; const p2 = this.planePoint(e, base + zOff); if (p2) p = p2; }
       }
@@ -808,6 +817,10 @@
       } else if (st.snapPorts && !e.altKey && el.type === 'mezzanine') {
         sn = app.findMezzSnap(el, el);
         if (sn) { el.x = sn.x; el.y = sn.y; el.z = sn.z; el.rot = sn.rot; }
+      }
+      if (st.snapPorts && !e.altKey && el.type === 'wall') {
+        sn = app.findWallSnap(el, el);
+        if (sn) { el.x = sn.x; el.y = sn.y; }
       }
       this.ghostMesh.visible = true;
       this.ghostMesh.position.set(el.x * M, el.y * M, el.z * M);

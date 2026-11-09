@@ -14,7 +14,7 @@
   const PREFIX = {
     straight: 'CV', curve: 'VR', heightchange: 'CH', spiral: 'SP', transfer: 'TR', sorter: 'TRI',
     turntable: 'TT', elevator: 'EL', stop: 'BT', separator: 'SEP', accumulation: 'ACC',
-    workstation: 'PP', source: 'IN', sink: 'OUT', obstacle: 'OBS', table: 'TAB', guide: 'GL', mezzanine: 'MEZ', rack: 'RK', osr: 'OSR'
+    workstation: 'PP', source: 'IN', sink: 'OUT', obstacle: 'OBS', table: 'TAB', guide: 'GL', mezzanine: 'MEZ', rack: 'RK', osr: 'OSR', wall: 'MUR'
   };
 
   C.defaultSettings = () => ({

@@ -41,6 +41,13 @@
       g.fillStyle = '#3f4954';
       for (let i = 0; i < 64; i += 8) { g.fillRect(i + 2, 0, 4, 64); }
       for (let j = 0; j < 64; j += 32) g.fillRect(0, j, 64, 3);
+    } else if (kind === 'cladding') {
+      g.fillStyle = '#e9edf1'; g.fillRect(0, 0, 64, 64);
+      g.fillStyle = '#b8c0c9'; g.fillRect(0, 0, 6, 64); g.fillRect(32, 0, 6, 64);
+      g.fillStyle = '#f7f9fb'; g.fillRect(8, 0, 3, 64); g.fillRect(40, 0, 3, 64);
+    } else if (kind === 'concrete') {
+      g.fillStyle = '#9aa0a6'; g.fillRect(0, 0, 64, 64);
+      for (let i = 0; i < 160; i++) { g.fillStyle = Math.random() < 0.5 ? '#8f959b' : '#a7adb3'; g.fillRect(Math.random() * 64, Math.random() * 64, 2, 2); }
     } else if (kind === 'hazard') {
       g.fillStyle = '#f1c40f'; g.fillRect(0, 0, 64, 64);
       g.fillStyle = '#222'; for (let i = -64; i < 128; i += 22) { g.beginPath(); g.moveTo(i, 0); g.lineTo(i + 11, 0); g.lineTo(i + 75, 64); g.lineTo(i + 64, 64); g.fill(); }
@@ -935,6 +942,61 @@
       o.liftIm.setMatrixAt(idx, _m4);
     });
     o.liftIm.instanceMatrix.needsUpdate = true;
+  };
+
+  /* ---------------- Mur d'entrepôt ---------------- */
+  builders.wall = (el, m, g) => {
+    const p = el.params, L = p.length, H = p.height, t = p.thickness || 200;
+    const all = C.app && C.app.project ? C.app.project.elements : [];
+    const openings = C.Walls.wallOpenings(el, all);
+    const pieces = C.Walls.wallPieces(el, openings);
+    // angles : prolonger de t/2 l'extrémité raccordée à un autre mur non parallèle
+    const ends = C.Walls.wallEnds(el);
+    const ext = [0, 0];
+    for (const o of all) {
+      if (o === el || o.type !== 'wall') continue;
+      if (Math.abs(Math.sin((o.rot - el.rot) * C.DEG)) < 0.2) continue;
+      for (const q of C.Walls.wallEnds(o)) ends.forEach((e2, i) => { if (Math.hypot(e2[0] - q[0], e2[1] - q[1]) < 20) ext[i] = t / 2; });
+    }
+    const mkMat = (kind, color, repX, repY) => {
+      const tex = stripeTex(kind).clone(); tex.needsUpdate = true; tex.repeat.set(repX, repY);
+      const mt = new THREE.MeshStandardMaterial({ map: tex, color: new THREE.Color(color), roughness: 0.85, metalness: kind === 'cladding' ? 0.25 : 0 });
+      mt.userData.owned = true; mt.userData.wallMat = true;
+      return mt;
+    };
+    const clad = mkMat('cladding', p.color || '#c9ced6', L / 1000, 1);
+    const conc = mkMat('concrete', '#ffffff', L / 2000, 1);
+    const baseH = Math.max(0, Math.min(H, +p.baseH || 0));
+    for (const pc of pieces) {
+      const x0 = pc.x0 <= 0.5 ? -ext[0] : pc.x0, x1 = pc.x1 >= L - 0.5 ? L + ext[1] : pc.x1;
+      for (const [z0, z1, mt] of [[pc.z0, Math.min(pc.z1, baseH), conc], [Math.max(pc.z0, baseH), pc.z1, clad]]) {
+        if (z1 - z0 < 1) continue;
+        const b = box(x1 - x0, t, z1 - z0, (x0 + x1) / 2, 0, (z0 + z1) / 2, mt, 'walls');
+        b.userData.wallPiece = true;
+        g.add(b);
+      }
+    }
+    // encadrement des ouvertures (+ porte sectionnelle relevée)
+    const fr = MAT.color('#3a4048');
+    for (const o of openings) {
+      const w = o.x1 - o.x0, cx = (o.x0 + o.x1) / 2;
+      if (o.z1 < H - 1) g.add(box(w + 120, t + 40, 80, cx, 0, o.z1 + 40, fr, 'walls'));
+      for (const x of [o.x0, o.x1]) if (x > 1 && x < L - 1) g.add(box(60, t + 40, o.z1 - o.z0, x, 0, (o.z0 + o.z1) / 2, fr, 'walls'));
+      if (o.kind === 'door') {
+        g.add(box(w, t * 0.6, 500, cx, -t, Math.min(H - 250, o.z1 + 300), MAT.color('#e67e22'), 'walls'));
+        g.add(box(w, 10, 100, cx, -t / 2 - 30, 50, MAT.hazard(), 'walls'));
+      } else if (o.kind === 'conv') {
+        // rideau à lanières translucide au-dessus du passage
+        const strip = new THREE.MeshStandardMaterial({ color: 0xaad8ff, transparent: true, opacity: 0.25, depthWrite: false, side: THREE.DoubleSide });
+        strip.userData.owned = true;
+        const n = Math.max(2, Math.round(w / 200));
+        for (let i = 0; i < n; i++) {
+          const sl = box(w / n - 10, 4, (o.z1 - o.z0) * 0.45, o.x0 + (i + 0.5) * w / n, 0, o.z1 - (o.z1 - o.z0) * 0.225, strip, 'walls');
+          sl.castShadow = false; g.add(sl);
+        }
+      }
+    }
+    g.userData.openings = openings;
   };
 
   builders.guide = (el, m, g) => {

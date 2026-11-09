@@ -57,6 +57,7 @@
     menu: '<path d="M3 6h18M3 12h18M3 18h18"/>',
     panel: '<rect x="3" y="4" width="18" height="16" rx="1"/><path d="M9 4v16"/>',
     panelR: '<rect x="3" y="4" width="18" height="16" rx="1"/><path d="M15 4v16"/>',
+    wallv: '<rect x="3" y="5" width="18" height="14"/><path d="M3 12h18M9 5v7M15 5v7M6 12v7M12 12v7M18 12v7"/>',
     heat: '<path d="M12 2c0 4-5 6-5 11a5 5 0 0010 0c0-3-2-4-2-6-1 2-3 2-3 2s2-3 0-7z"/>'
   };
   C.icon = function (name, size) {
@@ -98,6 +99,9 @@
     obstacle: '<path d="M20 3l14 22H6z"/><path d="M20 11v7M20 21v.5"/>',
     rack: '<path d="M6 3v22M34 3v22M20 3v22"/><path d="M6 9h28M6 16h28M6 23h28"/><rect x="9" y="11" width="8" height="5"/><rect x="23" y="18" width="8" height="5"/><rect x="9" y="4" width="8" height="5"/>',
     osr: '<rect x="4" y="2" width="9" height="18"/><rect x="15" y="2" width="9" height="18"/><rect x="26" y="2" width="9" height="18"/><path d="M4 8h9M4 14h9M15 8h9M15 14h9M26 8h9M26 14h9"/><path d="M2 24h34M33 22l3 2-3 2"/>',
+    wall: '<rect x="2" y="6" width="36" height="16"/><path d="M2 16h36M8 6v10M14 6v10M20 6v10M26 6v10M32 6v10"/>',
+    walldoor: '<rect x="2" y="6" width="36" height="16"/><path d="M2 16h10M28 16h10"/><rect x="13" y="9" width="14" height="13"/>',
+    building: '<path d="M3 24V10l17-7 17 7v14z"/><rect x="15" y="15" width="10" height="9"/><path d="M7 13h4M29 13h4"/>',
     mezz: '<path d="M4 9h32"/><path d="M4 5h32M4 5v4M36 5v4"/><path d="M8 9v16M32 9v16M20 9v16"/><path d="M8 25h-6M12 13l8 12" stroke-dasharray="2 1.5"/>'
   };
   C.libIcon = function (name) {

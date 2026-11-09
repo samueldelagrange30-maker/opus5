@@ -187,7 +187,13 @@
           const cx = def.centered ? 0 : hl;
           const pts = [[cx - hl, -hw], [cx + hl, -hw], [cx + hl, hw], [cx - hl, hw]].map(q => C.localToWorld(tf, q[0], q[1], 0));
           pts.forEach(q => ext(q[0], q[1]));
-          shapes.push({ el, polys: [pts.map(q => [q[0], q[1]])] });
+          const sh = { el, polys: [pts.map(q => [q[0], q[1]])] };
+          if (el.type === 'wall') {
+            // ouvertures praticables au niveau du sol / des convoyeurs (vue en coupe à 1,5 m)
+            sh.gaps = C.Walls.wallOpenings(el, project.elements).filter(o => o.z0 < 2500).map(o =>
+              [[o.x0, -hw - 5], [o.x1, -hw - 5], [o.x1, hw + 5], [o.x0, hw + 5]].map(q => C.localToWorld(tf, q[0], q[1], 0)).map(q => [q[0], q[1]]));
+          }
+          shapes.push(sh);
         }
       }
       if (!isFinite(x0)) { x0 = 0; y0 = 0; x1 = project.settings.workW; y1 = project.settings.workD; }
@@ -215,6 +221,7 @@
           const mez = el.type === 'mezzanine';
           s += `<polygon points="${poly.map(q => X(q[0]) + ',' + Y(q[1])).join(' ')}" fill="${col}" fill-opacity="${el.type === 'obstacle' ? 0.6 : mez ? 0.08 : 0.22}" stroke="${col}" stroke-width="${mez ? 2 : 1.4}"${mez ? ' stroke-dasharray="10 5"' : ''}/>`;
         }
+        for (const gp of sh.gaps || []) s += `<polygon points="${gp.map(q => X(q[0]) + ',' + Y(q[1])).join(' ')}" fill="#ffffff" stroke="#c0392b" stroke-width="0.8" stroke-dasharray="3 2"/>`;
         if (sh.flow) {
           const pts = sh.flow.path.sample(6, 0).map(o => X(o.p[0]) + ',' + Y(o.p[1])).join(' ');
           s += `<polyline points="${pts}" fill="none" stroke="#2c3e50" stroke-width="0.8" stroke-dasharray="6 4"/>`;
