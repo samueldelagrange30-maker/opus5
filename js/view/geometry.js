@@ -785,6 +785,33 @@
     return im;
   }
 
+  /** Plaque de signalétique (texte sur fond jaune ou bleu), face −Y, centrée. */
+  const plateMats = new Map();
+  function labelPlate(text, w, hh, style) {
+    const key = style + '|' + text;
+    let mt = plateMats.get(key);
+    if (!mt) {
+      const cv = document.createElement('canvas');
+      cv.width = style === 'head' ? 256 : 192; cv.height = Math.round(cv.width * hh / w);
+      const c2 = cv.getContext('2d');
+      c2.fillStyle = style === 'head' ? '#1f3f73' : '#ffd400'; c2.fillRect(0, 0, cv.width, cv.height);
+      c2.strokeStyle = style === 'head' ? '#ffffff' : '#111'; c2.lineWidth = 3; c2.strokeRect(2, 2, cv.width - 4, cv.height - 4);
+      c2.fillStyle = style === 'head' ? '#ffffff' : '#111';
+      let fs = cv.height * 0.62;
+      c2.font = `bold ${fs}px Arial, sans-serif`;
+      while (c2.measureText(text).width > cv.width * 0.9 && fs > 8) { fs -= 1; c2.font = `bold ${fs}px Arial, sans-serif`; }
+      c2.textAlign = 'center'; c2.textBaseline = 'middle';
+      c2.fillText(text, cv.width / 2, cv.height / 2 + 1);
+      const tex = new THREE.CanvasTexture(cv); tex.colorSpace = THREE.SRGBColorSpace; tex.anisotropy = 4;
+      mt = new THREE.MeshBasicMaterial({ map: tex, side: THREE.FrontSide });
+      plateMats.set(key, mt);
+    }
+    const pl = new THREE.Mesh(new THREE.PlaneGeometry(w * M, hh * M), mt);
+    pl.rotation.x = Math.PI / 2;
+    tag(pl, 'body');
+    return pl;
+  }
+
   /* ---------------- Rack à palettes ---------------- */
   builders.rack = (el, m, g) => {
     const p = el.params;
@@ -828,6 +855,36 @@
         _m4.setPosition(b.x * M, b.y * M, b.z * M); im.setMatrixAt(i, _m4);
       });
       tag(im, 'structure'); g.add(im);
+    }
+    // numérotation : plaque d'en-tête, plaques de bout d'allée, adresses des emplacements
+    if (p.showNumbers !== false) {
+      const head = `${p.aisleName || ''}${p.rackNumber || ''}`;
+      const facing = (sgn) => { const gp = new THREE.Group(); gp.rotation.z = sgn > 0 ? Math.PI : 0; return gp; };
+      for (let r = 0; r < rows; r++) {
+        const y0 = -Wt / 2 + r * (d + flue);
+        const face = rows === 2 && r === 1 ? 1 : -1;            // face accessible : avant (−Y) ou arrière (+Y)
+        const yf = face < 0 ? y0 + 12 : y0 + d - 12;
+        const gp = facing(face);
+        g.add(gp);
+        const put = (text, x, z, w, hh, style) => {
+          // dans le groupe tourné de 180° pour la face arrière, x et y sont inversés
+          const pl = labelPlate(text, w, hh, style);
+          pl.position.set((face < 0 ? x : -x) * M, (face < 0 ? yf : -yf) * M + (face < 0 ? -0.001 : -0.001), z * M);
+          gp.add(pl);
+        };
+        if (head) put(head + (rows === 2 ? (r ? ' P' : ' I') : ''), 0, H + 260, Math.min(1400, L * 0.5), 360, 'head');
+        for (let k = 0; k < nl; k++) for (let j = 0; j < nb; j++) {
+          const z = levelZ(k);
+          put(C.Types.defs.rack.address(p, r, j, k), -L / 2 + (j + 0.5) * bl, z > 1 ? z - 60 : 130, 380, 110, 'slot');
+        }
+      }
+      // plaques de bout d'allée (sur les deux échelles d'extrémité)
+      if (head) for (const sx of [-1, 1]) {
+        const gp = new THREE.Group(); gp.rotation.z = sx > 0 ? Math.PI / 2 : -Math.PI / 2; g.add(gp);
+        const pl = labelPlate(head, Math.min(900, Wt * 0.6), 420, 'head');
+        pl.position.set(0, -(L / 2 + 50) * M, H * 0.55 * M);
+        gp.add(pl);
+      }
     }
     // charges stockées
     if (p.loadType !== 'vide') {
@@ -997,6 +1054,109 @@
       }
     }
     g.userData.openings = openings;
+  };
+
+  /* ---------------- Étiqueteuse print & apply ---------------- */
+  builders.labeler = (el, m, g) => {
+    const p = el.params;
+    buildConveyor(el, m, g);
+    const side = p.labelSide === 'right' ? -1 : 1;           // côté de la machine
+    const xs = p.length * C.clamp(+p.stopPos || 0.5, 0.05, 0.95);
+    const yb = side * (p.width / 2 + 330);
+    const zf = floorLocal(el, xs, yb, 0);
+    const body = MAT.color('#e8ecef'), accent = MAT.color(p.color || '#16a085'), dark = MAT.dark();
+    // colonne support et armoire d'impression
+    g.add(box(120, 120, -zf + 100, xs, yb, (zf + 100) / 2, MAT.leg(), 'structure'));
+    g.add(box(450, 420, 900, xs, yb, 550, body, 'structure'));
+    g.add(box(455, 425, 120, xs, yb, 940, accent, 'structure'));
+    g.add(box(10, 220, 150, xs + 228, yb, 720, dark, 'structure'));           // écran
+    const roll = cyl(160, 120, MAT.color('#f5f5f5'), 'structure', 24); roll.position.set((xs - 120) * M, (yb + side * 270) * M, 560 * M); g.add(roll);
+    const core = cyl(40, 130, dark, 'structure', 12); core.position.copy(roll.position); g.add(core);
+    // bras et applicateur (tampon) animé
+    const ap = new THREE.Group();
+    let axis, rest, active;
+    if (p.labelSide === 'top') {
+      g.add(box(80, p.width / 2 + 330, 80, xs, side * (p.width / 2 + 330) / 2, 960, accent, 'structure'));
+      const pad = box(160, 120, 60, 0, 0, 0, MAT.color('#222'), 'structure'); ap.add(pad);
+      const rod = box(30, 30, 300, 0, 0, 180, MAT.guide(), 'structure'); ap.add(rod);
+      ap.position.set(xs * M, 0, 700 * M);
+      axis = 'z'; rest = 700 * M; active = 470 * M;
+    } else if (p.labelSide === 'front') {
+      const pad = box(60, 160, 120, 0, 0, 0, MAT.color('#222'), 'structure'); ap.add(pad);
+      ap.position.set((xs + 400) * M, 0, 250 * M);
+      g.add(box(80, p.width / 2 + 330, 80, xs + 400, side * (p.width / 2 + 330) / 2, 600, accent, 'structure'));
+      axis = 'x'; rest = (xs + 400) * M; active = (xs + 230) * M;
+    } else {
+      const pad = box(160, 60, 120, 0, 0, 0, MAT.color('#222'), 'structure'); ap.add(pad);
+      const rod = box(30, 260, 30, 0, side * 150, 0, MAT.guide(), 'structure'); ap.add(rod);
+      ap.position.set(xs * M, side * (p.width / 2 + 60) * M, 200 * M);
+      axis = 'y'; rest = side * (p.width / 2 + 60) * M; active = side * (p.usefulWidth / 2 - 120) * M;
+    }
+    tag(ap, 'structure');
+    g.add(ap);
+    g.userData.applicator = { obj: ap, axis, rest, active };
+    // cellule de détection
+    g.add(box(40, 40, 100, xs - 300, -side * (p.width / 2 + 25), 70, MAT.color('#f1c40f'), 'structure'));
+  };
+
+  /* ---------------- Palettes ---------------- */
+  /**
+   * Palette Europe (9 plots, 3 semelles) ou palette perdue (légère, sans semelles),
+   * éventuellement chargée de cartons. Origine : centre au sol (z = 0 dessous).
+   * L, W, H : dimensions hors-tout de l'unité de charge (mm).
+   */
+  const palletCache = new Map();
+  C.buildPallet = function (kind, L, W, H, loadColor, forSim) {
+    const key = [kind, L, W, H, loadColor].join('|');
+    if (palletCache.has(key)) return palletCache.get(key).clone();
+    const grp = new THREE.Group();
+    const euro = kind.startsWith('euro');
+    const loaded = kind.endsWith('-load');
+    const ph = loaded ? (euro ? 144 : 120) : H;            // hauteur de la palette seule
+    const k = ph / (euro ? 144 : 120);                     // mise à l'échelle verticale
+    const wood = euro ? MAT.color('#c9a36b') : MAT.color('#dcc9a0');
+    const dark = euro ? MAT.color('#9c7a4a') : MAT.color('#b9a57c');
+    const add = (lx, ly, lz, x, y, z, mt) => { const b = box(lx, ly, lz, x, y, z, mt, 'body'); b.castShadow = true; grp.add(b); return b; };
+    const xs = [-L / 2 + 0.075 * L, 0, L / 2 - 0.075 * L], ys = [-W / 2 + 0.06 * W, 0, W / 2 - 0.06 * W];
+    let z = 0;
+    if (euro) { const t = 22 * k; for (const y of ys) add(L, 0.12 * W, t, 0, y, z + t / 2, wood); z += t; }    // semelles
+    const bh = (euro ? 78 : 84) * k;
+    for (const x of xs) for (const y of ys) add(0.12 * L, 0.12 * W, bh, x, y, z + bh / 2, dark);            // plots
+    z += bh;
+    const st = (euro ? 22 : 16) * k;
+    for (const x of xs) add(0.12 * L, W, st, x, 0, z + st / 2, wood);                                     // traverses
+    z += st;
+    const tt = ph - z, nb = euro ? 5 : 4;
+    for (let i = 0; i < nb; i++) add(L, (euro ? 0.13 : 0.11) * W, tt, 0, -W / 2 + 0.065 * W + i * (W - 0.13 * W) / (nb - 1), z + tt / 2, wood); // planches
+    if (loaded && H > ph + 20) {
+      // cartons en couches (environ 400 × 300 × 250 mm)
+      const nx = Math.max(1, Math.round(L / 400)), ny = Math.max(1, Math.round(W / 300)), lh = H - ph;
+      const nz = Math.max(1, Math.round(lh / 250)), cl = L / nx, cw = W / ny, ch = lh / nz;
+      const mt = C.cartonMaterial ? C.cartonMaterial(loadColor || '#b98b52') : MAT.color(loadColor || '#b98b52');
+      for (let a = 0; a < nx; a++) for (let b = 0; b < ny; b++) for (let c = 0; c < nz; c++) {
+        const bx = add(cl - 8, cw - 8, ch - 6, -L / 2 + (a + 0.5) * cl, -W / 2 + (b + 0.5) * cw, ph + (c + 0.5) * ch, mt);
+        bx.userData.loadPart = true;
+      }
+      // film étirable
+      const film = new THREE.MeshStandardMaterial({ color: 0xeaf4ff, transparent: true, opacity: 0.18, roughness: 0.2, depthWrite: false });
+      add(L + 6, W + 6, lh * 0.85, 0, 0, ph + lh * 0.45, film).castShadow = false;
+    } else if (!loaded) grp.children.forEach(b => { b.userData.loadPart = true; });
+    palletCache.set(key, grp);
+    void forSim;
+    return grp.clone();
+  };
+
+  builders.pallet = (el, m, g) => {
+    const p = el.params;
+    const euro = p.palletType !== 'perdue';
+    const L = 1200, W = euro ? 800 : (p.palletSize === '1200x1000' ? 1000 : 800);
+    if (p.loaded) {
+      const ph = euro ? 144 : 120;
+      g.add(C.buildPallet(euro ? 'euro-load' : 'perdue-load', L, W, ph + Math.max(100, p.loadH), p.loadColor));
+    } else {
+      const n = C.clamp(Math.round(p.stack || 1), 1, 30), ph = euro ? 144 : 120;
+      for (let i = 0; i < n; i++) { const pg = C.buildPallet(euro ? 'euro' : 'perdue', L, W, ph, null); pg.position.z = i * ph * M; g.add(pg); }
+    }
   };
 
   builders.guide = (el, m, g) => {

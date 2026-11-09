@@ -546,6 +546,7 @@
       dom.addEventListener('wheel', e => {
         e.preventDefault();
         const f = Math.pow(1.0015, e.deltaY);
+        if (this.app.director && this.app.director.active) { this.app.director.zoom = C.clamp(this.app.director.zoom * f, 0.2, 8); return; }
         const p = this.planePoint(e, 0);
         this.orbit.zoom(f, p ? V3(p[0] * M, p[1] * M, p[2] * M) : null);
       }, { passive: false });

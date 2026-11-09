@@ -40,6 +40,15 @@
     return m;
   };
   C.makeCartonMesh = function (spec) {
+    if (spec.kind && spec.kind !== 'box' && C.buildPallet) {
+      // palette (vide ou chargée) : groupe centré (origine au centre de l'unité de charge)
+      const outer = new THREE.Group();
+      const inner = C.buildPallet(spec.kind, spec.L, spec.W, spec.H, spec.color, true);
+      inner.position.z = -spec.H / 2 * M;
+      outer.add(inner);
+      outer.userData.isPallet = true;
+      return outer;
+    }
     if (!cartonGeo) cartonGeo = new THREE.BoxGeometry(1, 1, 1);
     const m = new THREE.Mesh(cartonGeo, C.cartonMaterial(spec.color || '#b98b52'));
     m.scale.set(spec.L * M, spec.W * M, spec.H * M);
@@ -79,6 +88,34 @@
     return true;
   }
 
+  const isStation = el => el.type === 'workstation' || (el.type === 'labeler' && el.params.labelMode !== 'fly');
+
+  /** Autocollant d'étiquette (code-barres) sur une face du colis. */
+  let stickerMat = null, stickerGeo = null;
+  C.addLabelSticker = function (mesh, spec, side) {
+    if (!stickerMat) {
+      const cv = document.createElement('canvas'); cv.width = 64; cv.height = 96;
+      const g = cv.getContext('2d');
+      g.fillStyle = '#ffffff'; g.fillRect(0, 0, 64, 96);
+      g.fillStyle = '#111'; for (let x = 6; x < 58; x += 2 + (x * 7) % 3) g.fillRect(x, 40, 1 + (x % 2), 34);
+      g.fillRect(6, 10, 40, 5); g.fillRect(6, 20, 28, 4); g.fillRect(6, 80, 46, 4);
+      const tex = new THREE.CanvasTexture(cv); tex.colorSpace = THREE.SRGBColorSpace;
+      stickerMat = new THREE.MeshStandardMaterial({ map: tex, roughness: 0.6 });
+      stickerGeo = new THREE.BoxGeometry(1, 1, 1);
+    }
+    const lw = Math.min(100, spec.L * 0.6), lh = Math.min(150, spec.W * 0.6, spec.H * 0.8);
+    const st = new THREE.Mesh(stickerGeo, stickerMat);
+    const pallet = mesh.isGroup;
+    // un cube unitaire est mis à l'échelle (L,W,H) pour les cartons ; pour une palette on travaille en mètres
+    const sx = v => pallet ? v * M : v / spec.L, sy = v => pallet ? v * M : v / spec.W, sz = v => pallet ? v * M : v / spec.H;
+    const ex = pallet ? spec.L / 2 * M : 0.5, ey = pallet ? spec.W / 2 * M : 0.5, ez = pallet ? spec.H / 2 * M : 0.5;
+    if (side === 'left' || side === 'right') { st.scale.set(sx(lw), sy(2), sz(lh)); st.position.set(0, (side === 'left' ? 1 : -1) * (ey + sy(1)), 0); }
+    else if (side === 'front') { st.scale.set(sx(2), sy(lw), sz(lh)); st.position.set(ex + sx(1), 0, 0); }
+    else { st.scale.set(sx(lw), sy(lh), sz(2)); st.position.set(0, 0, ez + sz(1)); }
+    st.userData.sticker = true;
+    mesh.add(st);
+  };
+
   /* ------------------------- règles d'aiguillage -------------------------- */
   function parseRules(text) {
     const rules = [];
@@ -103,7 +140,7 @@
     const map = {
       ref: sp.ref, reference: sp.ref, format: sp.formatName, nom: sp.name, name: sp.name,
       poids: sp.weight, weight: sp.weight, masse: sp.weight, couleur: sp.color, color: sp.color,
-      source: c.source, entree: c.source, l: sp.L, longueur: sp.L, w: sp.W, largeur: sp.W, h: sp.H, hauteur: sp.H
+      source: c.source, entree: c.source, etiquette: c.label || '', etiquete: c.label ? 1 : 0, label: c.label || '', l: sp.L, longueur: sp.L, w: sp.W, largeur: sp.W, h: sp.H, hauteur: sp.H
     };
     const v = map[cd.key];
     if (v === undefined) return false;
@@ -218,6 +255,7 @@
       this.enterNode(c, tr.node);
       this.cartons.push(c);
       this.stats.created++;
+      this.emit('spawn', c);
       return c;
     }
     removeCarton(c, processed) {
@@ -394,10 +432,10 @@
       }
       // obstacles
       for (const bs of tr.blocks) if (bs > c.s + half - 30) { const l = bs - half - 10; if (l < lim) { lim = l; c.reason = 'obstacle'; } break; }
-      // poste de préparation
-      if (el.type === 'workstation' && tr.id === 'main' && !c.done[el.id]) {
+      // poste de préparation / étiqueteuse avec arrêt
+      if (isStation(el) && tr.id === 'main' && !c.done[el.id]) {
         const ss = tr.length * C.clamp(+p.stopPos || 0.5, 0.05, 0.95);
-        if (c.s <= ss + 0.5 && ss < lim) { lim = ss; c.reason = 'poste'; }
+        if (c.s <= ss + 0.5 && ss < lim) { lim = ss; c.reason = el.type === 'labeler' ? 'étiquetage' : 'poste'; }
       }
       // zones d'accumulation sans pression
       if (el.type === 'accumulation' && tr.id === 'main') {
@@ -529,7 +567,7 @@
       const ids = (Array.isArray(p.formats) && p.formats.length ? p.formats : ['moyen']);
       const fid = ids[Math.floor(this.rng.next() * ids.length) % ids.length];
       const f = this.formats.find(x => x.id === fid) || this.formats[0];
-      const spec = { name: f.name, ref: f.ref, formatName: f.name, formatId: f.id, L: f.L, W: f.W, H: f.H, weight: f.weight, color: f.color, speed: 0 };
+      const spec = { name: f.name, ref: f.ref, formatName: f.name, formatId: f.id, L: f.L, W: f.W, H: f.H, weight: f.weight, color: f.color, speed: 0, kind: f.kind || 'box' };
       const ori = (+p.orientation || 0) * C.DEG;
       const half = lenAlong(spec, ori) / 2;
       const s = half + 5;
@@ -557,7 +595,7 @@
         if (p.running === false) return;
         const fid = ids[Math.floor(this.rng.next() * ids.length) % ids.length];
         const f = this.formats.find(x => x.id === fid) || this.formats[0];
-        const spec = { name: f.name, ref: f.ref, formatName: f.name, formatId: f.id, L: f.L, W: f.W, H: f.H, weight: f.weight, color: f.color, speed: 0 };
+        const spec = { name: f.name, ref: f.ref, formatName: f.name, formatId: f.id, L: f.L, W: f.W, H: f.H, weight: f.weight, color: f.color, speed: 0, kind: f.kind || 'box' };
         const ori = (+p.orientation || 0) * C.DEG;
         const half = lenAlong(spec, ori) / 2, gap = this.gapOf(tr);
         const s = (i + 0.5) * p.towerWidth;
@@ -575,6 +613,15 @@
       });
     }
 
+    /** Pose d'une étiquette numérotée sur le colis (numéro + autocollant visible). */
+    applyLabel(c, node) {
+      const p = node.el.params, rt = node.rt;
+      rt.labels = (rt.labels || 0) + 1; rt.lastLabel = this.t;
+      c.label = (p.labelPrefix || '') + String(rt.labels).padStart(6, '0');
+      c.labeledBy = node.el.name;
+      if (c.mesh) C.addLabelSticker(c.mesh, c.spec, p.labelSide || 'top');
+    }
+
     moveCarton(c, dt) {
       const tr = c.track, el = tr.el, p = el.params;
       // rotation sur table tournante
@@ -589,6 +636,7 @@
       if (c.dwellUntil) {
         if (this.t < c.dwellUntil) { c.state = 'process'; c.process += dt; return; }
         c.dwellUntil = 0; c.done[el.id] = true;
+        if (el.type === 'labeler') this.applyLabel(c, tr.node);
       }
       const v = this.speedOf(c, dt);
       const want = v * 1000 * dt;
@@ -601,10 +649,17 @@
       if (want <= 1e-9) { c.state = 'stopped'; c.reason = c.reason || (p.running === false ? 'convoyeur à l\'arrêt' : 'vitesse nulle'); c.wait += dt; tr.node.rt.blockedNow++; }
       else if (adv < want * 0.5) { c.state = 'blocked'; c.wait += dt; tr.node.rt.blockedNow++; if (p.surface === 'freerollers') c.v = 0; }
       else { c.state = 'moving'; c.reason = ''; }
-      // début de préparation
-      if (el.type === 'workstation' && tr.id === 'main' && !c.done[el.id] && !c.dwellUntil) {
+      // début de préparation / d'étiquetage
+      if (isStation(el) && tr.id === 'main' && !c.done[el.id] && !c.dwellUntil) {
         const ss = tr.length * C.clamp(+p.stopPos || 0.5, 0.05, 0.95);
-        if (Math.abs(c.s - ss) < 0.6) { c.dwellUntil = this.t + (+p.processTime || 0); if (!(+p.processTime > 0)) c.done[el.id] = true; }
+        if (Math.abs(c.s - ss) < 0.6) {
+          c.dwellUntil = this.t + (+p.processTime || 0);
+          if (!(+p.processTime > 0)) { c.dwellUntil = 0; c.done[el.id] = true; if (el.type === 'labeler') this.applyLabel(c, tr.node); }
+        }
+      }
+      // étiquetage à la volée
+      if (el.type === 'labeler' && p.labelMode === 'fly' && tr.id === 'main' && !c.done[el.id] && c.s >= tr.length * C.clamp(+p.stopPos || 0.5, 0.05, 0.95)) {
+        c.done[el.id] = true; this.applyLabel(c, tr.node);
       }
       this.transitions(c);
       if (!c.removed) this.updateYaw(c);
@@ -729,7 +784,10 @@
         else if (mode === 'state') col = c.state === 'moving' ? '#2ecc71' : c.state === 'process' ? '#3498db' : c.state === 'turn' ? '#9b59b6' : c.reason === 'collision évitée' ? '#e74c3c' : '#f39c12';
         else if (mode === 'route' && c.route) col = C.palette[(c.route.out || 0) % C.palette.length];
         const m = C.cartonMaterial(col);
-        if (c.mesh.material !== m) c.mesh.material = m;
+        if (c.mesh.isGroup) {
+          // palette : seule la charge (ou le bois si vide) prend la couleur d'affichage
+          if (c._col !== col) { c._col = col; c.mesh.traverse(o => { if (!o.userData.loadPart) return; if (!o._baseMat) o._baseMat = o.material; o.material = mode === 'format' ? o._baseMat : m; }); }
+        } else if (c.mesh.material !== m) c.mesh.material = m;
       }
       this.updateEquipVisuals();
       if (this.heatMode) this.applyHeat();
@@ -743,6 +801,12 @@
         const rt = node.rt, p = node.el.params;
         if (g.userData.spin) g.userData.spin.rotation.z = rt.angle;
         if (g.userData.osr && C.animateOSR) C.animateOSR(g, this.t);
+        if (g.userData.applicator) {
+          const ap = g.userData.applicator;
+          const busy = this.cartons.some(c => c.node === node && c.state === 'process') || (rt.lastLabel !== undefined && this.t - rt.lastLabel < 0.35);
+          const target = busy ? ap.active : ap.rest;
+          ap.obj.position[ap.axis] += (target - ap.obj.position[ap.axis]) * 0.35;
+        }
         if (g.userData.carriage) {
           const c = this.cartons.find(x => x.node === node && x.track.lift);
           let target = 0;

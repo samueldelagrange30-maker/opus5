@@ -150,6 +150,12 @@
   fld('loadH', 'Hauteur de charge', 'number', { group: 'Stockage', unit: 'mm', min: 100, step: 50 });
   fld('fill', 'Taux de remplissage', 'number', { group: 'Stockage', unit: '%', min: 0, max: 100, step: 5 });
   fld('beamColor', 'Couleur des lisses', 'color', { group: 'Apparence' });
+  fld('showNumbers', 'Afficher la numérotation', 'bool', { group: 'Numérotation' });
+  fld('aisleName', 'Allée', 'text', { group: 'Numérotation', help: 'Lettre ou code de l\'allée (ex. A).' });
+  fld('rackNumber', 'Numéro du rack', 'text', { group: 'Numérotation' });
+  fld('firstBay', 'Numéro de la 1re travée', 'number', { group: 'Numérotation', min: 0, step: 1 });
+  fld('bayStep', 'Pas de numérotation des travées', 'select', { group: 'Numérotation', options: [[1, '1, 2, 3…'], [2, '1, 3, 5… (impairs / pairs)']] });
+  fld('levelStyle', 'Repérage des niveaux', 'select', { group: 'Numérotation', options: [['letters', 'Lettres (A, B, C…)'], ['num0', 'Chiffres (0, 1, 2…)'], ['num1', 'Chiffres (1, 2, 3…)']] });
   // --- Stockage à navettes (type OSR)
   fld('towers', 'Nombre de tours (allées)', 'number', { group: 'Stockage à navettes', min: 1, max: 30, step: 1 });
   fld('rackLength', 'Longueur des tours', 'number', { group: 'Stockage à navettes', unit: 'mm', min: 2000, step: 100 });
@@ -166,6 +172,18 @@
   fld('clearance', 'Jeu autour des passages', 'number', { group: 'Mur', unit: 'mm', min: 0, max: 2000, step: 10 });
   fld('passH', 'Hauteur libre au-dessus des convoyeurs', 'number', { group: 'Mur', unit: 'mm', min: 200, step: 50 });
   fld('doors', 'Portes / ouvertures manuelles', 'textarea', { group: 'Mur', help: 'Une ligne par ouverture : centre ; largeur ; hauteur [; hauteur du bas] en mm, mesurés depuis le début du mur.\nExemple : 5000;4000;4500 (porte sectionnelle) ou 12000;1000;2100 (porte piétonne).' });
+  // --- Palettes
+  fld('palletType', 'Type de palette', 'select', { group: 'Palette', options: [['euro', 'Palette Europe (EPAL 1200 × 800)'], ['perdue', 'Palette perdue (légère)']] });
+  fld('palletSize', 'Dimensions (palette perdue)', 'select', { group: 'Palette', options: [['1200x800', '1200 × 800'], ['1200x1000', '1200 × 1000']] });
+  fld('loaded', 'Chargée de cartons', 'bool', { group: 'Palette' });
+  fld('loadColor', 'Couleur des cartons', 'color', { group: 'Palette' });
+  fld('stack', 'Palettes vides empilées', 'number', { group: 'Palette', min: 1, max: 30, step: 1 });
+  // --- Étiqueteuse
+  fld('labelMode', 'Mode d\'étiquetage', 'select', { group: 'Étiqueteuse', live: true, options: [['stop', 'Arrêt du colis pendant la pose'], ['fly', 'À la volée (sans arrêt)']] });
+  FL.labelTime = Object.assign({}, FL.processTime, { id: 'labelTime', label: 'Temps d\'étiquetage (impression + pose)', group: 'Étiqueteuse' });
+  FL.labelPos = Object.assign({}, FL.stopPos, { id: 'labelPos', label: 'Position de l\'applicateur (0–1)', group: 'Étiqueteuse' });
+  fld('labelSide', 'Face étiquetée', 'select', { group: 'Étiqueteuse', options: [['top', 'Dessus'], ['left', 'Côté gauche'], ['right', 'Côté droit'], ['front', 'Face avant']] });
+  fld('labelPrefix', 'Préfixe des numéros d\'étiquette', 'text', { group: 'Étiqueteuse', live: true });
   fld('color', 'Couleur', 'color', { group: 'Apparence', live: true });
   fld('note', 'Commentaire', 'textarea', { group: 'Apparence' });
 
@@ -330,6 +348,8 @@
   T.stop = special('Butée', { length: 600, stopMode: 'timed', holdTime: 3, openTime: 2, closedTime: 4, color: '#e67e22' }, ['stopMode', 'holdTime', 'openTime', 'closedTime']);
   T.separator = special('Séparateur de cartons', { length: 1000, interval: 2, surface: 'belt', speed: 0.8, color: '#27ae60' }, ['interval']);
   T.accumulation = special('Zone d\'accumulation', { length: 4000, zoneLength: 600, gap: 20, color: '#2980b9' }, ['zoneLength']);
+  T.labeler = special('Étiqueteuse de colis', { length: 1500, processTime: 1.5, stopPos: 0.5, labelMode: 'stop', labelSide: 'top', labelPrefix: 'COLIS-', speed: 0.4, color: '#16a085' },
+    ['labelMode', 'labelTime', 'labelPos', 'labelSide', 'labelPrefix']);
   T.workstation = special('Poste de préparation', { length: 2400, processTime: 8, stopPos: 0.5, opSide: 'left', color: '#f1c40f' }, ['processTime', 'stopPos', 'opSide']);
   T.source = special('Entrée (générateur de cartons)', { length: 1000, rate: 600, jitter: 0, formats: ['moyen'], maxCount: 0, startDelay: 0, orientation: 0, color: '#2ecc71' },
     ['rate', 'jitter', 'formats', 'maxCount', 'startDelay', 'orientation'], { cat: 'Entrées / sorties' });
@@ -357,8 +377,16 @@
   /* ---------------- Rack à palettes ------------------------------------ */
   T.rack = {
     label: 'Rack à palettes', cat: 'Stockage', conveyor: false, centered: true,
-    defaults: { levels: 4, bays: 3, bayLength: 2700, depth: 1100, rows: 1, levelH: 1500, firstOnFloor: true, loadType: 'palette', loadH: 1200, fill: 75, color: '#1f5fa8', beamColor: '#e67e22', note: '' },
-    fields: ['name', 'x', 'y', 'zBase', 'rot', 'levels', 'bays', 'bayLength', 'depth', 'rows', 'levelH', 'firstOnFloor', 'loadType', 'loadH', 'fill', 'color', 'beamColor', 'note'],
+    defaults: { levels: 4, bays: 3, bayLength: 2700, depth: 1100, rows: 1, levelH: 1500, firstOnFloor: true, loadType: 'palette', loadH: 1200, fill: 75, color: '#1f5fa8', beamColor: '#e67e22',
+      showNumbers: true, aisleName: 'A', rackNumber: '01', firstBay: 1, bayStep: 1, levelStyle: 'letters', note: '' },
+    fields: ['name', 'x', 'y', 'zBase', 'rot', 'levels', 'bays', 'bayLength', 'depth', 'rows', 'levelH', 'firstOnFloor', 'loadType', 'loadH', 'fill',
+      'showNumbers', 'aisleName', 'rackNumber', 'firstBay', 'bayStep', 'levelStyle', 'color', 'beamColor', 'note'],
+    /** Adresse d'un emplacement : allée+rack - travée - niveau (ex. A01-03-B). */
+    address(p, row, bay, level) {
+      const b = (+p.firstBay || 0) + bay * (+p.bayStep || 1);
+      const lv = p.levelStyle === 'num0' ? String(level) : p.levelStyle === 'num1' ? String(level + 1) : String.fromCharCode(65 + level % 26);
+      return `${p.aisleName || ''}${p.rackNumber || ''}${+p.rows === 2 ? (row ? 'P' : 'I') : ''}-${String(b).padStart(2, '0')}-${lv}`;
+    },
     build: () => ({ tracks: {}, ports: [], diverts: [] })
   };
 
@@ -388,6 +416,14 @@
       }
       return m;
     }
+  };
+
+  /* ---------------- Palette (objet posé) ---------------- */
+  T.pallet = {
+    label: 'Palette', cat: 'Stockage', conveyor: false, centered: true,
+    defaults: { palletType: 'euro', palletSize: '1200x800', loaded: false, loadH: 1000, loadColor: '#b98b52', stack: 1, note: '' },
+    fields: ['name', 'x', 'y', 'zBase', 'rot', 'palletType', 'palletSize', 'loaded', 'loadH', 'loadColor', 'stack', 'note'],
+    build: () => ({ tracks: {}, ports: [], diverts: [] })
   };
 
   /* ---------------- Mur d'entrepôt ---------------- */
@@ -457,6 +493,10 @@
       }
       if (el.type === 'mezzanine') return { L: p.length, W: p.width, H: p.deckH + (p.railH || 0) };
       if (el.type === 'wall') return { L: p.length, W: p.thickness, H: p.height };
+      if (el.type === 'pallet') {
+        const euro = p.palletType !== 'perdue', ph = euro ? 144 : 120;
+        return { L: 1200, W: !euro && p.palletSize === '1200x1000' ? 1000 : 800, H: p.loaded ? ph + Math.max(100, p.loadH) : ph * C.clamp(Math.round(p.stack || 1), 1, 30) };
+      }
       return { L: p.length, W: p.width || p.thickness || 0, H: p.height || 0 };
     },
     rackHeight(p) { return (p.firstOnFloor ? p.levels - 1 : p.levels) * p.levelH + p.loadH + 150; },
@@ -529,6 +569,7 @@
         { id: 'eq-separator', label: 'Séparateur de cartons', icon: 'separator', type: 'separator', params: {} },
         { id: 'eq-accu', label: 'Zone d\'accumulation', icon: 'accu', type: 'accumulation', params: {} },
         { id: 'eq-station', label: 'Poste de préparation', icon: 'station', type: 'workstation', params: {} },
+        { id: 'eq-labeler', label: 'Étiqueteuse de colis', icon: 'labeler', type: 'labeler', params: {} },
         { id: 'eq-table', label: 'Table de travail', icon: 'table', type: 'table', params: {} },
         { id: 'eq-sorter', label: 'Trieur', icon: 'sorter', type: 'sorter', params: {} }
       ]
@@ -538,6 +579,10 @@
         { id: 'st-rack', label: 'Rack à palettes 4 niveaux', icon: 'rack', type: 'rack', params: {} },
         { id: 'st-rack2', label: 'Rack double 4 niveaux', icon: 'rack', type: 'rack', params: { rows: 2 } },
         { id: 'st-rack-ctn', label: 'Rack à cartons 4 niveaux', icon: 'rack', type: 'rack', params: { loadType: 'carton', depth: 800, bayLength: 1800, levelH: 1200, loadH: 800 } },
+        { id: 'st-pal-eu', label: 'Palette Europe', icon: 'pallet', type: 'pallet', params: { palletType: 'euro' } },
+        { id: 'st-pal-pp', label: 'Palette perdue', icon: 'pallet', type: 'pallet', params: { palletType: 'perdue' } },
+        { id: 'st-pal-eu-c', label: 'Palette Europe avec cartons', icon: 'palletload', type: 'pallet', params: { palletType: 'euro', loaded: true } },
+        { id: 'st-pal-pp-c', label: 'Palette perdue avec cartons', icon: 'palletload', type: 'pallet', params: { palletType: 'perdue', loaded: true, loadColor: '#c49a62' } },
         { id: 'st-osr', label: 'Stockage à navettes OSR (1 tour)', icon: 'osr', type: 'osr', params: {} },
         { id: 'st-osr3', label: 'Stockage à navettes OSR (3 tours)', icon: 'osr', type: 'osr', params: { towers: 3 } }
       ]

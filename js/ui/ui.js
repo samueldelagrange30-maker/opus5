@@ -136,7 +136,10 @@
             ...[['format', 'Couleur des cartons : format'], ['source', 'Couleur des cartons : entrée (flux)'], ['route', 'Couleur des cartons : sortie de tri'], ['wait', 'Couleur des cartons : temps d\'attente'], ['state', 'Couleur des cartons : état']]
               .map(([m, l]) => ({ label: l, check: () => sim().colorMode === m, action: () => { sim().colorMode = m; this.refreshSim(true); } })),
             null,
-            { label: 'Statistiques détaillées', icon: 'chart', action: () => this.setRightTab('stats') }
+            { label: 'Statistiques détaillées', icon: 'chart', action: () => this.setRightTab('stats') },
+            null,
+            { label: 'Filmer le parcours d\'un carton…', icon: 'video', action: () => this.filmDialog() },
+            { label: 'Arrêter le suivi de carton', disabled: () => !a.director.active, action: () => a.director.stop() }
           ]
         },
         {
@@ -144,6 +147,8 @@
             { label: 'Capture d\'écran de la vue 3D (PNG)', icon: 'camera', action: () => this.screenshot() },
             { label: 'Exporter la vue de dessus (PNG)', icon: 'image', action: () => this.exportTop() },
             { label: 'Imprimer le plan 2D…', icon: 'print', action: () => this.planDialog() },
+            { label: 'Vidéo : filmer le parcours d\'un carton…', icon: 'video', action: () => this.filmDialog() },
+            { label: 'Vidéo : enregistrer la vue 3D (démarrer / arrêter)', icon: 'video', check: () => a.screenRec.active, action: () => { a.screenRec.toggle(); } },
             { label: 'Nomenclature des convoyeurs…', icon: 'bom', action: () => this.bomDialog() },
             { label: 'Exporter la nomenclature (CSV)', icon: 'export', action: () => C.IO.exportBOMCSV(a) },
             { label: 'Exporter le projet (JSON)', icon: 'export', action: () => C.IO.exportJSON(a) }
@@ -328,6 +333,9 @@
         this.refreshToolbar();
       });
       vb.appendChild(wb);
+      const film = h('button', { class: 'vb-btn', title: 'Filmer le parcours d\'un carton (caméra de suivi + vidéo)', html: C.icon('video', 16) + '<span>Filmer</span>' });
+      film.addEventListener('click', () => this.filmDialog());
+      vb.appendChild(film);
       const fit = h('button', { class: 'vb-btn', title: 'Cadrer tout (F)', html: C.icon('fit', 16) });
       fit.addEventListener('click', () => vp.fit());
       vb.appendChild(fit);
@@ -672,12 +680,15 @@
         const sz = C.Types.staticSize(el);
         kv('Encombrement', `${C.fmt(sz.L)} × ${C.fmt(sz.W)} mm`);
         kv('Hauteur (haut)', `${C.fmt(el.z + sz.H)} mm`);
+        if (el.type === 'pallet') kv('Type', p.palletType === 'perdue' ? 'Palette perdue (usage unique)' : 'Palette Europe (EPAL)');
         if (el.type === 'rack') {
           const rows = +p.rows === 2 ? 2 : 1, perBay = Math.max(1, Math.floor((p.bayLength - 80) / 900));
           const places = rows * p.bays * p.levels * perBay;
           kv('Emplacements', `${places} (${perBay} par travée et par niveau)`);
           kv('Niveaux de dépose', Array.from({ length: p.levels }, (_, k) => C.fmt((p.firstOnFloor ? k : k + 1) * p.levelH)).join(' / ') + ' mm');
           kv('Occupés (environ)', Math.round(places * p.fill / 100));
+          const R = C.Types.defs.rack, rowsN = +p.rows === 2 ? 2 : 1;
+          kv('Adresses', `${R.address(p, 0, 0, 0)} … ${R.address(p, rowsN - 1, p.bays - 1, p.levels - 1)}`);
         }
         return;
       }
@@ -822,6 +833,12 @@
       if (!c) { this.emptyProps(body); return; }
       const sp = c.spec;
       body.appendChild(h('div', { class: 'prop-title', html: `<span class="dot big" style="background:${sp.color}"></span><div><b>${C.escape(sp.name)} <span class="muted">#${c.id}</span></b><div class="muted small">Carton en simulation</div></div>` }));
+      const fb = h('div', { class: 'prop-actions' });
+      const b1 = h('button', { class: 'btn small primary', html: C.icon('video', 14) + ' Suivre ce carton' });
+      b1.addEventListener('click', () => a.director.start({ cartonId: id, record: false, views: ['chase', 'side', 'top', 'orbit', 'front'] }));
+      const b2 = h('button', { class: 'btn small', html: '● Filmer son parcours' });
+      b2.addEventListener('click', () => this.filmDialog(id));
+      fb.append(b1, b2); body.appendChild(fb);
       const sec = this.section(body, 'État en temps réel');
       sec.id = 'liveCarton';
       this.liveCartonId = id;
@@ -836,7 +853,7 @@
       const st = { moving: 'en mouvement', blocked: 'bloqué', stopped: 'à l\'arrêt', process: 'en préparation', turn: 'rotation sur table' }[c.state] || c.state;
       const kv = (k, v) => `<div class="kv"><span>${k}</span><b>${v}</b></div>`;
       sec.innerHTML = kv('Référence', C.escape(sp.ref || '—')) + kv('Format', `${C.escape(sp.formatName)} ${sp.L}×${sp.W}×${sp.H} mm`) + kv('Poids', C.fmt(sp.weight, 1) + ' kg') +
-        kv('Entrée', C.escape(c.source)) + kv('État', st + (c.reason ? ` <span class="muted">(${C.escape(c.reason)})</span>` : '')) +
+        kv('Entrée', C.escape(c.source)) + kv('Étiquette', c.label ? `<b>${C.escape(c.label)}</b> <span class="muted">(${C.escape(c.labeledBy)})</span>` : '<span class="muted">non étiqueté</span>') + kv('État', st + (c.reason ? ` <span class="muted">(${C.escape(c.reason)})</span>` : '')) +
         kv('Élément actuel', C.escape(c.track.isBridge ? 'jonction → ' + c.track.el.name : c.track.el.name)) + kv('Position', `${C.fmt(c.s)} / ${C.fmt(c.track.length)} mm`) +
         kv('Altitude', C.fmt(c._pose ? c._pose.p[2] : 0) + ' mm') + kv('Vitesse', C.fmt(c.state === 'moving' ? (c.v || c.track.el.params.speed) : 0, 2) + ' m/s') +
         kv('Temps de parcours', C.fmtTime(this.app.sim.t - c.born)) + kv('Temps d\'attente', C.fmtTime(c.wait)) +
@@ -1114,7 +1131,7 @@
       const render = () => {
         wrap.innerHTML = '';
         const t = h('table', { class: 'fmt-table' });
-        t.innerHTML = '<tr><th>Nom</th><th>Référence</th><th>L (mm)</th><th>l (mm)</th><th>H (mm)</th><th>Poids (kg)</th><th>Couleur</th><th></th></tr>';
+        t.innerHTML = '<tr><th>Nom</th><th>Type</th><th>Référence</th><th>L (mm)</th><th>l (mm)</th><th>H (mm)</th><th>Poids (kg)</th><th>Couleur</th><th></th></tr>';
         a.project.formats.forEach(f => {
           const tr = h('tr');
           const cell = (k, type) => {
@@ -1125,7 +1142,13 @@
             });
             td.appendChild(i); tr.appendChild(td);
           };
-          cell('name', 'text'); cell('ref', 'text'); cell('L', 'number'); cell('W', 'number'); cell('H', 'number'); cell('weight', 'number'); cell('color', 'color');
+          cell('name', 'text');
+          const tdk = h('td'), sk = h('select');
+          C.FORMAT_KINDS.forEach(([v, l]) => sk.appendChild(h('option', { value: v, text: l })));
+          sk.value = f.kind || 'box';
+          sk.addEventListener('change', () => a.project.change('Format de carton', () => { f.kind = sk.value; }));
+          tdk.appendChild(sk); tr.appendChild(tdk);
+          cell('ref', 'text'); cell('L', 'number'); cell('W', 'number'); cell('H', 'number'); cell('weight', 'number'); cell('color', 'color');
           const td = h('td');
           if (!f.builtin) {
             const del = h('button', { class: 'icon-btn', html: C.icon('delete', 14), title: 'Supprimer ce format' });
@@ -1205,6 +1228,39 @@
         { label: 'Télécharger SVG', action: () => C.download(C.safeName(a.project.name) + '_plan.svg', svg, 'image/svg+xml'), keep: true },
         { label: 'Imprimer', primary: true, keep: true, action: b => C.IO.printHTML('Plan ' + a.project.name, `${C.IO.planSVG(a, { width: 1500 })}${b.querySelector('#planBom').checked ? '<div class="pb"></div><h1>Nomenclature</h1>' + C.IO.bomHTML(a) : ''}`) }
       ], { xwide: true, noFocus: true });
+    }
+    /** Caméra de suivi d'un carton + enregistrement vidéo. */
+    filmDialog(cartonId) {
+      const a = this.app;
+      const srcs = a.project.elements.filter(e => e.type === 'source' || e.type === 'osr');
+      const selC = cartonId || (a.sim.active && Array.from(a.cartonSelection).find(id => a.sim.cartonById(id)));
+      if (!srcs.length && !selC) { C.toast('Ajoutez une entrée (générateur) ou sélectionnez un carton en simulation', 'warn'); return; }
+      const opts = [];
+      if (selC) opts.push([`c:${selC}`, `Carton sélectionné (#${selC})`]);
+      for (const s of srcs) opts.push([`s:${s.name}`, `Prochain carton de ${s.name} (du début à la fin)`]);
+      const recOk = C.Recorder.supported();
+      const body = this.modal('Filmer le parcours d\'un carton', `<div class="form-grid">
+        <label>Carton suivi</label><select id="fmWho">${opts.map(o => `<option value="${C.escape(o[0])}">${C.escape(o[1])}</option>`).join('')}</select>
+        <label class="span2">Vues utilisées (alternées automatiquement)</label>
+        <div class="span2 views-grid">${C.CAMERA_VIEWS.map(([v, l]) => `<label class="chk"><input type="checkbox" value="${v}" ${v !== 'onboard' && v !== 'front' ? 'checked' : ''}> ${l}</label>`).join('')}</div>
+        <label>Changer de vue toutes les</label><div class="prop-in"><input type="number" id="fmInt" value="6" min="0" step="1"><span class="unit">s</span></div>
+        <label class="chk span2"><input type="checkbox" id="fmElem" checked> Changer aussi de vue à chaque nouvel équipement traversé</label>
+        <label>Vitesse de simulation</label><select id="fmSpeed"><option value="1">×1 (temps réel)</option><option value="2">×2</option><option value="5">×5</option><option value="10">×10</option></select>
+        <label class="chk span2"><input type="checkbox" id="fmRec" ${recOk ? 'checked' : 'disabled'}> Enregistrer la vidéo (fichier ${recOk ? 'WebM' : 'non pris en charge par ce navigateur'})</label>
+        <p class="span2 muted small">La caméra suit le carton depuis son entrée jusqu'à sa sortie ; la vidéo est téléchargée automatiquement à l'arrivée. Molette : distance de la caméra · ◀ ▶ : changer de vue · Échap : arrêter.</p>
+      </div>`, [{ label: 'Annuler' }, {
+        label: 'Démarrer', primary: true, action: b => {
+          const who = b.querySelector('#fmWho').value;
+          const views = Array.from(b.querySelectorAll('.views-grid input:checked')).map(i => i.value);
+          const o = {
+            views, interval: Math.max(0, +b.querySelector('#fmInt').value || 0), switchOnElement: b.querySelector('#fmElem').checked,
+            record: b.querySelector('#fmRec').checked, simSpeed: +b.querySelector('#fmSpeed').value
+          };
+          if (who.startsWith('c:')) o.cartonId = who.slice(2); else o.sourceName = who.slice(2);
+          a.director.start(o);
+        }
+      }], { noFocus: true });
+      void body;
     }
     screenshot() {
       const url = this.app.viewport.screenshot();

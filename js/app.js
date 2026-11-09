@@ -223,10 +223,12 @@
     init() {
       this.viewport = new C.Viewport(document.getElementById('viewport'), this);
       this.sim = new C.Simulation(this);
+      this.director = new C.Director(this);
+      this.screenRec = new C.ScreenRecorder(this);
       this.ui = new C.UI(this);
       this.ui.build();
       this.project.on('changed', e => this.onChanged(e));
-      this.sim.on('state', () => this.ui.refreshSim(true));
+      this.sim.on('state', () => { this.ui.refreshSim(true); if (!this.sim.active && this.director.active) this.director.stop(); });
       this.viewport.on('mode', () => this.ui.refreshToolbar());
       this.loadInitial();
       this.bindKeys();
@@ -234,7 +236,10 @@
       const loop = now => {
         const dt = (now - last) / 1000; last = now;
         this.sim.frame(dt);
+        this.director.update(Math.min(dt, 0.1));
         this.viewport.render();
+        this.director.afterRender();
+        this.screenRec.afterRender();
         this.ui.tick(now);
         requestAnimationFrame(loop);
       };
@@ -724,7 +729,7 @@
       const half = f.L / 2;
       const s = C.clamp(n.s, Math.min(half, tr.length / 2), Math.max(tr.length - half, tr.length / 2));
       if (this.sim.active) {
-        const spec = { name: f.name, ref: f.ref, formatName: f.name, formatId: f.id, L: f.L, W: f.W, H: f.H, weight: f.weight, color: f.color, speed: 0 };
+        const spec = { name: f.name, ref: f.ref, formatName: f.name, formatId: f.id, L: f.L, W: f.W, H: f.H, weight: f.weight, color: f.color, speed: 0, kind: f.kind || 'box' };
         this.sim.spawn(tr, s, spec, 0, 'Manuel');
         return;
       }
@@ -801,6 +806,7 @@
         else if (ctrl && k === 'e') C.IO.exportJSON(this);
         else if (ctrl) handled = false;
         else if (k === 'delete' || k === 'backspace') this.deleteSelection();
+        else if (k === 'escape' && this.director.active) this.director.stop();
         else if (k === 'escape') { if (this.viewport.mode !== 'select') this.viewport.setMode('select'); else this.select([]); }
         else if (k === 'r') { if (this.viewport.mode === 'place') this.viewport.rotateGhost(e.shiftKey ? -st.angleStep : st.angleStep); else this.rotateSelection(e.shiftKey ? -st.angleStep : st.angleStep); }
         else if (k === 'f') { if (this.selection.size) this.viewport.fit(true, Array.from(this.selection)); else this.viewport.fit(); }
