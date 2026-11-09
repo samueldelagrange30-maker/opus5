@@ -145,7 +145,7 @@
       }
       let done = false;
       switch (st.t) {
-        case 'drive': done = this.drive(pose, st, dt, p.travelSpeed || 1.8); break;
+        case 'drive': done = this.drive(pose, st, dt, p.travelSpeed || 1.8, el, job); break;
         case 'lift': {
           const v = (p.forkSpeed || 0.35) * 1000 * dt, d = st.z - pose.forkZ;
           pose.forkZ += C.clamp(d, -v, v); done = Math.abs(st.z - pose.forkZ) < 0.5; break;
@@ -182,32 +182,62 @@
       if (done) { cur.i++; cur.sub = 0; if (cur.i >= cur.steps.length) this.finishMission(el, job); }
     }
 
-    /** Déplacement : rotation vers le point, avance, rotation finale. Renvoie true une fois arrivé. */
-    drive(pose, st, dt, speed) {
+    /**
+     * Déplacement le long d'un itinéraire planifié (contournement des obstacles,
+     * respect du fléchage au sol), puis orientation finale. Renvoie true à l'arrivée.
+     */
+    drive(pose, st, dt, speed, el, job) {
       const to = st.to;
-      const dx = to.x - pose.x, dy = to.y - pose.y, dist = Math.hypot(dx, dy);
-      const turn = (target) => {
+      if (!st.route) {
+        const exclude = new Set([el.id]);
+        const from = job.cur && job.cur.mission.from;
+        if (from && from.kind === 'pallet') exclude.add(from.id);
+        const r = C.Planner.route(this.app.project, [pose.x, pose.y], [to.x, to.y], { exclude, followLanes: el.params.followLanes !== false });
+        st.route = r.pts.slice(1);
+        st.wp = 0;
+        if (!r.ok) C.toast(`${el.name} : aucun passage libre trouvé, trajet direct`, 'warn');
+        else if (r.lanesAvailable && !r.lanes) C.toast(`${el.name} : aucun itinéraire ne respecte le fléchage jusqu'à la destination — trajet libre`, 'warn');
+        job.route = [[pose.x, pose.y]].concat(r.pts.slice(1));
+        job.routeLanes = r.lanes;
+        this.showRoute(el, job);
+      }
+      const turnTo = (target, rate) => {
         const d = C.normAngle(target - pose.rot * D);
-        const s = C.clamp(d, -TURN_RATE * dt, TURN_RATE * dt);
+        const s = C.clamp(d, -rate * dt, rate * dt);
         pose.rot = (pose.rot * D + s) / D;
         return Math.abs(d - s) < 0.002;
       };
-      if (st.phase === undefined) st.phase = dist > 30 ? 0 : 2;
-      if (st.phase === 0) {
-        // le chariot roule fourches devant ou en marche arrière selon le plus court
+      if (st.wp < st.route.length) {
+        const wp = st.route[st.wp];
+        const dx = wp[0] - pose.x, dy = wp[1] - pose.y, dist = Math.hypot(dx, dy);
+        if (dist < 5) { st.wp++; return false; }
         const head = Math.atan2(dy, dx);
+        // fourches devant ou marche arrière : le plus proche du cap actuel
         const fwd = Math.abs(C.normAngle(head - pose.rot * D)) <= Math.PI / 2;
-        st.back = !fwd;
-        if (turn(fwd ? head : head + Math.PI)) st.phase = 1;
-        return false;
-      }
-      if (st.phase === 1) {
-        const step = speed * 1000 * dt;
-        if (dist <= step) { pose.x = to.x; pose.y = to.y; st.phase = 2; }
+        const want = fwd ? head : head + Math.PI;
+        const err = Math.abs(C.normAngle(want - pose.rot * D));
+        if (err > 25 * D) { turnTo(want, TURN_RATE); return false; }          // virage sur place
+        turnTo(want, TURN_RATE);
+        const step = speed * 1000 * dt * (err > 10 * D ? 0.5 : 1);
+        if (dist <= step) { pose.x = wp[0]; pose.y = wp[1]; st.wp++; }
         else { pose.x += dx / dist * step; pose.y += dy / dist * step; }
         return false;
       }
-      return turn(to.rot * D);
+      const ok = turnTo(to.rot * D, TURN_RATE);
+      if (ok) { job.route = null; this.showRoute(el, job); }
+      return ok;
+    }
+    /** Trait pointillé de l'itinéraire prévu. */
+    showRoute(el, job) {
+      const vp = this.app.viewport;
+      if (job.routeLine) { vp.gOverlay.remove(job.routeLine); job.routeLine.geometry.dispose(); job.routeLine = null; }
+      if (!job.route || job.route.length < 2) return;
+      const pts = job.route.map(q => new THREE.Vector3(q[0] * M, q[1] * M, 0.03));
+      const geo = new THREE.BufferGeometry().setFromPoints(pts);
+      const line = new THREE.Line(geo, new THREE.LineDashedMaterial({ color: job.routeLanes ? 0x2ecc71 : 0x00e5ff, dashSize: 0.3, gapSize: 0.2, depthTest: false }));
+      line.computeLineDistances(); line.renderOrder = 8;
+      vp.gOverlay.add(line);
+      job.routeLine = line;
     }
 
     doPick(el, job) {

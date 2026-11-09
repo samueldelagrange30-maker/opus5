@@ -107,6 +107,12 @@
     palletload: '<rect x="5" y="3" width="10" height="8"/><rect x="15" y="3" width="10" height="8"/><rect x="25" y="3" width="10" height="8"/><path d="M3 13h34"/><rect x="5" y="15" width="5" height="5"/><rect x="17.5" y="15" width="5" height="5"/><rect x="30" y="15" width="5" height="5"/><path d="M3 21h34"/>',
     labeler: '<rect x="2" y="17" width="36" height="8"/><rect x="24" y="2" width="12" height="13"/><circle cx="30" cy="7" r="3"/><path d="M24 11h-8v5"/><rect x="12" y="11" width="9" height="6" stroke-dasharray="1.5 1"/>',
     forklift: '<path d="M3 22h20"/><rect x="5" y="10" width="11" height="12"/><path d="M8 10V4h7v6"/><path d="M24 2v20M24 18h12"/><circle cx="8" cy="23" r="2"/><circle cx="32" cy="23" r="2"/><path d="M16 22h18"/>',
+    lane: '<path d="M2 6h36M2 22h36"/><path d="M8 14h10M15 10l5 4-5 4M24 14h8M29 10l5 4-5 4"/>',
+    lanecurve: '<path d="M2 24h8a18 18 0 0018-18V2"/><path d="M2 14h8a8 8 0 008-8V2" opacity=".5"/><path d="M12 19l5-3-1 6"/>',
+    lane2: '<path d="M2 5h36M2 23h36M2 14h36" /><path d="M10 9h12M19 6l4 3-4 3M30 19H18M21 16l-4 3 4 3"/>',
+    zebra: '<path d="M6 4v20M12 4v20M18 4v20M24 4v20M30 4v20M36 4v20" stroke-width="3"/>',
+    barrier: '<path d="M4 24V6M20 24V6M36 24V6" stroke-width="3"/><path d="M4 10h32M4 17h32" stroke-width="2"/><path d="M4 6v3M20 6v3M36 6v3" stroke="#222"/>',
+    bollard: '<rect x="15" y="3" width="10" height="21" rx="2"/><path d="M15 8h10M15 12h10"/><path d="M11 25h18"/>',
     mezz: '<path d="M4 9h32"/><path d="M4 5h32M4 5v4M36 5v4"/><path d="M8 9v16M32 9v16M20 9v16"/><path d="M8 25h-6M12 13l8 12" stroke-dasharray="2 1.5"/>'
   };
   C.libIcon = function (name) {

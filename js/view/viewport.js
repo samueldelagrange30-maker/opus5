@@ -94,7 +94,7 @@
       this.width = container.clientWidth || 800;
       this.height = container.clientHeight || 600;
       this.mode = 'select';
-      this.show = { grid: true, axes: true, ports: true, labels: true, rollers: true, guides: true, structure: true, arrows: true, shadows: true, walls: true, wallsGhost: false };
+      this.show = { grid: true, axes: true, ports: true, labels: true, rollers: true, guides: true, structure: true, arrows: true, shadows: true, walls: true, wallsGhost: false, lanes: true };
       this.meshes = new Map();
       this.cartonMeshes = new Map();
 
@@ -820,6 +820,10 @@
       } else if (st.snapPorts && !e.altKey && el.type === 'mezzanine') {
         sn = app.findMezzSnap(el, el);
         if (sn) { el.x = sn.x; el.y = sn.y; el.z = sn.z; el.rot = sn.rot; }
+      }
+      if (st.snapPorts && !e.altKey && el.type === 'lane') {
+        sn = app.findLaneSnap(el, el);
+        if (sn) { el.x = sn.x; el.y = sn.y; el.rot = sn.rot; }
       }
       if (st.snapPorts && !e.altKey && el.type === 'wall') {
         sn = app.findWallSnap(el, el);

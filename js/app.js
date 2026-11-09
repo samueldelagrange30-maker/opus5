@@ -108,6 +108,24 @@
       vp.setMode('select');
     }
 
+    /* ------------------------- fléchage au sol ------------------------- */
+    /** Ports (début / fin) des allées de circulation, pour l'accrochage. */
+    lanePorts(exclude) {
+      const res = [];
+      for (const e of this.project.elements) {
+        if (e.type !== 'lane' || (exclude && exclude.has(e.id))) continue;
+        for (const q of this.elementPorts(e, e)) res.push(Object.assign(q, { el: e, link: null, linkedFrom: [] }));
+      }
+      return res;
+    }
+    /** Accrochage d'une allée bout à bout avec une autre (position et cap). */
+    findLaneSnap(el, tf, moving) {
+      const mv = moving || new Set([el.id]);
+      const sn = this.findSnapFor(el, tf, mv, this.lanePorts(mv), Math.max(800, this.project.settings.snapRadius || 300));
+      if (sn) sn.z = 0;
+      return sn;
+    }
+
     /* ------------------------------ murs ------------------------------ */
     /** Accrochage d'une extrémité de mur sur l'extrémité d'un autre mur (angles, prolongements). */
     findWallSnap(el, tf, moving) {
@@ -485,15 +503,15 @@
       return res;
     }
     /** Pose d'accrochage magnétique pour un élément à la transformation tf. */
-    findSnapFor(el, tf, movingIds) {
-      const st = this.project.settings, R = st.snapRadius || 300;
+    findSnapFor(el, tf, movingIds, portList, radius) {
+      const st = this.project.settings, R = radius || st.snapRadius || 300;
       const moving = movingIds || new Set([el.id]);
       const mine = this.elementPorts(el, tf);
       const local = this.elementPorts(el, { x: 0, y: 0, z: 0, rot: 0 });
       let best = null;
       for (let i = 0; i < mine.length; i++) {
         const P = mine[i], Li = local[i];
-        for (const Q of this.network.ports) {
+        for (const Q of portList || this.network.ports) {
           if (moving.has(Q.el.id) || P.role === Q.role) continue;
           if (Q.role === 'in' && Q.linkedFrom.some(a => !moving.has(a.el.id))) continue;
           if (Q.role === 'out' && Q.link && !moving.has(Q.link.track.el.id)) continue;
@@ -515,6 +533,11 @@
     findSnap(ids, dx, dy, orig, dz0, primId) {
       const moving = new Set(ids);
       const prim = primId && this.project.getElement(primId);
+      if (prim && prim.type === 'lane' && ids.length === 1) {
+        const o = orig.get(prim.id);
+        const sn = this.findLaneSnap(prim, { x: o.x + dx, y: o.y + dy, z: 0, rot: o.rot }, moving);
+        return sn ? { dx: sn.x - o.x, dy: sn.y - o.y, dz: 0, rot: Object.assign({}, sn), label: sn.label } : null;
+      }
       if (prim && prim.type === 'wall') {
         const o = orig.get(prim.id);
         const sn = this.findWallSnap(prim, { x: o.x + dx, y: o.y + dy, z: o.z, rot: o.rot }, moving);
@@ -579,6 +602,10 @@
         const el = this.project.createElement(item.type, item.params);
         el.x = at[0]; el.y = at[1];
         el.z = (el.type === 'mezzanine' ? 0 : this.supportAt(at[0], at[1])) + (def.conveyor ? st.defaultZ : 0);
+        if (el.type === 'lane' && st.snapPorts) {
+          const sn = this.findLaneSnap(el, el);
+          if (sn) { el.x = sn.x; el.y = sn.y; el.rot = sn.rot; }
+        }
         if (el.type === 'wall' && st.snapPorts) {
           const sn = this.findWallSnap(el, el);
           if (sn) { el.x = sn.x; el.y = sn.y; }
@@ -595,6 +622,11 @@
         return;
       }
       const sel = this.selectedElements();
+      if (st.chainAdd && item.type === 'lane' && sel.length === 1 && sel[0].type === 'lane') {
+        const out = this.elementPorts(sel[0], sel[0]).find(q => q.role === 'out');
+        const taken = this.lanePorts(new Set([sel[0].id])).some(q => q.role === 'in' && Math.hypot(q.pos[0] - out.pos[0], q.pos[1] - out.pos[1]) < 50);
+        if (out && !taken) { this.appendAt(out, item); return; }
+      }
       if (st.chainAdd && def.conveyor && sel.length === 1 && C.Types.get(sel[0].type).conveyor) {
         const node = this.network.node(sel[0].id);
         const port = node && (node.ports.find(p => p.role === 'out' && !p.link && p.id === 'out') || node.ports.find(p => p.role === 'out' && !p.link && !p.optional));
@@ -974,6 +1006,11 @@
       add('reachtruck', { name: 'CAR-01', driverName: 'Cariste 1' }, { x: 28800, y: 8500, z: 0, rot: 0 });
       add('pallet', { name: 'PAL-01', palletType: 'euro', loaded: true }, { x: 28500, y: 5200, z: 0, rot: 90 });
       add('pallet', { name: 'PAL-02', palletType: 'perdue', loaded: true, loadColor: '#c49a62' }, { x: 30000, y: 5200, z: 0, rot: 90 });
+      // fléchage au sol (allée à sens unique devant le rack) et protections
+      add('lane', { name: 'ALL-01', length: 6500, width: 2400 }, { x: 30600, y: 11300, z: 0, rot: -90 });
+      add('bollard', { name: 'POT-01' }, { x: 31600, y: 4250, z: 0 });
+      add('bollard', { name: 'POT-02' }, { x: 31600, y: 12750, z: 0 });
+      add('barrier', { name: 'BAR-01', length: 2400 }, { x: 31800, y: 4150, z: 0, rot: 0 });
       add('obstacle', { name: 'POTEAU-01', length: 300, width: 300, height: 4000 }, { x: 30000, y: 12000, z: 0 });
       // mezzanine avec un poste de travail à l'étage
       add('mezzanine', { name: 'MEZ-01', stairs: 'left' }, { x: 27500, y: 18500, z: 0, rot: 0 });

@@ -1162,6 +1162,97 @@
     return grp;
   };
 
+  /* ---------------- Fléchage au sol ---------------- */
+  const paintCache = new Map();
+  function paint(color) {
+    if (paintCache.has(color)) return paintCache.get(color);
+    const m = new THREE.MeshStandardMaterial({ color, roughness: 0.75, metalness: 0, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 });
+    paintCache.set(color, m);
+    return m;
+  }
+  /** Flèche de sol (pointe vers +X), longueur len, largeur wid (mm). */
+  function floorArrow(len, wid) {
+    const sh = new THREE.Shape(), l = len * M, w = wid * M, st = w * 0.36;
+    sh.moveTo(l / 2, 0); sh.lineTo(l / 2 - l * 0.38, w / 2); sh.lineTo(l / 2 - l * 0.38, st / 2);
+    sh.lineTo(-l / 2, st / 2); sh.lineTo(-l / 2, -st / 2); sh.lineTo(l / 2 - l * 0.38, -st / 2); sh.lineTo(l / 2 - l * 0.38, -w / 2); sh.closePath();
+    return new THREE.ShapeGeometry(sh);
+  }
+  builders.lane = (el, m, g) => {
+    const p = el.params;
+    const path = new C.Path(m.tracks.main.segs, null, false);
+    const fr = frames(path, 3, 500);
+    const W = p.width, lw = p.lineWidth || 100;
+    const mt = paint(p.color || '#f1c40f');
+    const add = (geo, mat) => { const mm = new THREE.Mesh(geo, mat); mm.receiveShadow = true; mm.renderOrder = 1; tag(mm, 'lanes'); g.add(mm); return mm; };
+    if (p.laneStyle === 'pieton') {
+      // zébras perpendiculaires au sens de passage + bordures
+      add(sweep(fr, W / 2 - lw, W / 2, 1, 3), mt); add(sweep(fr, -W / 2, -W / 2 + lw, 1, 3), mt);
+      const n = Math.max(1, Math.floor(path.length / 500));
+      for (let i = 0; i < n; i++) {
+        const f = localFrame(path, (i + 0.5) * path.length / n);
+        const b = new THREE.Mesh(new THREE.BoxGeometry(250 * M, (W - 2 * lw - 100) * M, 2 * M), paint('#2ecc71'));
+        b.position.set(f.p[0] * M, f.p[1] * M, 2 * M); b.rotation.z = Math.atan2(f.t[1], f.t[0]);
+        tag(b, 'lanes'); b.receiveShadow = true; g.add(b);
+      }
+      return;
+    }
+    // lignes de rive (+ axe en double sens)
+    add(sweep(fr, W / 2 - lw, W / 2, 1, 3), mt);
+    add(sweep(fr, -W / 2, -W / 2 + lw, 1, 3), mt);
+    if (p.twoWay) {
+      // ligne axiale discontinue
+      const L = path.length, dash = 1000;
+      for (let s0 = 0; s0 < L; s0 += dash * 2) {
+        const sub = frames(path, 3, 250).filter(f => f.s >= s0 && f.s <= Math.min(L, s0 + dash));
+        if (sub.length > 1) add(sweep(sub, -lw / 2, lw / 2, 1, 3), mt);
+      }
+    }
+    // flèches de sens (circulation à droite en double sens)
+    const n = Math.max(1, Math.round(path.length / Math.max(1000, p.arrowSpacing || 4000)));
+    const aw = Math.min(p.twoWay ? W * 0.32 : W * 0.5, 1100), al = Math.min(1800, aw * 1.8);
+    const geo = floorArrow(al, aw);
+    for (let i = 0; i < n; i++) {
+      const f = localFrame(path, (i + 0.5) * path.length / n);
+      const h = Math.atan2(f.t[1], f.t[0]);
+      const put = (off, dir) => {
+        const a = add(geo, mt);
+        a.position.set((f.p[0] + f.n[0] * off) * M, (f.p[1] + f.n[1] * off) * M, 2.5 * M);
+        a.rotation.z = h + (dir < 0 ? Math.PI : 0);
+      };
+      if (p.twoWay) { put(-W / 4, 1); put(W / 4, -1); } else put(0, 1);
+    }
+  };
+
+  /* ---------------- Barrière et poteau de protection (type Boplan) ---------------- */
+  const blackBand = () => MAT.color('#1b1b1b');
+  builders.barrier = (el, m, g) => {
+    const p = el.params, L = p.length, H = p.height;
+    const yel = MAT.color(p.color || '#f5c400');
+    const n = Math.max(2, Math.ceil(L / Math.max(500, p.postSpacing || 1500)) + 1);
+    for (let i = 0; i < n; i++) {
+      const x = C.clamp(L * i / (n - 1), 70, L - 70);
+      g.add(box(130, 130, H, x, 0, H / 2, yel, 'body'));
+      g.add(box(134, 134, 70, x, 0, H - 110, blackBand(), 'body'));
+      g.add(box(134, 134, 70, x, 0, H - 260, blackBand(), 'body'));
+      g.add(box(260, 260, 18, x, 0, 9, MAT.color('#2b2b2b'), 'structure'));
+    }
+    const nr = C.clamp(Math.round(p.rails || 2), 1, 3);
+    const zs = nr === 1 ? [H - 80] : nr === 2 ? [H - 80, H * 0.45] : [H - 80, H * 0.6, H * 0.3];
+    for (const z of zs) {
+      const r = cyl(55, L - 60, yel, 'body', 16);
+      r.rotation.z = Math.PI / 2; r.position.set(L / 2 * M, 0, z * M);
+      g.add(r);
+    }
+  };
+  builders.bollard = (el, m, g) => {
+    const p = el.params, H = p.height, R = (p.diameter || 190) / 2;
+    const c = cyl(R, H, MAT.color(p.color || '#f5c400'), 'body', 24); c.rotation.x = Math.PI / 2; c.position.z = H / 2 * M; g.add(c);
+    for (const z of [H - 120, H - 300]) { const b = cyl(R + 2, 80, blackBand(), 'body', 24); b.rotation.x = Math.PI / 2; b.position.z = z * M; g.add(b); }
+    const top = new THREE.Mesh(new THREE.SphereGeometry(R * M, 20, 10, 0, Math.PI * 2, 0, Math.PI / 2), MAT.color(p.color || '#f5c400'));
+    top.position.z = H * M; top.scale.z = 0.3; tag(top, 'body'); g.add(top);
+    const base = cyl(R + 70, 18, MAT.color('#2b2b2b'), 'structure', 24); base.rotation.x = Math.PI / 2; base.position.z = 9 * M; g.add(base);
+  };
+
   /* ---------------- Palettes ---------------- */
   /**
    * Palette Europe (9 plots, 3 semelles) ou palette perdue (légère, sans semelles),

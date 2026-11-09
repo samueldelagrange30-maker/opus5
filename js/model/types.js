@@ -466,12 +466,49 @@
   fld('liftSpeed2', 'Vitesse de levée', 'number', { group: 'Chariot', unit: 'm/s', min: 0.05, max: 1, step: 0.05, live: true });
   FL.liftSpeed2.k = 'forkSpeed';
   fld('driverName', 'Nom du cariste', 'text', { group: 'Chariot' });
+  fld('followLanes', 'Respecter le fléchage au sol', 'bool', { group: 'Chariot', live: true });
   T.reachtruck = {
     label: 'Cariste CACES 5 (chariot à mât rétractable)', cat: 'Stockage', conveyor: false, centered: true, floor: true,
-    defaults: { maxLift: 10500, travelSpeed: 1.8, forkSpeed: 0.35, driverName: 'Cariste', color: '#f39c12', note: '' },
-    fields: ['name', 'x', 'y', 'rot', 'driverName', 'maxLift', 'travelSpeed', 'liftSpeed2', 'color', 'note'],
+    defaults: { maxLift: 10500, travelSpeed: 1.8, forkSpeed: 0.35, driverName: 'Cariste', followLanes: true, color: '#f39c12', note: '' },
+    fields: ['name', 'x', 'y', 'rot', 'driverName', 'followLanes', 'maxLift', 'travelSpeed', 'liftSpeed2', 'color', 'note'],
     // cinématique : centre des fourches = mât (150 → 900 mm) + 600 mm
     reachIn: 750, reachOut: 1500,
+    build: () => ({ tracks: {}, ports: [], diverts: [] })
+  };
+
+  /* ---------------- Circulation : fléchage au sol ---------------- */
+  fld('laneShape', 'Forme', 'select', { group: 'Fléchage au sol', options: [['straight', 'Droite'], ['curve', 'Virage']] });
+  fld('laneStyle', 'Marquage', 'select', { group: 'Fléchage au sol', options: [['allee', 'Allée chariots (flèches)'], ['pieton', 'Passage piéton (zébras)']] });
+  fld('twoWay', 'Double sens', 'bool', { group: 'Fléchage au sol' });
+  fld('arrowSpacing', 'Espacement des flèches', 'number', { group: 'Fléchage au sol', unit: 'mm', min: 1000, step: 100 });
+  fld('lineWidth', 'Largeur des lignes', 'number', { group: 'Fléchage au sol', unit: 'mm', min: 50, max: 300, step: 10 });
+  T.lane = {
+    label: 'Fléchage au sol (allée de circulation)', cat: 'Circulation', conveyor: false, floor: true,
+    defaults: { laneShape: 'straight', laneStyle: 'allee', length: 6000, width: 3000, angle: 90, radius: 3000, side: 'left', twoWay: false, arrowSpacing: 4000, lineWidth: 100, color: '#f1c40f', note: '' },
+    fields: ['name', 'x', 'y', 'rot', 'laneShape', 'laneStyle', 'length', 'width', 'angle', 'radius', 'side', 'twoWay', 'arrowSpacing', 'lineWidth', 'color', 'note'],
+    build: p => {
+      const t = new C.Turtle();
+      if (p.laneShape === 'curve') t.arc(Math.max(200, p.radius), (p.side === 'right' ? -1 : 1) * C.clamp(p.angle, 1, 359) * D);
+      else t.line(Math.max(100, p.length));
+      return { tracks: { main: { segs: t.segs } }, ports: [{ id: 'in', role: 'in', track: 'main', at: 'start' }, { id: 'out', role: 'out', track: 'main', at: 'end' }], diverts: [] };
+    }
+  };
+
+  /* ---------------- Sécurité : barrières et poteaux de protection ---------------- */
+  fld('rails', 'Nombre de lisses', 'number', { group: 'Protection', min: 1, max: 3, step: 1 });
+  fld('postSpacing', 'Entraxe des poteaux', 'number', { group: 'Protection', unit: 'mm', min: 500, max: 3000, step: 50 });
+  fld('diameter2', 'Diamètre', 'number', { group: 'Protection', unit: 'mm', min: 60, max: 600, step: 10 });
+  FL.diameter2.k = 'diameter';
+  T.barrier = {
+    label: 'Barrière de protection (type Boplan)', cat: 'Circulation', conveyor: false, floor: true,
+    defaults: { length: 3000, height: 1000, rails: 2, postSpacing: 1500, color: '#f5c400', note: '' },
+    fields: ['name', 'x', 'y', 'rot', 'length', 'height', 'rails', 'postSpacing', 'color', 'note'],
+    build: () => ({ tracks: {}, ports: [], diverts: [] })
+  };
+  T.bollard = {
+    label: 'Poteau de protection (type Boplan)', cat: 'Circulation', conveyor: false, centered: true, floor: true,
+    defaults: { diameter: 190, height: 1200, color: '#f5c400', note: '' },
+    fields: ['name', 'x', 'y', 'diameter2', 'height', 'color', 'note'],
     build: () => ({ tracks: {}, ports: [], diverts: [] })
   };
 
@@ -551,6 +588,9 @@
       if (el.type === 'mezzanine') return { L: p.length, W: p.width, H: p.deckH + (p.railH || 0) };
       if (el.type === 'wall') return { L: p.length, W: p.thickness, H: p.height };
       if (el.type === 'reachtruck') return { L: 2600, W: 1300, H: 2300 };
+      if (el.type === 'barrier') return { L: p.length, W: 220, H: p.height };
+      if (el.type === 'bollard') return { L: p.diameter, W: p.diameter, H: p.height };
+      if (el.type === 'lane') return { L: p.laneShape === 'curve' ? p.radius : p.length, W: p.width, H: 2 };
       if (el.type === 'pallet') {
         const euro = p.palletType !== 'perdue', ph = euro ? 144 : 120;
         return { L: 1200, W: !euro && p.palletSize === '1200x1000' ? 1000 : 800, H: p.loaded ? ph + Math.max(100, p.loadH) : ph * C.clamp(Math.round(p.stack || 1), 1, 30) };
@@ -652,6 +692,18 @@
         { id: 'bd-wall-door', label: 'Mur avec porte sectionnelle', icon: 'walldoor', type: 'wall', params: { doors: '5000;4000;4500' } },
         { id: 'bd-wall-low', label: 'Cloison basse (3 m)', icon: 'wall', type: 'wall', params: { height: 3000, thickness: 100, baseH: 0, color: '#dfe3e8' } },
         { id: 'bd-building', label: 'Entrepôt complet (4 murs)', icon: 'building', type: 'wall', params: {}, action: 'building' }
+      ]
+    },
+    {
+      cat: 'Circulation et sécurité', items: [
+        { id: 'cs-lane', label: 'Allée chariots (fléchage)', icon: 'lane', type: 'lane', params: {} },
+        { id: 'cs-lane-curve', label: 'Virage d\'allée (gauche)', icon: 'lanecurve', type: 'lane', params: { laneShape: 'curve', side: 'left' } },
+        { id: 'cs-lane-curve-r', label: 'Virage d\'allée (droite)', icon: 'lanecurve', type: 'lane', params: { laneShape: 'curve', side: 'right' } },
+        { id: 'cs-lane-2', label: 'Allée double sens', icon: 'lane2', type: 'lane', params: { twoWay: true, width: 4000, color: '#ffffff' } },
+        { id: 'cs-ped', label: 'Passage piéton', icon: 'zebra', type: 'lane', params: { laneStyle: 'pieton', length: 4000, width: 1200, color: '#ffffff' } },
+        { id: 'cs-barrier', label: 'Barrière Boplan (2 lisses)', icon: 'barrier', type: 'barrier', params: {} },
+        { id: 'cs-barrier-3', label: 'Barrière Boplan haute (3 lisses)', icon: 'barrier', type: 'barrier', params: { height: 1300, rails: 3 } },
+        { id: 'cs-bollard', label: 'Poteau Boplan', icon: 'bollard', type: 'bollard', params: {} }
       ]
     },
     {

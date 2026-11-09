@@ -232,6 +232,8 @@
           res.push({ tf, cx: (pc.x0 + pc.x1) / 2, cy: 0, L: pc.x1 - pc.x0, W: p.thickness || 200, z0: pc.z0, z1: pc.z1, label: e.name });
         }
       }
+      if (e.type === 'barrier') res.push({ tf, cx: p.length / 2, cy: 0, L: p.length, W: 220, z0: 0, z1: p.height, label: e.name });
+      if (e.type === 'bollard') res.push({ tf, cx: 0, cy: 0, L: p.diameter, W: p.diameter, z0: 0, z1: p.height, label: e.name });
       if (e.type === 'rack') {
         const sz = C.Types.staticSize(e);
         res.push({ tf, cx: 0, cy: 0, L: sz.L, W: sz.W, z0: 0, z1: sz.H, label: e.name });

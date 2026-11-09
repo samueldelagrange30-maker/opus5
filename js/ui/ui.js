@@ -102,6 +102,7 @@
             Object.assign({ label: 'Ombres' }, tog('shadows')),
             Object.assign({ label: 'Murs d\'entrepôt' }, tog('walls')),
             Object.assign({ label: 'Murs translucides' }, tog('wallsGhost')),
+            Object.assign({ label: 'Fléchage au sol' }, tog('lanes')),
             Object.assign({ label: 'Étiquettes' }, tog('labels')),
             { label: 'Cotes de tous les éléments', check: () => this.showDims, action: () => { this.showDims = !this.showDims; vp().updateLabels(); } },
             { label: 'Hauteurs des raccordements', check: () => this.showHeights, action: () => { this.showHeights = !this.showHeights; vp().updateLabels(); } }
@@ -1323,7 +1324,8 @@
             <li>Déplacez un élément en le faisant glisser : il s'<b>accroche magnétiquement</b> aux ports libres proches (alignement, cap et hauteur). Alt : désactiver le magnétisme.</li>
             <li>Ports : <span class="pill ok">vert</span> raccordé, <span class="pill err">rouge</span> libre ou défaut, <span class="pill warn">orange</span> écart de hauteur, <span class="pill opt">gris</span> sortie optionnelle.</li>
             <li>Une sortie qui débouche sur le côté d'un convoyeur crée une <b>jonction</b> (fusion de flux).</li>
-            <li><b>Cariste CACES 5</b> : sélectionnez le chariot, « Nouvelle mission », cliquez la palette à prendre (sol ou rack) puis l'endroit où la déposer. Le trajet est en ligne droite (pas d'évitement d'obstacles).</li>
+            <li><b>Cariste CACES 5</b> : sélectionnez le chariot, « Nouvelle mission », cliquez la palette à prendre (sol ou rack) puis l'endroit où la déposer. Le chariot contourne les obstacles (barrières, poteaux, racks, convoyeurs…) et suit le fléchage au sol dans le sens des flèches.</li>
+            <li><b>Fléchage au sol</b> : allées droites ou en virage qui s'accrochent bout à bout (sélectionnez une allée puis cliquez une autre allée de la bibliothèque pour la prolonger). Itinéraire prévu : pointillés verts (sur les allées) ou bleus (trajet libre).</li>
             <li><b>Murs d'entrepôt</b> : un convoyeur (ou un objet) qui traverse un mur y perce automatiquement une ouverture. Portes : champ « Portes / ouvertures manuelles ». Bouton « Murs » en haut à droite : visibles / translucides / masqués.</li>
             <li><b>Mezzanine modulaire</b> : accolez des modules bord à bord (accrochage magnétique ou boutons « Étendre ») pour obtenir la surface voulue ; les garde-corps disparaissent sur les jonctions.</li>
             <li><b>Mezzanine</b> : tout objet placé ou glissé au-dessus du plancher s'y pose automatiquement (Alt : garder la hauteur). Déplacer la mezzanine emporte les objets posés dessus.</li>
