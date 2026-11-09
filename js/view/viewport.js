@@ -34,6 +34,8 @@
     const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, transparent: true, depthWrite: false, depthTest: opts.depthTest !== false }));
     const h = opts.height || 0.35;
     sp.scale.set(h * cv.width / cv.height, h, 1);
+    // ancrage en bas : le texte reste au-dessus du sol au lieu d'être coupé par le plancher
+    if (opts.ground) { sp.center.set(0.5, 0); sp.renderOrder = 3; }
     return sp;
   }
   C.textSprite = textSprite;
@@ -185,15 +187,15 @@
       const big = Math.max(W, D);
       const lh = C.clamp(big / 60, 0.25, 2.5);
       for (let x = 0; x <= W + 1e-6; x += labelEvery) {
-        const s = textSprite(C.fmt(x, x % 1 ? 1 : 0) + ' m', { height: lh, color: '#7f93ad' });
-        s.position.set(x, -lh * 0.9, 0.01); s.userData.layer = 'grid'; this.gHelpers.add(s);
+        const s = textSprite(C.fmt(x, x % 1 ? 1 : 0) + ' m', { height: lh, color: '#7f93ad', ground: true });
+        s.position.set(x, -lh * 0.9, 0.02); s.userData.layer = 'grid'; this.gHelpers.add(s);
       }
       for (let y = labelEvery; y <= D + 1e-6; y += labelEvery) {
-        const s = textSprite(C.fmt(y, y % 1 ? 1 : 0) + ' m', { height: lh, color: '#7f93ad' });
-        s.position.set(-lh * 1.6, y, 0.01); s.userData.layer = 'grid'; this.gHelpers.add(s);
+        const s = textSprite(C.fmt(y, y % 1 ? 1 : 0) + ' m', { height: lh, color: '#7f93ad', ground: true });
+        s.position.set(-lh * 1.6, y, 0.02); s.userData.layer = 'grid'; this.gHelpers.add(s);
       }
-      const dimTxt = textSprite(`Zone de travail ${C.fmt(st.workW / 1000, 1)} × ${C.fmt(st.workD / 1000, 1)} m`, { height: lh * 1.1, color: '#9fb4cc' });
-      dimTxt.position.set(W / 2, -lh * 2.4, 0.01); dimTxt.userData.layer = 'grid'; this.gHelpers.add(dimTxt);
+      const dimTxt = textSprite(`Zone de travail ${C.fmt(st.workW / 1000, 1)} × ${C.fmt(st.workD / 1000, 1)} m`, { height: lh * 1.1, color: '#9fb4cc', ground: true });
+      dimTxt.position.set(W / 2, -lh * 3.6, 0.02); dimTxt.userData.layer = 'grid'; this.gHelpers.add(dimTxt);
       // repère XYZ à l'origine
       const axes = new THREE.Group(); axes.userData.layer = 'axes';
       const al = C.clamp(big / 20, 1, 5);
