@@ -39,7 +39,80 @@
     cartonMats.set(color, m);
     return m;
   };
+  /* ----------------------- carton ouvert (rabats) ----------------------- */
+  const flatGeo = new THREE.BoxGeometry(1, 1, 1);
+  /** Carton ouvert : fond, 4 parois, 4 rabats relevés ; groupe centré (mètres). */
+  C.makeOpenCarton = function (spec) {
+    const L = spec.L, W = spec.W, H = spec.H, t = 5;
+    const mat = C.cartonMaterial(spec.color || '#c8a26b');
+    const inner = C.cartonMaterial('#8a6a40');
+    const grp = new THREE.Group();
+    const add = (lx, ly, lz, x, y, z, m) => {
+      const b = new THREE.Mesh(flatGeo, m); b.scale.set(lx * M, ly * M, lz * M); b.position.set(x * M, y * M, z * M);
+      b.castShadow = true; b.receiveShadow = true; b.userData.loadPart = true; grp.add(b); return b;
+    };
+    add(L, W, t, 0, 0, -H / 2 + t / 2, inner);
+    add(L, t, H, 0, W / 2 - t / 2, 0, mat); add(L, t, H, 0, -W / 2 + t / 2, 0, mat);
+    add(t, W, H, L / 2 - t / 2, 0, 0, mat); add(t, W, H, -L / 2 + t / 2, 0, 0, mat);
+    // rabats relevés et légèrement ouverts vers l'extérieur
+    const flaps = new THREE.Group(); flaps.name = 'flaps';
+    const flap = (len, hgt, x, y, rotAxis, ang) => {
+      const pv = new THREE.Group(); pv.position.set(x * M, y * M, H / 2 * M);
+      const b = new THREE.Mesh(flatGeo, mat);
+      if (rotAxis === 'x') b.scale.set(len * M, t * M, hgt * M); else b.scale.set(t * M, len * M, hgt * M);
+      b.position.z = hgt / 2 * M; b.castShadow = true; b.userData.loadPart = true;
+      pv.add(b); pv.rotation[rotAxis] = ang; flaps.add(pv);
+    };
+    flap(L, W / 2, 0, W / 2, 'x', -0.45); flap(L, W / 2, 0, -W / 2, 'x', 0.45);
+    flap(W, W / 2 * 0.9, L / 2, 0, 'y', 0.5); flap(W, W / 2 * 0.9, -L / 2, 0, 'y', -0.5);
+    grp.add(flaps);
+    const items = new THREE.Group(); items.name = 'items'; grp.add(items);
+    grp.userData.isOpenCarton = true;
+    return grp;
+  };
+  /** Ajoute n articles visibles dans un carton ouvert (rangés en couches). */
+  const ARTICLE_COLORS = ['#e74c3c', '#3498db', '#2ecc71', '#f1c40f', '#9b59b6', '#1abc9c', '#e67e22', '#ecf0f1'];
+  C.addArticles = function (c, n, dims) {
+    c.items = (c.items || 0) + n;
+    const g = c.mesh, items = g && g.getObjectByName && g.getObjectByName('items');
+    if (!items) return;
+    const [al, aw, ah] = dims || [180, 120, 90];
+    const sp = c.spec, nx = Math.max(1, Math.floor((sp.L - 20) / (al + 10))), ny = Math.max(1, Math.floor((sp.W - 20) / (aw + 10)));
+    for (let k = items.children.length; k < c.items; k++) {
+      const layer = Math.floor(k / (nx * ny)), idx = k % (nx * ny), i = idx % nx, j = Math.floor(idx / nx);
+      const z = -sp.H / 2 + 8 + ah / 2 + layer * (ah + 4);
+      if (z + ah / 2 > sp.H / 2 - 5) break;              // carton plein visuellement
+      const b = new THREE.Mesh(flatGeo, C.cartonMaterial(ARTICLE_COLORS[(k * 7 + c.id.length) % ARTICLE_COLORS.length]));
+      b.scale.set(al * M, aw * M, ah * M);
+      b.position.set((-sp.L / 2 + 10 + (i + 0.5) * (sp.L - 20) / nx) * M, (-sp.W / 2 + 10 + (j + 0.5) * (sp.W - 20) / ny) * M, z * M);
+      b.castShadow = true;
+      items.add(b);
+    }
+  };
+  /** Fermeture : coiffe en carton ajustée au format, ou rabats repliés + adhésif. */
+  C.closeCarton = function (c, mode, skirt, color) {
+    c.open = false; c.closedBy = mode;
+    const g = c.mesh;
+    if (!g || !g.isGroup) return;
+    const fl = g.getObjectByName('flaps'); if (fl) fl.visible = false;
+    const sp = c.spec;
+    if (mode === 'tape') {
+      const top = new THREE.Mesh(flatGeo, C.cartonMaterial(sp.color)); top.scale.set(sp.L * M, sp.W * M, 6 * M); top.position.z = (sp.H / 2 - 3) * M; g.add(top);
+      const tape = new THREE.Mesh(flatGeo, C.cartonMaterial('#d9cfa8')); tape.scale.set((sp.L + 4) * M, 50 * M, 7 * M); tape.position.z = (sp.H / 2 - 2.5) * M; g.add(tape);
+    } else {
+      const sk = C.clamp(skirt || 80, 20, sp.H), e = 8;
+      const lid = new THREE.Group(); lid.name = 'lid';
+      const lm = C.cartonMaterial(color || '#c8a26b');
+      const part = (lx, ly, lz, x, y, z) => { const b = new THREE.Mesh(flatGeo, lm); b.scale.set(lx * M, ly * M, lz * M); b.position.set(x * M, y * M, z * M); b.castShadow = true; lid.add(b); };
+      part(sp.L + 2 * e, sp.W + 2 * e, 6, 0, 0, sp.H / 2 + 3);
+      part(sp.L + 2 * e, 5, sk, 0, sp.W / 2 + e - 2.5, sp.H / 2 - sk / 2 + 6); part(sp.L + 2 * e, 5, sk, 0, -sp.W / 2 - e + 2.5, sp.H / 2 - sk / 2 + 6);
+      part(5, sp.W + 2 * e, sk, sp.L / 2 + e - 2.5, 0, sp.H / 2 - sk / 2 + 6); part(5, sp.W + 2 * e, sk, -sp.L / 2 - e + 2.5, 0, sp.H / 2 - sk / 2 + 6);
+      g.add(lid);
+    }
+  };
+
   C.makeCartonMesh = function (spec) {
+    if (spec.kind === 'open') return C.makeOpenCarton(spec);
     if (spec.kind && spec.kind !== 'box' && C.buildPallet) {
       // palette (vide ou chargée) : groupe centré (origine au centre de l'unité de charge)
       const outer = new THREE.Group();
@@ -88,7 +161,8 @@
     return true;
   }
 
-  const isStation = el => el.type === 'workstation' || (el.type === 'labeler' && el.params.labelMode !== 'fly');
+  /** Le carton doit-il s'arrêter au poste de cet élément ? */
+  const isStation = (el, c) => el.type === 'workstation' || (el.type === 'labeler' && el.params.labelMode !== 'fly') || (el.type === 'closer' && (!c || c.open));
 
   /** Autocollant d'étiquette (code-barres) sur une face du colis. */
   let stickerMat = null, stickerGeo = null;
@@ -140,7 +214,7 @@
     const map = {
       ref: sp.ref, reference: sp.ref, format: sp.formatName, nom: sp.name, name: sp.name,
       poids: sp.weight, weight: sp.weight, masse: sp.weight, couleur: sp.color, color: sp.color,
-      source: c.source, entree: c.source, etiquette: c.label || '', etiquete: c.label ? 1 : 0, label: c.label || '', l: sp.L, longueur: sp.L, w: sp.W, largeur: sp.W, h: sp.H, hauteur: sp.H
+      source: c.source, entree: c.source, etiquette: c.label || '', etiquete: c.label ? 1 : 0, label: c.label || '', articles: c.items || 0, ouvert: c.open ? 1 : 0, ferme: c.open ? 0 : 1, l: sp.L, longueur: sp.L, w: sp.W, largeur: sp.W, h: sp.H, hauteur: sp.H
     };
     const v = map[cd.key];
     if (v === undefined) return false;
@@ -246,7 +320,7 @@
         id: 'c' + (this.nextId++), spec, source: source || '', designId,
         track: null, node: null, s, v: 0, yaw: h + yawOff, yawOff, heading: h, pitch: 0,
         half: lenAlong(spec, yawOff) / 2, state: 'moving', reason: '', born: this.t, wait: 0, process: 0,
-        vmax: spec.speed || 0, done: {}, route: null, entering: null, path: []
+        vmax: spec.speed || 0, done: {}, route: null, entering: null, path: [], open: spec.kind === 'open', items: 0
       };
       c.mesh = C.makeCartonMesh(spec);
       c.mesh.userData.simCarton = c.id;
@@ -432,10 +506,15 @@
       }
       // obstacles
       for (const bs of tr.blocks) if (bs > c.s + half - 30) { const l = bs - half - 10; if (l < lim) { lim = l; c.reason = 'obstacle'; } break; }
-      // poste de préparation / étiqueteuse avec arrêt
-      if (isStation(el) && tr.id === 'main' && !c.done[el.id]) {
+      // poste de préparation / étiqueteuse / fermeuse avec arrêt
+      if (isStation(el, c) && tr.id === 'main' && !c.done[el.id]) {
         const ss = tr.length * C.clamp(+p.stopPos || 0.5, 0.05, 0.95);
-        if (c.s <= ss + 0.5 && ss < lim) { lim = ss; c.reason = el.type === 'labeler' ? 'étiquetage' : 'poste'; }
+        if (c.s <= ss + 0.5 && ss < lim) { lim = ss; c.reason = el.type === 'labeler' ? 'étiquetage' : el.type === 'closer' ? 'fermeture' : 'poste'; }
+      }
+      // poste GTP : bac et carton s'arrêtent face à l'opérateur jusqu'à la fin du transfert
+      if (el.type === 'gtp' && !c.done[el.id]) {
+        const ss = tr.length * 0.5;
+        if (c.s <= ss + 0.5 && ss < lim) { lim = ss; c.reason = tr.id === 'tote' ? 'bac au poste GTP' : 'carton au poste GTP'; }
       }
       // zones d'accumulation sans pression
       if (el.type === 'accumulation' && tr.id === 'main') {
@@ -554,7 +633,9 @@
         const list = tr.cartons.slice().sort((a, b) => b.s - a.s);
         for (const c of list) if (c.track === tr && !c.removed) this.moveCarton(c, dt);
       }
-      // 4. statistiques
+      // 4. postes GTP
+      for (const node of net.nodes.values()) if (node.el.type === 'gtp') this.runGTP(node);
+      // 5. statistiques
       this.accumulateStats(dt);
     }
 
@@ -610,6 +691,34 @@
       });
     }
 
+    /**
+     * Poste GTP : quand un bac et un carton sont présentés, l'opérateur transfère
+     * min(articles par bac, articles restants) à la cadence réglée (articles/h).
+     */
+    runGTP(node) {
+      const el = node.el, p = el.params, rt = node.rt, id = el.id;
+      const tt = node.tracks.tote, tc = node.tracks.ctn;
+      if (!tt || !tc) return;
+      const at = (tr, c) => !c.removed && !c.done[id] && c.track === tr && Math.abs(c.s - tr.length * 0.5) < 1;
+      if (rt.busy) {
+        const b = rt.busy;
+        if (b.tote.removed || b.ctn.removed) { rt.busy = null; return; }
+        if (this.t < b.until) return;
+        C.addArticles(b.ctn, b.n, C.Types.defs.gtp.articleDims(p.articleSize));
+        rt.picks = (rt.picks || 0) + b.n;
+        b.tote.done[id] = true; rt.totes = (rt.totes || 0) + 1;
+        if ((b.ctn.items || 0) >= Math.max(1, +p.itemsPerOrder || 1)) { b.ctn.done[id] = true; rt.orders = (rt.orders || 0) + 1; }
+        rt.busy = null;
+        return;
+      }
+      if (p.running === false) return;
+      const tote = tt.cartons.find(c => at(tt, c)), ctn = tc.cartons.find(c => at(tc, c));
+      if (!tote || !ctn) { rt.waitTote = !tote; rt.waitCtn = !ctn; return; }
+      const remaining = Math.max(1, (+p.itemsPerOrder || 1) - (ctn.items || 0));
+      const n = Math.min(Math.max(1, Math.round(+p.itemsPerTote || 1)), remaining);
+      rt.busy = { tote, ctn, n, start: this.t, until: this.t + n * 3600 / Math.max(1, +p.pickRate || 600) };
+    }
+
     /** Pose d'une étiquette numérotée sur le colis (numéro + autocollant visible). */
     applyLabel(c, node) {
       const p = node.el.params, rt = node.rt;
@@ -634,6 +743,7 @@
         if (this.t < c.dwellUntil) { c.state = 'process'; c.process += dt; return; }
         c.dwellUntil = 0; c.done[el.id] = true;
         if (el.type === 'labeler') this.applyLabel(c, tr.node);
+        if (el.type === 'closer') { C.closeCarton(c, p.closeMode, p.lidSkirt, p.lidColor); tr.node.rt.closed = (tr.node.rt.closed || 0) + 1; tr.node.rt.lastLabel = this.t; }
       }
       const v = this.speedOf(c, dt);
       const want = v * 1000 * dt;
@@ -647,7 +757,8 @@
       else if (adv < want * 0.5) { c.state = 'blocked'; c.wait += dt; tr.node.rt.blockedNow++; if (p.surface === 'freerollers') c.v = 0; }
       else { c.state = 'moving'; c.reason = ''; }
       // début de préparation / d'étiquetage
-      if (isStation(el) && tr.id === 'main' && !c.done[el.id] && !c.dwellUntil) {
+      if (el.type === 'gtp' && !c.done[el.id] && Math.abs(c.s - tr.length * 0.5) < 0.6) { c.state = 'process'; c.reason = tr.id === 'tote' ? 'prélèvement' : 'remplissage'; }
+      if (isStation(el, c) && tr.id === 'main' && !c.done[el.id] && !c.dwellUntil) {
         const ss = tr.length * C.clamp(+p.stopPos || 0.5, 0.05, 0.95);
         if (Math.abs(c.s - ss) < 0.6) {
           c.dwellUntil = this.t + (+p.processTime || 0);
@@ -802,6 +913,18 @@
         const rt = node.rt, p = node.el.params;
         if (g.userData.spin) g.userData.spin.rotation.z = rt.angle;
         if (g.userData.osr && C.animateOSR) C.animateOSR(g, this.t);
+        if (g.userData.gtpArticle) {
+          // article en cours de transfert : arc du bac vers le carton
+          const art = g.userData.gtpArticle, b = rt.busy;
+          art.visible = !!b && !b.tote.removed && !b.ctn.removed;
+          if (art.visible) {
+            const u = C.clamp((this.t - b.start) / Math.max(1e-6, b.until - b.start), 0, 1), f = (u * b.n) % 1;
+            const pa = b.tote.mesh.position, pb = b.ctn.mesh.position;
+            const v = new THREE.Vector3().lerpVectors(pa, pb, f);
+            v.z += Math.sin(f * Math.PI) * 0.45 + 0.12;
+            art.position.copy(g.worldToLocal(v));
+          }
+        }
         if (g.userData.applicator) {
           const ap = g.userData.applicator;
           const busy = this.cartons.some(c => c.node === node && c.state === 'process') || (rt.lastLabel !== undefined && this.t - rt.lastLabel < 0.35);

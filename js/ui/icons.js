@@ -113,6 +113,9 @@
     zebra: '<path d="M6 4v20M12 4v20M18 4v20M24 4v20M30 4v20M36 4v20" stroke-width="3"/>',
     barrier: '<path d="M4 24V6M20 24V6M36 24V6" stroke-width="3"/><path d="M4 10h32M4 17h32" stroke-width="2"/><path d="M4 6v3M20 6v3M36 6v3" stroke="#222"/>',
     bollard: '<rect x="15" y="3" width="10" height="21" rx="2"/><path d="M15 8h10M15 12h10"/><path d="M11 25h18"/>',
+    closer: '<rect x="2" y="18" width="36" height="6"/><path d="M8 18V4h24v14"/><rect x="14" y="8" width="12" height="5"/><rect x="16" y="13" width="8" height="5" stroke-dasharray="1.5 1"/>',
+    gtp: '<rect x="2" y="4" width="36" height="6"/><rect x="2" y="16" width="36" height="6"/><rect x="15" y="1" width="8" height="5"/><rect x="15" y="13" width="9" height="6"/><path d="M19 7v7" stroke-dasharray="1.5 1"/><circle cx="34" cy="13" r="2.5"/>',
+    mezzstair: '<path d="M2 6h36"/><path d="M14 6l4 4h4l4 4h4l4 4h4" /><path d="M14 6v18M38 18v6"/><path d="M10 2v4M30 2v4" stroke-dasharray="1.5 1"/>',
     mezz: '<path d="M4 9h32"/><path d="M4 5h32M4 5v4M36 5v4"/><path d="M8 9v16M32 9v16M20 9v16"/><path d="M8 25h-6M12 13l8 12" stroke-dasharray="2 1.5"/>'
   };
   C.libIcon = function (name) {

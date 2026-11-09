@@ -14,7 +14,7 @@
   const PREFIX = {
     straight: 'CV', curve: 'VR', heightchange: 'CH', spiral: 'SP', transfer: 'TR', sorter: 'TRI',
     turntable: 'TT', elevator: 'EL', stop: 'BT', separator: 'SEP', accumulation: 'ACC',
-    workstation: 'PP', source: 'IN', sink: 'OUT', obstacle: 'OBS', table: 'TAB', guide: 'GL', mezzanine: 'MEZ', rack: 'RK', osr: 'OSR', wall: 'MUR', pallet: 'PAL', labeler: 'ETQ', reachtruck: 'CAR', lane: 'ALL', barrier: 'BAR', bollard: 'POT'
+    workstation: 'PP', source: 'IN', sink: 'OUT', obstacle: 'OBS', table: 'TAB', guide: 'GL', mezzanine: 'MEZ', rack: 'RK', osr: 'OSR', wall: 'MUR', pallet: 'PAL', labeler: 'ETQ', closer: 'FRM', gtp: 'GTP', mezzstair: 'ESC', reachtruck: 'CAR', lane: 'ALL', barrier: 'BAR', bollard: 'POT'
   };
 
   C.defaultSettings = () => ({
@@ -137,7 +137,7 @@
     /* --------------------------- sérialisation --------------------------- */
     toJSON(network) {
       return {
-        format: 'convoy3d-project', version: 3, app: 'Convoy3D ' + C.VERSION,
+        format: 'convoy3d-project', version: 4, app: 'Convoy3D ' + C.VERSION,
         id: this.id, name: this.name, created: this.created, saved: Date.now(),
         settings: this.settings, formats: this.formats, elements: this.elements,
         cartons: this.cartons, measures: this.measures, camera: this.camera,
@@ -167,6 +167,8 @@
       }
       // v1 → v2 : le convoyeur de retour devant les tours OSR n'est plus actif par défaut
       if ((+data.version || 1) < 2) for (const e of this.elements) if (e.type === 'osr') e.params.returnLane = false;
+      // v3 → v4 : l'étiqueteuse pose l'étiquette sur le côté du carton
+      if ((+data.version || 1) < 4) for (const e of this.elements) if (e.type === 'labeler' && e.params.labelSide === 'top') e.params.labelSide = 'left';
       this.cartons = (data.cartons || []).filter(c => this.getElement(c.elementId));
       this.measures = data.measures || [];
       this.camera = data.camera || null;

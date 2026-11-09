@@ -636,9 +636,33 @@
     tex.repeat.set(L / 400, W / 400);
     const deckMat = new THREE.MeshStandardMaterial({ map: tex, roughness: 0.6, metalness: 0.5 });
     deckMat.userData.owned = true;
-    const deck = box(L, W, t, 0, 0, H - t / 2, deckMat, 'body');
-    deck.userData.deck = true;
-    g.add(deck);
+    // plancher découpé autour des trémies d'escalier
+    const holes = C.Types.mezzHoles(el, (C.app && C.app.project) ? C.app.project.elements : []);
+    const xb = Array.from(new Set([-L / 2, L / 2, ...holes.flatMap(h => [h.x0, h.x1])])).sort((a, b) => a - b);
+    for (let i = 0; i < xb.length - 1; i++) {
+      const a = xb[i], b = xb[i + 1];
+      if (b - a < 1) continue;
+      const mid = (a + b) / 2;
+      const cut = holes.filter(h => h.x0 < mid && h.x1 > mid).map(h => [h.y0, h.y1]).sort((u, v) => u[0] - v[0]);
+      let y = -W / 2;
+      const piece = (y0, y1) => {
+        if (y1 - y0 < 1) return;
+        const tx = stripeTex('grating').clone(); tx.needsUpdate = true; tx.repeat.set((b - a) / 400, (y1 - y0) / 400);
+        const mt = new THREE.MeshStandardMaterial({ map: tx, roughness: 0.6, metalness: 0.5 }); mt.userData.owned = true;
+        const dk = box(b - a, y1 - y0, t, mid, (y0 + y1) / 2, H - t / 2, mt, 'body');
+        dk.userData.deck = true; g.add(dk);
+      };
+      for (const [y0, y1] of cut) { piece(y, y0); y = Math.max(y, y1); }
+      piece(y, W / 2);
+    }
+    // chevêtres autour des trémies
+    for (const h of holes) {
+      g.add(box(h.x1 - h.x0, 80, beamH, (h.x0 + h.x1) / 2, h.y0 - 40, H - t - beamH / 2, frame, 'body'));
+      g.add(box(h.x1 - h.x0, 80, beamH, (h.x0 + h.x1) / 2, h.y1 + 40, H - t - beamH / 2, frame, 'body'));
+      g.add(box(80, h.y1 - h.y0, beamH, h.x0 - 40, (h.y0 + h.y1) / 2, H - t - beamH / 2, frame, 'body'));
+      g.add(box(80, h.y1 - h.y0, beamH, h.x1 + 40, (h.y0 + h.y1) / 2, H - t - beamH / 2, frame, 'body'));
+    }
+    void deckMat;
     // poutres de rive
     g.add(box(L, 80, beamH, 0, W / 2 - 40, H - t - beamH / 2, frame, 'body'));
     g.add(box(L, 80, beamH, 0, -W / 2 + 40, H - t - beamH / 2, frame, 'body'));
@@ -665,8 +689,8 @@
     for (let j = 0; j < ny; j++) ys.push(-W / 2 + 75 + (W - 150) * j / (ny - 1));
     for (const y of ys) g.add(box(L, 100, beamH, 0, y, H - t - beamH / 2, frame, 'body'));
     for (const x of xs) for (const y of ys) {
-      // poteau de rive sur une jonction : un seul des deux modules le porte
-      let skip = false;
+      // poteau de rive sur une jonction : un seul des deux modules le porte ; pas de poteau dans une trémie
+      let skip = holes.some(h => x > h.x0 - 60 && x < h.x1 + 60 && y > h.y0 - 60 && y < h.y1 + 60);
       for (const [dx, dy] of [[-1, 0], [1, 0], [0, -1], [0, 1]]) {
         const onEdge = (dx && Math.abs(x - dx * L / 2) < 100) || (dy && Math.abs(y - dy * W / 2) < 100);
         if (!onEdge) continue;
@@ -692,7 +716,7 @@
       st.rotation.z = cfg[2];
       const zf = floorLocal(el, cfg[0], cfg[1], H - 1);
       const rise = H - zf;
-      const n = Math.max(2, Math.ceil(rise / 180)), r = rise / n, going = 270;
+      const n = p.steps > 0 ? Math.round(p.steps) : Math.max(2, Math.ceil(rise / 180)), r = rise / n, going = p.going || 270;
       const run = (n - 1) * going;
       for (let i = 1; i < n; i++) st.add(box(going + 20, sw - 60, 40, (i - 0.5) * going, 0, H - i * r - 20, deckMat, 'body'));
       const ang = Math.atan2(rise, run), hyp = Math.hypot(rise, run);
@@ -759,6 +783,45 @@
         }
       }
     }
+    if ((p.railH || 0) > 0 && holes.length) {
+      const yel = MAT.color('#f1c40f'), rh = p.railH;
+      const hrail = (x0, y0, x1, y1) => {
+        const len = Math.hypot(x1 - x0, y1 - y0); if (len < 50) return;
+        const cx = (x0 + x1) / 2, cy = (y0 + y1) / 2, a = Math.atan2(y1 - y0, x1 - x0);
+        for (const [z, hh, th, mt] of [[H + rh - 20, 40, 40, yel], [H + rh / 2, 30, 30, yel], [H + 75, 150, 12, frame]]) {
+          const b = box(len, th, hh, 0, 0, 0, mt, 'body'); b.position.set(cx * M, cy * M, z * M); b.rotation.z = a; g.add(b);
+        }
+        const np = Math.max(2, Math.ceil(len / 1500) + 1);
+        for (let i = 0; i < np; i++) { const u = i / (np - 1); g.add(box(40, 40, rh, x0 + (x1 - x0) * u, y0 + (y1 - y0) * u, H + rh / 2, yel, 'body')); }
+      };
+      for (const h of holes) {
+        const e = 25;
+        if (h.entry !== 'y0') hrail(h.x0 - e, h.y0 - e, h.x1 + e, h.y0 - e);
+        if (h.entry !== 'y1') hrail(h.x0 - e, h.y1 + e, h.x1 + e, h.y1 + e);
+        if (h.entry !== 'x0') hrail(h.x0 - e, h.y0 - e, h.x0 - e, h.y1 + e);
+        if (h.entry !== 'x1') hrail(h.x1 + e, h.y0 - e, h.x1 + e, h.y1 + e);
+      }
+    }
+  };
+
+  /* ---------------- Escalier de trémie ---------------- */
+  builders.mezzstair = (el, m, g) => {
+    const p = el.params, w = p.stairWidth || 1000, going = p.going || 250;
+    const d = C.Types.defs.mezzstair.dims(el);
+    const frame = MAT.frame(p.color || '#3d6fa8'), yel = MAT.color('#f1c40f');
+    const tx = stripeTex('grating').clone(); tx.needsUpdate = true; tx.repeat.set(going / 300, w / 400);
+    const tread = new THREE.MeshStandardMaterial({ map: tx, roughness: 0.6, metalness: 0.5 }); tread.userData.owned = true;
+    for (let i = 1; i < d.n; i++) g.add(box(going + 20, w - 60, 40, (i - 0.5) * going, 0, -i * d.r - 20, tread, 'body'));
+    g.add(box(going * 1.2, w - 60, 20, d.run + going * 0.6, 0, -d.rise + 10, tread, 'body'));          // palier bas
+    const ang = Math.atan2(d.rise, d.run), hyp = Math.hypot(d.rise, d.run);
+    for (const sg of [1, -1]) {
+      const str = box(hyp + 200, 30, 220, d.run / 2, sg * w / 2, -d.rise / 2 - 60, frame, 'body'); str.rotation.y = ang; g.add(str);
+      const hr = box(hyp + 200, 40, 40, d.run / 2, sg * w / 2, -d.rise / 2 + 950, yel, 'body'); hr.rotation.y = ang; g.add(hr);
+      for (const u of [0.05, 0.35, 0.65, 0.95]) g.add(box(30, 30, 950, d.run * u, sg * w / 2, -d.rise * u + 455, yel, 'body'));
+    }
+    // plaque d'information (nombre de marches)
+    const lab = C.textSprite && C.textSprite(`${d.n} marches · ${C.fmt(d.r)} mm`, { height: 0.18, color: '#ffffff', bg: 'rgba(30,40,55,0.8)' });
+    if (lab) { lab.center.set(0.5, 0); lab.position.set(d.run / 2 * M, 0, (-d.rise / 2 + 1250) * M); tag(lab, 'labels3d'); g.add(lab); }
   };
 
   /** Petit générateur déterministe (remplissage reproductible des stocks). */
@@ -1257,6 +1320,68 @@
     const top = new THREE.Mesh(new THREE.SphereGeometry(R * M, 20, 10, 0, Math.PI * 2, 0, Math.PI / 2), MAT.color(p.color || '#f5c400'));
     top.position.z = H * M; top.scale.z = 0.3; tag(top, 'body'); g.add(top);
     const base = cyl(R + 70, 18, MAT.color('#2b2b2b'), 'structure', 24); base.rotation.x = Math.PI / 2; base.position.z = 9 * M; g.add(base);
+  };
+
+  /* ---------------- Fermeuse à coiffe ---------------- */
+  builders.closer = (el, m, g) => {
+    const p = el.params;
+    buildConveyor(el, m, g);
+    const xs = p.length * C.clamp(+p.stopPos || 0.5, 0.05, 0.95), W = p.width;
+    const body = MAT.color(p.color || '#8e44ad'), steel = MAT.color('#c3cad3'), glass = new THREE.MeshStandardMaterial({ color: 0xaad8ff, transparent: true, opacity: 0.18, depthWrite: false });
+    glass.userData.owned = true;
+    // portique et carter de protection vitré
+    for (const dx of [-450, 450]) for (const sy of [1, -1]) g.add(box(80, 80, 1500, xs + dx, sy * (W / 2 + 60), 600, body, 'structure'));
+    g.add(box(1000, W + 200, 120, xs, 0, 1360, body, 'structure'));
+    for (const sy of [1, -1]) { const gl = box(900, 8, 1150, xs, sy * (W / 2 + 60), 700, glass, 'structure'); gl.castShadow = false; g.add(gl); }
+    // magasin de coiffes (pile de coiffes sur le côté)
+    const lidC = MAT.color(p.lidColor || '#c8a26b');
+    g.add(box(500, 400, 700, xs - 200, W / 2 + 420, 350 - (p.frameH || 160), steel, 'structure'));
+    for (let i = 0; i < 10; i++) g.add(box(440, 340, 18, xs - 200, W / 2 + 420, 720 - (p.frameH || 160) + i * 22, lidC, 'structure'));
+    // tête de pose (ventouses) animée
+    const ap = new THREE.Group();
+    ap.add(box(420, 320, 40, 0, 0, 0, MAT.color('#2b2f35'), 'structure'));
+    for (const dx of [-120, 120]) for (const dy of [-90, 90]) { const v = cyl(25, 40, MAT.color('#111'), 'structure', 10); v.rotation.x = Math.PI / 2; v.position.set(dx * M, dy * M, -0.03); ap.add(v); }
+    ap.add(box(40, 40, 600, 0, 0, 320, steel, 'structure'));
+    ap.position.set(xs * M, 0, 1050 * M);
+    tag(ap, 'structure'); g.add(ap);
+    g.userData.applicator = { obj: ap, axis: 'z', rest: 1050 * M, active: 520 * M };
+    g.add(box(40, 40, 100, xs - 600, -(W / 2 + 25), 70, MAT.color('#f1c40f'), 'structure'));      // cellule
+  };
+
+  /* ---------------- Poste GTP (goods-to-person) ---------------- */
+  builders.gtp = (el, m, g) => {
+    const p = el.params, L = p.length;
+    for (const id of ['tote', 'ctn']) {
+      const path = new C.Path(m.tracks[id].segs, null, false), fr = frames(path, 3);
+      const lp = Object.assign({}, p, { color: id === 'tote' ? '#2e86de' : '#c49a62' });
+      addSurface(g, path, fr, lp); addFrames(g, fr, lp); addGuides(g, fr, path, lp); addLegs(g, path, lp, el);
+      addArrows(g, path, lp, 8); addMotor(g, path, lp);
+      // arrêt + pick-to-light au point de présentation
+      const f = localFrame(path, L * 0.5);
+      const ptl = box(80, p.usefulWidth * 0.8, 60, f.p[0] + 300, f.p[1], 260, MAT.glow(id === 'tote' ? 0x2ecc71 : 0x3498db), 'structure');
+      g.add(ptl);
+    }
+    const side = p.opSide === 'right' ? -1 : 1;
+    const yOp = side * (p.lanePitch / 2 + p.width / 2 + 550);
+    const zf = floorLocal(el, L / 2, yOp, -200);
+    // plateforme / tapis anti-fatigue et opérateur debout face aux deux convoyeurs
+    g.add(box(1200, 900, 30, L / 2, yOp, zf + 15, MAT.color('#2c3e50'), 'structure'));
+    const op = new THREE.Group();
+    const legs = cyl(140, 820, MAT.color('#2c3e50'), 'structure'); legs.rotation.x = Math.PI / 2; legs.position.z = 410 * M; op.add(legs);
+    const torso = box(260, 420, 620, 0, 0, 1130, MAT.color('#c8ff00'), 'structure'); op.add(torso);
+    const head = new THREE.Mesh(new THREE.SphereGeometry(110 * M, 14, 10), MAT.color('#f0c8a0')); head.position.z = 1560 * M; tag(head, 'structure'); op.add(head);
+    for (const dy of [-150, 150]) { const arm = box(520, 80, 80, 260, dy, 1240, MAT.color('#c8ff00'), 'structure'); arm.rotation.y = 0.35; op.add(arm); }
+    op.position.set(L / 2 * M, yOp * M, zf * M);
+    op.rotation.z = side > 0 ? -Math.PI / 2 : Math.PI / 2;
+    g.add(op);
+    // écran de commande et support
+    g.add(box(40, 40, 900, L / 2 + 700, side * (p.lanePitch / 2 + p.width / 2 + 150), zf + 450 - 0, MAT.leg(), 'structure'));
+    g.add(box(30, 420, 300, L / 2 + 700, side * (p.lanePitch / 2 + p.width / 2 + 150), zf + 1050, MAT.dark(), 'structure'));
+    // article en cours de transfert (animé par la simulation)
+    const dims = C.Types.defs.gtp.articleDims(p.articleSize);
+    const art = box(dims[0], dims[1], dims[2], L / 2, 0, 500, MAT.color('#e74c3c'), 'structure');
+    art.visible = false; g.add(art);
+    g.userData.gtpArticle = art;
   };
 
   /* ---------------- Palettes ---------------- */

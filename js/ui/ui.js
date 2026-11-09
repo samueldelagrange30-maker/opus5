@@ -703,6 +703,13 @@
         const sz = C.Types.staticSize(el);
         kv('Encombrement', `${C.fmt(sz.L)} × ${C.fmt(sz.W)} mm`);
         kv('Hauteur (haut)', `${C.fmt(el.z + sz.H)} mm`);
+        if (el.type === 'mezzstair') {
+          const d = C.Types.defs.mezzstair.dims(el), bl = 2 * d.r + (p.going || 250);
+          kv('Marches', `${d.n} contremarches · hauteur ${C.fmt(d.r)} mm · giron ${C.fmt(p.going || 250)} mm`);
+          kv('Hauteur franchie / longueur', `${C.fmt(d.rise)} / ${C.fmt(d.run)} mm`);
+          kv('Formule de Blondel (2h + g)', `${C.fmt(bl)} mm ${bl >= 600 && bl <= 650 ? '✔ confortable' : '⚠ hors 600–650'}`);
+          if (d.r > 200) sec.appendChild(h('p', { class: 'muted small', text: 'Hauteur de marche supérieure à 200 mm : augmentez le nombre de marches.' }));
+        }
         if (el.type === 'pallet') kv('Type', p.palletType === 'perdue' ? 'Palette perdue (usage unique)' : 'Palette Europe (EPAL)');
         if (el.type === 'rack') {
           const rows = +p.rows === 2 ? 2 : 1, perBay = Math.max(1, Math.floor((p.bayLength - 80) / 900));
@@ -716,6 +723,24 @@
           kv('Adresses', `${R.address(p, 0, 0, 0)} … ${R.address(p, rowsN - 1, p.bays - 1, p.levels - 1)}`);
         }
         return;
+      }
+      if (el.type === 'gtp') {
+        const ipt = Math.max(1, +p.itemsPerTote || 1), ipo = Math.max(1, +p.itemsPerOrder || 1);
+        kv('Bacs traités (théorique)', C.fmt((+p.pickRate || 0) / ipt) + ' bacs/h');
+        kv('Cartons remplis (théorique)', C.fmt((+p.pickRate || 0) / ipo) + ' cartons/h');
+        kv('Temps par bac', C.fmt(ipt * 3600 / Math.max(1, +p.pickRate || 1), 1) + ' s');
+        const node = net.node(el.id);
+        if (a.sim.active && node && node.rt) {
+          const rt = node.rt, t = Math.max(1, a.sim.t);
+          kv('Articles prélevés', `${rt.picks || 0} (${C.fmt((rt.picks || 0) / t * 3600)} /h)`);
+          kv('Bacs / cartons terminés', `${rt.totes || 0} / ${rt.orders || 0}`);
+          kv('État', rt.busy ? 'prélèvement en cours' : rt.waitTote && rt.waitCtn ? 'attente bac et carton' : rt.waitTote ? 'attente bac' : rt.waitCtn ? 'attente carton' : '—');
+        }
+      }
+      if (el.type === 'closer') {
+        const node = net.node(el.id);
+        kv('Coiffes', 'ajustées automatiquement à chaque format de carton ouvert');
+        if (a.sim.active && node && node.rt) kv('Cartons fermés', node.rt.closed || 0);
       }
       if (el.type === 'osr') {
         const n = Math.round(p.towers), rd = Math.min(700, (p.towerWidth - 600) / 2);
@@ -1331,6 +1356,8 @@
             <li><b>Cariste CACES 5</b> : sélectionnez le chariot, « Nouvelle mission », cliquez la palette à prendre (sol ou rack) puis l'endroit où la déposer. Le chariot contourne les obstacles (barrières, poteaux, racks, convoyeurs…) et suit le fléchage au sol dans le sens des flèches.</li>
             <li><b>Fléchage au sol</b> : allées droites ou en virage qui s'accrochent bout à bout (sélectionnez une allée puis cliquez une autre allée de la bibliothèque pour la prolonger). Itinéraire prévu : pointillés verts (sur les allées) ou bleus (trajet libre).</li>
             <li><b>Murs d'entrepôt</b> : un convoyeur (ou un objet) qui traverse un mur y perce automatiquement une ouverture. Portes : champ « Portes / ouvertures manuelles ». Bouton « Murs » en haut à droite : visibles / translucides / masqués.</li>
+            <li><b>Escalier de trémie</b> : posez-le sur le plancher d'une mezzanine, il découpe une trémie avec garde-corps et descend jusqu'au sol ; nombre de marches réglable (0 = automatique).</li>
+            <li><b>Carton ouvert → poste GTP → fermeuse</b> : les cartons ouverts se remplissent d'articles au poste GTP (cadence en articles/h), puis la fermeuse pose une coiffe ajustée au format.</li>
             <li><b>Mezzanine modulaire</b> : accolez des modules bord à bord (accrochage magnétique ou boutons « Étendre ») pour obtenir la surface voulue ; les garde-corps disparaissent sur les jonctions.</li>
             <li><b>Mezzanine</b> : tout objet placé ou glissé au-dessus du plancher s'y pose automatiquement (Alt : garder la hauteur). Déplacer la mezzanine emporte les objets posés dessus.</li>
             <li>Modifiez toutes les cotes dans le panneau <b>Propriétés</b> (longueur, largeur, pente en ° ou %, hauteur de sortie, rayon, rouleaux…).</li>

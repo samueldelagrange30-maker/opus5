@@ -81,6 +81,7 @@
           break;
         }
         case 'barrier': rect(tf, p.length / 2, 0, p.length, 220, INFLATE); break;
+        case 'mezzstair': { const d = C.Types.defs.mezzstair.dims(e); rect(tf, d.run / 2, 0, d.run + 300, p.stairWidth || 1000, INFLATE); break; }
         case 'guide': if (e.z < TRUCK_H) rect(tf, p.length / 2, 0, p.length, p.thickness || 20, INFLATE); break;
         default: {
           const sz = C.Types.staticSize(e);

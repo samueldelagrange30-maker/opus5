@@ -248,9 +248,11 @@
 
     /* --------------------------- mezzanines / supports --------------------------- */
     /** Mezzanine dont l'emprise contient le point (x,y). */
-    onMezzanine(m, x, y) {
+    onMezzanine(m, x, y, withHoles) {
       const l = C.worldToLocal({ x: m.x, y: m.y, z: m.z, rot: m.rot }, x, y, 0);
-      return Math.abs(l[0]) <= m.params.length / 2 + 1 && Math.abs(l[1]) <= m.params.width / 2 + 1;
+      if (!(Math.abs(l[0]) <= m.params.length / 2 + 1 && Math.abs(l[1]) <= m.params.width / 2 + 1)) return false;
+      if (withHoles) for (const h of C.Types.mezzHoles(m, this.project.elements)) if (l[0] > h.x0 && l[0] < h.x1 && l[1] > h.y0 && l[1] < h.y1) return false;
+      return true;
     }
     /**
      * Altitude du support (0 = sol, sinon dessus du plancher de mezzanine le plus
@@ -264,7 +266,7 @@
         if (m.type !== 'mezzanine' || ex.has(m.id)) continue;
         const top = m.z + m.params.deckH;
         if (top > (maxZ === undefined ? Infinity : maxZ) + 1 || top <= best) continue;
-        if (this.onMezzanine(m, x, y)) best = top;
+        if (this.onMezzanine(m, x, y, true)) best = top;
       }
       return best;
     }

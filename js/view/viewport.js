@@ -268,7 +268,7 @@
       const els = this.app.project.elements;
       const ids = new Set(els.map(e => e.id));
       // les pieds / poteaux dépendent des planchers de mezzanine : signature commune
-      const mz = JSON.stringify(els.filter(e => e.type === 'mezzanine').map(e => [e.x, e.y, e.z, e.rot, e.params.length, e.params.width, e.params.deckH]));
+      const mz = JSON.stringify(els.filter(e => e.type === 'mezzanine' || e.type === 'mezzstair').map(e => [e.x, e.y, e.z, e.rot, e.params.length, e.params.width, e.params.deckH, e.params.steps, e.params.going, e.params.stairWidth]));
       // les ouvertures des murs dépendent de tous les autres objets
       const wallSig = els.some(e => e.type === 'wall') ? JSON.stringify(els.map(e => [e.id, e.type, e.x, e.y, e.z, e.rot, e.params])) : '';
       for (const id of Array.from(this.meshes.keys())) if (!ids.has(id)) this.removeElementMesh(id);
@@ -800,7 +800,7 @@
       this._lastGhostEvt = { clientX: e.clientX, clientY: e.clientY, altKey: e.altKey };
       const app = this.app, st = app.project.settings, el = this.ghost.el;
       const centered = C.Types.get(el.type).centered;
-      const zOff = centered || C.Types.get(el.type).floor ? 0 : st.defaultZ;
+      const zOff = centered || C.Types.get(el.type).floor || C.Types.get(el.type).onDeck ? 0 : st.defaultZ;
       let p = this.planePoint(e, zOff);
       if (!p) return;
       // pose sur le plancher de mezzanine visé (Alt : rester au sol)

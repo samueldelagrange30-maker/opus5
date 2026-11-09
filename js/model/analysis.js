@@ -33,6 +33,8 @@
         else if (p.stopMode === 'cycle') cap = cap * (+p.openTime || 1) / ((+p.openTime || 1) + (+p.closedTime || 1));
         break;
       case 'workstation': cap = Math.min(cap, 3600 / ((+p.processTime || 0) + pitch / Math.max(1, v))); break;
+      case 'closer': cap = Math.min(cap, 3600 / ((+p.processTime || 0) + pitch / Math.max(1, v))); break;
+      case 'gtp': cap = Math.min(cap, (+p.pickRate || 0) / Math.max(1, +p.itemsPerTote || 1)); break;
       case 'labeler': if (p.labelMode !== 'fly') cap = Math.min(cap, 3600 / ((+p.processTime || 0) + pitch / Math.max(1, v))); break;
       case 'elevator': {
         const cycle = 2 * p.bedLength / Math.max(1, v) + 2 * Math.abs(p.elevH) / Math.max(1, p.liftSpeed * 1000);

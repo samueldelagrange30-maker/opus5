@@ -180,6 +180,18 @@
   fld('loaded', 'Chargée de cartons', 'bool', { group: 'Palette' });
   fld('loadColor', 'Couleur des cartons', 'color', { group: 'Palette' });
   fld('stack', 'Palettes vides empilées', 'number', { group: 'Palette', min: 1, max: 30, step: 1 });
+  // --- Fermeuse
+  fld('closeMode', 'Mode de fermeture', 'select', { group: 'Fermeuse', live: true, options: [['coiffe', 'Pose d\'une coiffe en carton'], ['tape', 'Rabats repliés + adhésif']] });
+  FL.closeTime = Object.assign({}, FL.processTime, { id: 'closeTime', label: 'Temps de cycle de fermeture', group: 'Fermeuse' });
+  FL.closePos = Object.assign({}, FL.stopPos, { id: 'closePos', label: 'Position de fermeture (0–1)', group: 'Fermeuse' });
+  fld('lidSkirt', 'Hauteur de jupe de la coiffe', 'number', { group: 'Fermeuse', unit: 'mm', min: 20, max: 300, step: 5 });
+  fld('lidColor', 'Couleur des coiffes', 'color', { group: 'Fermeuse', live: true });
+  // --- Poste GTP
+  fld('pickRate', 'Cadence de prélèvement', 'number', { group: 'Poste GTP', unit: 'articles/h', min: 1, step: 10, live: true });
+  fld('itemsPerTote', 'Articles prélevés par bac', 'number', { group: 'Poste GTP', min: 1, max: 200, step: 1, live: true });
+  fld('itemsPerOrder', 'Articles par carton (commande)', 'number', { group: 'Poste GTP', min: 1, max: 500, step: 1, live: true });
+  fld('lanePitch', 'Entraxe des convoyeurs bac / carton', 'number', { group: 'Poste GTP', unit: 'mm', min: 600, step: 10 });
+  fld('articleSize', 'Taille des articles', 'select', { group: 'Poste GTP', options: [['s', 'Petits (120 × 80 × 60)'], ['m', 'Moyens (180 × 120 × 90)'], ['l', 'Grands (250 × 180 × 120)']] });
   // --- Étiqueteuse
   fld('labelMode', 'Mode d\'étiquetage', 'select', { group: 'Étiqueteuse', live: true, options: [['stop', 'Arrêt du colis pendant la pose'], ['fly', 'À la volée (sans arrêt)']] });
   FL.labelTime = Object.assign({}, FL.processTime, { id: 'labelTime', label: 'Temps d\'étiquetage (impression + pose)', group: 'Étiqueteuse' });
@@ -350,8 +362,11 @@
   T.stop = special('Butée', { length: 600, stopMode: 'timed', holdTime: 3, openTime: 2, closedTime: 4, color: '#e67e22' }, ['stopMode', 'holdTime', 'openTime', 'closedTime']);
   T.separator = special('Séparateur de cartons', { length: 1000, interval: 2, surface: 'belt', speed: 0.8, color: '#27ae60' }, ['interval']);
   T.accumulation = special('Zone d\'accumulation', { length: 4000, zoneLength: 600, gap: 20, color: '#2980b9' }, ['zoneLength']);
-  T.labeler = special('Étiqueteuse de colis', { length: 1500, processTime: 1.5, stopPos: 0.5, labelMode: 'stop', labelSide: 'top', labelPrefix: 'COLIS-', speed: 0.4, color: '#16a085' },
+  T.labeler = special('Étiqueteuse de colis', { length: 1500, processTime: 1.5, stopPos: 0.5, labelMode: 'stop', labelSide: 'left', labelPrefix: 'COLIS-', speed: 0.4, color: '#16a085' },
     ['labelMode', 'labelTime', 'labelPos', 'labelSide', 'labelPrefix']);
+  /* Fermeuse : pose d'une coiffe en carton (ajustée au format) ou fermeture des rabats + adhésif */
+  T.closer = special('Fermeuse de cartons (coiffe)', { length: 2000, processTime: 4, stopPos: 0.5, closeMode: 'coiffe', lidSkirt: 80, lidColor: '#c8a26b', speed: 0.4, guideH: 80, color: '#8e44ad' },
+    ['closeMode', 'closeTime', 'closePos', 'lidSkirt', 'lidColor']);
   T.workstation = special('Poste de préparation', { length: 2400, processTime: 8, stopPos: 0.5, opSide: 'left', color: '#f1c40f' }, ['processTime', 'stopPos', 'opSide']);
   T.source = special('Entrée (générateur de cartons)', { length: 1000, rate: 600, jitter: 0, formats: ['moyen'], maxCount: 0, startDelay: 0, orientation: 0, color: '#2ecc71' },
     ['rate', 'jitter', 'formats', 'maxCount', 'startDelay', 'orientation'], { cat: 'Entrées / sorties' });
@@ -372,8 +387,8 @@
   };
   T.mezzanine = {
     label: 'Mezzanine', cat: 'Structures', conveyor: false, centered: true,
-    defaults: { length: 8000, width: 5000, deckH: 3000, thickness: 120, columnSpacing: 4000, railH: 1100, stairs: 'front', stairsWidth: 1000, load: 500, color: '#3d6fa8', note: '' },
-    fields: ['name', 'x', 'y', 'zBase', 'rot', 'length', 'width', 'deckH', 'thickness', 'columnSpacing', 'railH', 'stairs', 'stairsWidth', 'load', 'color', 'note'],
+    defaults: { length: 8000, width: 5000, deckH: 3000, thickness: 120, columnSpacing: 4000, railH: 1100, stairs: 'front', stairsWidth: 1000, steps: 0, going: 270, load: 500, color: '#3d6fa8', note: '' },
+    fields: ['name', 'x', 'y', 'zBase', 'rot', 'length', 'width', 'deckH', 'thickness', 'columnSpacing', 'railH', 'stairs', 'stairsWidth', 'steps', 'going', 'load', 'color', 'note'],
     build: () => ({ tracks: {}, ports: [], diverts: [] })
   };
   /* ---------------- Rack à palettes ------------------------------------ */
@@ -539,6 +554,51 @@
     build: () => ({ tracks: {}, ports: [], diverts: [] })
   };
 
+  /* ---------------- Poste GTP (goods-to-person) ----------------
+   * Deux convoyeurs parallèles devant l'opérateur : bacs (articles) et cartons
+   * de commande. L'opérateur transfère « articles par bac » d'un bac vers le
+   * carton à la cadence réglée ; le bac repart, le carton repart une fois complet.
+   */
+  T.gtp = {
+    label: 'Poste GTP (bac → carton)', cat: 'Équipements', conveyor: true,
+    defaults: Object.assign({}, CONV_DEF, { length: 1800, lanePitch: 1000, pickRate: 600, itemsPerTote: 2, itemsPerOrder: 6, articleSize: 'm', opSide: 'left', speed: 0.4, guideH: 60, color: '#00a8a8' }),
+    fields: ['name', 'x', 'y', 'z', 'rot', 'pickRate', 'itemsPerTote', 'itemsPerOrder', 'articleSize', 'length', 'lanePitch', 'opSide', 'width', 'usefulWidth', 'speed', 'running', 'gap', 'rollerDiam', 'rollerPitch', 'guideH', 'color', 'note'],
+    articleDims: s => s === 's' ? [120, 80, 60] : s === 'l' ? [250, 180, 120] : [180, 120, 90],
+    build: p => {
+      const side = p.opSide === 'right' ? -1 : 1;    // côté opérateur : la voie bacs est côté opérateur
+      const t1 = new C.Turtle(0, side * p.lanePitch / 2, 0, 0); t1.line(p.length);
+      const t2 = new C.Turtle(0, -side * p.lanePitch / 2, 0, 0); t2.line(p.length);
+      return {
+        tracks: { tote: { segs: t1.segs }, ctn: { segs: t2.segs } },
+        ports: [
+          { id: 'ti', role: 'in', track: 'tote', at: 'start' }, { id: 'to', role: 'out', track: 'tote', at: 'end', out: 0 },
+          { id: 'ci', role: 'in', track: 'ctn', at: 'start' }, { id: 'co', role: 'out', track: 'ctn', at: 'end', out: 0 }
+        ], diverts: []
+      };
+    }
+  };
+
+  /* ---------------- Escalier de trémie (dans une mezzanine) ----------------
+   * Origine : nez de la marche haute, au bord de la trémie ; descend suivant +X.
+   * Posé sur le plancher d'une mezzanine, il y découpe une trémie avec garde-corps.
+   */
+  fld('steps', 'Nombre de marches (0 = auto)', 'number', { group: 'Escalier', min: 0, max: 60, step: 1 });
+  fld('going', 'Giron (profondeur de marche)', 'number', { group: 'Escalier', unit: 'mm', min: 180, max: 400, step: 5 });
+  fld('stairWidth', 'Largeur de l\'escalier', 'number', { group: 'Escalier', unit: 'mm', min: 600, max: 3000, step: 50 });
+  T.mezzstair = {
+    label: 'Escalier de trémie (dans la mezzanine)', cat: 'Structures', conveyor: false, onDeck: true,
+    defaults: { steps: 0, going: 250, stairWidth: 1000, color: '#3d6fa8', note: '' },
+    fields: ['name', 'x', 'y', 'zBase', 'rot', 'steps', 'going', 'stairWidth', 'color', 'note'],
+    /** Dimensions : hauteur à franchir, nombre de marches, hauteur de marche, longueur. */
+    dims(el) {
+      const floor = C.supportAt ? C.supportAt(el.x, el.y, el.z - 50, el.id) : 0;
+      const rise = Math.max(200, el.z - floor);
+      const n = el.params.steps > 0 ? Math.round(el.params.steps) : Math.max(2, Math.ceil(rise / 180));
+      return { rise, n, r: rise / n, run: (n - 1) * (el.params.going || 250), floor };
+    },
+    build: () => ({ tracks: {}, ports: [], diverts: [] })
+  };
+
   /* ---------------- Mur d'entrepôt ---------------- */
   T.wall = {
     label: 'Mur d\'entrepôt', cat: 'Bâtiment', conveyor: false, floor: true,
@@ -578,7 +638,7 @@
         if (id === 'main' || id === 'in') L += m.tracks[id].segs.reduce((a, s) => a + C.segLength(s), 0);
       }
       if (el.type === 'turntable') L = el.params.diameter;
-      if (el.type === 'osr') { L = 0; for (const id in m.tracks) L += m.tracks[id].segs.reduce((a, s) => a + C.segLength(s), 0); }
+      if (el.type === 'osr' || el.type === 'gtp') { L = 0; for (const id in m.tracks) L += m.tracks[id].segs.reduce((a, s) => a + C.segLength(s), 0); }
       return L;
     },
     /** Dénivelé géométrique (fin - origine) de la trajectoire principale. */
@@ -608,6 +668,7 @@
       if (el.type === 'mezzanine') return { L: p.length, W: p.width, H: p.deckH + (p.railH || 0) };
       if (el.type === 'wall') return { L: p.length, W: p.thickness, H: p.height };
       if (el.type === 'reachtruck') return { L: 2600, W: 1300, H: 2300 };
+      if (el.type === 'mezzstair') { const d = T.mezzstair.dims(el); return { L: d.run, W: p.stairWidth, H: d.rise }; }
       if (el.type === 'barrier') return { L: p.length, W: 220, H: p.height };
       if (el.type === 'bollard') return { L: p.diameter, W: p.diameter, H: p.height };
       if (el.type === 'lane') return { L: p.laneShape === 'curve' ? p.radius : p.length, W: p.width, H: 2 };
@@ -616,6 +677,29 @@
         return { L: 1200, W: !euro && p.palletSize === '1200x1000' ? 1000 : 800, H: p.loaded ? ph + Math.max(100, p.loadH) : ph * C.clamp(Math.round(p.stack || 1), 1, 30) };
       }
       return { L: p.length, W: p.width || p.thickness || 0, H: p.height || 0 };
+    },
+    /** Trémies d'escalier découpées dans le plancher d'une mezzanine (repère local de la mezzanine). */
+    mezzHoles(m, elements) {
+      const res = [], top = m.z + m.params.deckH, L = m.params.length, W = m.params.width;
+      const mtf = { x: m.x, y: m.y, z: 0, rot: m.rot };
+      for (const s of elements) {
+        if (s.type !== 'mezzstair' || Math.abs(s.z - top) > 30) continue;
+        const o = C.worldToLocal(mtf, s.x, s.y, 0);
+        if (Math.abs(o[0]) > L / 2 + 50 || Math.abs(o[1]) > W / 2 + 50) continue;
+        const d = T.mezzstair.dims(s), w = s.params.stairWidth || 1000;
+        const pts = [[0, -w / 2], [d.run + 40, -w / 2], [d.run + 40, w / 2], [0, w / 2]].map(q => {
+          const ww = C.localToWorld({ x: s.x, y: s.y, z: 0, rot: s.rot }, q[0], q[1], 0);
+          return C.worldToLocal(mtf, ww[0], ww[1], 0);
+        });
+        const xs = pts.map(q => q[0]), ys = pts.map(q => q[1]);
+        const h = { x0: Math.max(-L / 2, Math.min(...xs)), x1: Math.min(L / 2, Math.max(...xs)), y0: Math.max(-W / 2, Math.min(...ys)), y1: Math.min(W / 2, Math.max(...ys)), stair: s };
+        if (h.x1 - h.x0 < 50 || h.y1 - h.y0 < 50) continue;
+        // côté d'accès (haut de l'escalier) : bord de la trémie le plus proche de l'origine de l'escalier
+        const dd = { x0: Math.abs(o[0] - h.x0), x1: Math.abs(o[0] - h.x1), y0: Math.abs(o[1] - h.y0), y1: Math.abs(o[1] - h.y1) };
+        h.entry = Object.keys(dd).sort((a, b) => dd[a] - dd[b])[0];
+        res.push(h);
+      }
+      return res;
     },
     rackHeight(p) { return (p.firstOnFloor ? p.levels - 1 : p.levels) * p.levelH + p.loadH + 150; },
     /** Hauteur totale des tours d'un stockage à navettes (depuis le sol). */
@@ -688,6 +772,8 @@
         { id: 'eq-accu', label: 'Zone d\'accumulation', icon: 'accu', type: 'accumulation', params: {} },
         { id: 'eq-station', label: 'Poste de préparation', icon: 'station', type: 'workstation', params: {} },
         { id: 'eq-labeler', label: 'Étiqueteuse de colis', icon: 'labeler', type: 'labeler', params: {} },
+        { id: 'eq-closer', label: 'Fermeuse de cartons (coiffe)', icon: 'closer', type: 'closer', params: {} },
+        { id: 'eq-gtp', label: 'Poste GTP (bac → carton)', icon: 'gtp', type: 'gtp', params: {} },
         { id: 'eq-table', label: 'Table de travail', icon: 'table', type: 'table', params: {} },
         { id: 'eq-sorter', label: 'Trieur', icon: 'sorter', type: 'sorter', params: {} }
       ]
@@ -735,6 +821,7 @@
     {
       cat: 'Structures et divers', items: [
         { id: 'misc-mezz', label: 'Mezzanine', icon: 'mezz', type: 'mezzanine', params: {} },
+        { id: 'misc-mezzstair', label: 'Escalier de trémie (dans la mezzanine)', icon: 'mezzstair', type: 'mezzstair', params: {} },
         { id: 'misc-mezz-big', label: 'Mezzanine sans escalier', icon: 'mezz', type: 'mezzanine', params: { stairs: 'none', length: 12000, width: 6000 } },
         { id: 'misc-obstacle', label: 'Obstacle', icon: 'obstacle', type: 'obstacle', params: {} }
       ]
