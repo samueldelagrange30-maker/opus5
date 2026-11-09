@@ -137,7 +137,7 @@
     /* --------------------------- sérialisation --------------------------- */
     toJSON(network) {
       return {
-        format: 'convoy3d-project', version: 1, app: 'Convoy3D ' + C.VERSION,
+        format: 'convoy3d-project', version: 2, app: 'Convoy3D ' + C.VERSION,
         id: this.id, name: this.name, created: this.created, saved: Date.now(),
         settings: this.settings, formats: this.formats, elements: this.elements,
         cartons: this.cartons, measures: this.measures, camera: this.camera,
@@ -165,6 +165,8 @@
           params: Object.assign(C.clone(def.defaults), e.params || {})
         });
       }
+      // v1 → v2 : le convoyeur de retour devant les tours OSR n'est plus actif par défaut
+      if ((+data.version || 1) < 2) for (const e of this.elements) if (e.type === 'osr') e.params.returnLane = false;
       this.cartons = (data.cartons || []).filter(c => this.getElement(c.elementId));
       this.measures = data.measures || [];
       this.camera = data.camera || null;

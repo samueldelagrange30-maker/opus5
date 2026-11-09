@@ -535,7 +535,7 @@
             continue;
           }
           const def = C.Types.get(el.type);
-          if (!def.fields.includes(fid) && !(fid === 'z' && def.fields.includes('zBase'))) continue;
+          if (!def.fields.includes(fid) && !(fid === 'z' && (def.fields.includes('zBase') || def.fields.includes('convH')))) continue;
           if (el.type === 'osr' && ['towers', 'towerWidth', 'endLength'].includes(fid)) {
             // les tours sont ajoutées / retirées côté début du collecteur : la sortie
             // (et la ligne de retour) restent en place et raccordées
@@ -722,13 +722,14 @@
       let b = after(tt, 'o2', 'straight', { length: 1500 }); after(b, 'out', 'sink', { name: 'OUT-TT-B' });
       // obstacle / table / guide pour illustration
       add('table', { name: 'TAB-01' }, { x: 33500, y: 2200, z: 0, rot: 0 });
-      // stockage à navettes (2 tours) → poste de picking → retour en stock
+      // stockage à navettes (2 tours) → poste de picking → évacuation
       const osr = add('osr', { name: 'OSR-01', towers: 2, rackLength: 6000, towerRate: 250 }, { x: 22000, y: 2500, z: 800, rot: 0 });
       e = after(osr, 'out', 'straight', { length: 1000 });
       e = after(e, 'out', 'workstation', { processTime: 5, name: 'PICK-01' });
       e = after(e, 'out', 'curve', { angle: 90, side: 'right' });
       e = after(e, 'out', 'curve', { angle: 90, side: 'right' });
-      after(e, 'out', 'straight', { length: 3400 });
+      e = after(e, 'out', 'straight', { length: 1500 });
+      after(e, 'out', 'sink', { name: 'OUT-PICK' });
       // rayonnage double à 4 niveaux
       add('rack', { name: 'RK-01', rows: 2, levels: 4, bays: 3 }, { x: 33000, y: 8500, z: 0, rot: 90 });
       add('obstacle', { name: 'POTEAU-01', length: 300, width: 300, height: 4000 }, { x: 30000, y: 12000, z: 0 });

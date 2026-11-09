@@ -156,7 +156,8 @@
   fld('towerWidth', 'Largeur d\'une tour', 'number', { group: 'Stockage à navettes', unit: 'mm', min: 1400, step: 50 });
   fld('frontZone', 'Profondeur de la pré-zone (élévateurs)', 'number', { group: 'Stockage à navettes', unit: 'mm', min: 600, step: 50 });
   fld('towerRate', 'Débit de sortie par tour', 'number', { group: 'Stockage à navettes', unit: 'caisses/h', min: 1, step: 10, live: true });
-  fld('returnLane', 'Ligne de retour en stock', 'bool', { group: 'Stockage à navettes' });
+  fld('returnLane', 'Ligne de retour en stock (convoyeur avant)', 'bool', { group: 'Stockage à navettes' });
+  FL.convH = Object.assign({}, FL.z, { id: 'convH', label: 'Hauteur du convoyeur de sortie', group: 'Stockage à navettes', help: 'Hauteur (Z) du dessus des rouleaux du collecteur, mesurée depuis le sol. Les tours restent posées au sol.' });
   fld('returnOffset', 'Écart de la ligne de retour', 'number', { group: 'Stockage à navettes', unit: 'mm', min: 700, step: 50 });
   fld('endLength', 'Longueur du convoyeur de sortie', 'number', { group: 'Stockage à navettes', unit: 'mm', min: 300, step: 50 });
   fld('color', 'Couleur', 'color', { group: 'Apparence', live: true });
@@ -365,9 +366,9 @@
     defaults: Object.assign({}, CONV_DEF, {
       towers: 1, levels: 16, levelH: 380, rackLength: 8000, towerWidth: 2200, frontZone: 1500, fill: 75,
       towerRate: 400, formats: ['bac'], orientation: 0, maxCount: 0, startDelay: 0, jitter: 20,
-      returnLane: true, returnOffset: 1800, endLength: 1000, speed: 0.6, guideH: 60, color: '#5b6d82'
+      returnLane: false, returnOffset: 1800, endLength: 1000, speed: 0.6, guideH: 60, color: '#5b6d82'
     }),
-    fields: ['name', 'x', 'y', 'z', 'rot', 'towers', 'levels', 'levelH', 'rackLength', 'towerWidth', 'frontZone', 'fill', 'towerRate', 'formats', 'orientation', 'maxCount', 'startDelay', 'jitter',
+    fields: ['name', 'x', 'y', 'rot', 'towers', 'convH', 'levels', 'levelH', 'rackLength', 'towerWidth', 'frontZone', 'fill', 'towerRate', 'formats', 'orientation', 'maxCount', 'startDelay', 'jitter',
       'returnLane', 'returnOffset', 'endLength', 'width', 'usefulWidth', 'speed', 'running', 'gap', 'rollerDiam', 'rollerPitch', 'guideH', 'color', 'note'],
     collectorLength: p => C.clamp(Math.round(p.towers), 1, 30) * p.towerWidth + p.endLength,
     build: p => {
