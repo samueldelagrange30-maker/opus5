@@ -161,6 +161,8 @@
     return true;
   }
 
+  /** Abscisse d'arrêt (présentation à l'opérateur) sur une voie du poste GTP. */
+  const gtpStop = (el, tr) => C.Types.defs.gtp.stops(el.params)[tr.id] || tr.length * 0.5;
   /** Le carton doit-il s'arrêter au poste de cet élément ? */
   const isStation = (el, c) => el.type === 'workstation' || (el.type === 'labeler' && el.params.labelMode !== 'fly') || (el.type === 'closer' && (!c || c.open));
 
@@ -513,7 +515,7 @@
       }
       // poste GTP : bac et carton s'arrêtent face à l'opérateur jusqu'à la fin du transfert
       if (el.type === 'gtp' && !c.done[el.id]) {
-        const ss = tr.length * 0.5;
+        const ss = gtpStop(el, tr);
         if (c.s <= ss + 0.5 && ss < lim) { lim = ss; c.reason = tr.id === 'tote' ? 'bac au poste GTP' : 'carton au poste GTP'; }
       }
       // zones d'accumulation sans pression
@@ -699,7 +701,7 @@
       const el = node.el, p = el.params, rt = node.rt, id = el.id;
       const tt = node.tracks.tote, tc = node.tracks.ctn;
       if (!tt || !tc) return;
-      const at = (tr, c) => !c.removed && !c.done[id] && c.track === tr && Math.abs(c.s - tr.length * 0.5) < 1;
+      const at = (tr, c) => !c.removed && !c.done[id] && c.track === tr && Math.abs(c.s - gtpStop(el, tr)) < 1;
       if (rt.busy) {
         const b = rt.busy;
         if (b.tote.removed || b.ctn.removed) { rt.busy = null; return; }
@@ -757,7 +759,7 @@
       else if (adv < want * 0.5) { c.state = 'blocked'; c.wait += dt; tr.node.rt.blockedNow++; if (p.surface === 'freerollers') c.v = 0; }
       else { c.state = 'moving'; c.reason = ''; }
       // début de préparation / d'étiquetage
-      if (el.type === 'gtp' && !c.done[el.id] && Math.abs(c.s - tr.length * 0.5) < 0.6) { c.state = 'process'; c.reason = tr.id === 'tote' ? 'prélèvement' : 'remplissage'; }
+      if (el.type === 'gtp' && !c.done[el.id] && Math.abs(c.s - gtpStop(el, tr)) < 0.6) { c.state = 'process'; c.reason = tr.id === 'tote' ? 'prélèvement' : 'remplissage'; }
       if (isStation(el, c) && tr.id === 'main' && !c.done[el.id] && !c.dwellUntil) {
         const ss = tr.length * C.clamp(+p.stopPos || 0.5, 0.05, 0.95);
         if (Math.abs(c.s - ss) < 0.6) {

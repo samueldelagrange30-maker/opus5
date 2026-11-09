@@ -1350,36 +1350,107 @@
 
   /* ---------------- Poste GTP (goods-to-person) ---------------- */
   builders.gtp = (el, m, g) => {
-    const p = el.params, L = p.length;
-    for (const id of ['tote', 'ctn']) {
-      const path = new C.Path(m.tracks[id].segs, null, false), fr = frames(path, 3);
-      const lp = Object.assign({}, p, { color: id === 'tote' ? '#2e86de' : '#c49a62' });
-      addSurface(g, path, fr, lp); addFrames(g, fr, lp); addGuides(g, fr, path, lp); addLegs(g, path, lp, el);
-      addArrows(g, path, lp, 8); addMotor(g, path, lp);
-      // arrêt + pick-to-light au point de présentation
-      const f = localFrame(path, L * 0.5);
-      const ptl = box(80, p.usefulWidth * 0.8, 60, f.p[0] + 300, f.p[1], 260, MAT.glow(id === 'tote' ? 0x2ecc71 : 0x3498db), 'structure');
-      g.add(ptl);
+    const p = el.params, Y = C.Types.defs.gtp.layout(p);
+    const { L, tl, D, yC, yT, xc0, xc1, wl, total } = Y;
+    const TOP = 150;                                   // dessus du plan de travail (local, au-dessus des rouleaux)
+    const zf = floorLocal(el, total / 2, 0, -100);
+    const dark = MAT.color(p.color || '#2b2f35'), darker = MAT.color('#1d2024'), cream = MAT.color('#e8e3d6'), light = MAT.color('#d3d7da');
+    const steelM = MAT.color('#9aa3ab'), black = MAT.color('#111316');
+    // convoyeurs internes (seuls les rouleaux sont visibles dans les alvéoles et sur les tables)
+    for (const id of ['ctn', 'tote']) addRollers(g, new C.Path(m.tracks[id].segs, null, false), p);
+    // ---- meuble bas (caissons gris anthracite avec portes, poignées et vérins de pied)
+    const cabTop = TOP - 45, cabBot = zf + 110;
+    g.add(box(L, D - 40, cabTop - cabBot, tl + L / 2, 0, (cabTop + cabBot) / 2, dark, 'structure'));
+    const nDoor = Math.max(4, Math.round(L / 850));
+    for (let i = 0; i <= nDoor; i++) g.add(box(12, 8, cabTop - cabBot - 60, tl + i * L / nDoor, -D / 2 + 16, (cabTop + cabBot) / 2, darker, 'structure'));
+    for (let i = 0; i < nDoor; i++) {
+      const x = tl + (i + 0.5) * L / nDoor;
+      g.add(box(220, 14, 26, x - 120, -D / 2 + 10, cabTop - 160, black, 'structure'));                 // poignée
+      g.add(box(L / nDoor - 60, 6, 10, x, -D / 2 + 14, (cabTop + cabBot) / 2, darker, 'structure'));  // rainure médiane
     }
-    const side = p.opSide === 'right' ? -1 : 1;
-    const yOp = side * (p.lanePitch / 2 + p.width / 2 + 550);
-    const zf = floorLocal(el, L / 2, yOp, -200);
-    // plateforme / tapis anti-fatigue et opérateur debout face aux deux convoyeurs
-    g.add(box(1200, 900, 30, L / 2, yOp, zf + 15, MAT.color('#2c3e50'), 'structure'));
+    for (let i = 0; i <= nDoor; i++) for (const y of [-D / 2 + 80, D / 2 - 80]) {
+      const f = cyl(45, 100, black, 'structure', 12); f.rotation.x = Math.PI / 2; f.position.set((tl + i * L / nDoor) * M, y * M, (zf + 50) * M); g.add(f);
+    }
+    // ---- plan de travail avec alvéoles
+    const pockets = [];
+    const pk = (x, w, y0, y1, zone) => pockets.push({ x0: x - w / 2, x1: x + w / 2, y0, y1, zone });
+    const pw = Math.min(950, wl / 2 - 120);
+    for (const [xa, zone] of [[tl, 'L'], [xc1, 'R']]) for (const u of [0.27, 0.73]) pk(xa + wl * u, pw, yC - 270, yC + 270, zone);
+    pk(xc0 + Y.cw * 0.3, 620, yT - 280, yT + 280, 'C'); pk(xc0 + Y.cw * 0.7, 620, yT - 280, yT + 280, 'C');
+    const xb = Array.from(new Set([tl, tl + L, ...pockets.flatMap(q => [q.x0, q.x1]), xc0, xc1])).sort((a, b) => a - b);
+    for (let i = 0; i < xb.length - 1; i++) {
+      const a = xb[i], b = xb[i + 1], mid = (a + b) / 2;
+      if (b - a < 1) continue;
+      const mt = mid > xc0 && mid < xc1 ? light : cream;
+      const cut = pockets.filter(q => q.x0 < mid && q.x1 > mid).map(q => [q.y0, q.y1]).sort((u, v) => u[0] - v[0]);
+      let y = -D / 2;
+      const piece = (y0, y1) => { if (y1 - y0 > 1) g.add(box(b - a, y1 - y0, 40, mid, (y0 + y1) / 2, TOP - 20, mt, 'structure')); };
+      for (const [y0, y1] of cut) { piece(y, y0); y = Math.max(y, y1); }
+      piece(y, D / 2);
+    }
+    // bandeau avant arrondi des ailes + rebord arrière
+    for (const [x0, x1] of [[tl, xc0], [xc1, tl + L]]) {
+      const fr = cyl(55, x1 - x0, cream, 'structure', 16); fr.rotation.z = Math.PI / 2; fr.position.set((x0 + x1) / 2 * M, (-D / 2 + 30) * M, (TOP - 40) * M); g.add(fr);
+      // capot arrière surélevé (recouvre le convoyeur interne des bacs)
+      g.add(box(x1 - x0, D / 2 - 20, 170, (x0 + x1) / 2, (D / 2 + 20) / 2, TOP + 65, cream, 'structure'));
+      const lip = cyl(40, x1 - x0, cream, 'structure', 12); lip.rotation.z = Math.PI / 2; lip.position.set((x0 + x1) / 2 * M, 20 * M, (TOP + 150) * M); g.add(lip);
+    }
+    // intérieur des alvéoles : parois sombres + mécanismes (pousseur, cellule)
+    for (const q of pockets) {
+      const cx = (q.x0 + q.x1) / 2, cy = (q.y0 + q.y1) / 2, dz = 260;
+      for (const [lx, ly, x, y] of [[q.x1 - q.x0, 10, cx, q.y0], [q.x1 - q.x0, 10, cx, q.y1]]) g.add(box(lx, ly, dz, x, y, TOP - dz / 2, darker, 'structure'));
+      if (q.zone !== 'C') {
+        g.add(box(30, q.y1 - q.y0 - 60, 60, q.x0 + 90, cy, TOP - 120, steelM, 'structure'));        // pousseur
+        g.add(box(40, 40, 70, q.x1 - 60, q.y1 - 40, TOP - 60, MAT.glow(0x2f7dff), 'structure'));   // cellule
+      }
+    }
+    // ---- partie centrale : bloc arrière surélevé (gris clair) avec pupitre incliné,
+    //      deux écrans tactiles, arrêt d'urgence et moniteur sur bras
+    const cxm = (xc0 + xc1) / 2;
+    g.add(box(Y.cw, 420, 330, cxm, D / 2 + 190, TOP + 145 - 120, light, 'structure'));
+    g.add(box(Y.cw + 40, 40, 300, cxm, D / 2 + 380, TOP + 40, light, 'structure'));
+    const desk = new THREE.Group();
+    desk.add(box(Y.cw - 80, 360, 30, 0, 0, 0, light, 'structure'));
+    for (const dx of [-Y.cw * 0.24, Y.cw * 0.24]) {
+      desk.add(box(330, 240, 14, dx, 0, 18, black, 'structure'));
+      desk.add(box(300, 210, 4, dx, 0, 26, MAT.glow(0x2f6fb0), 'structure'));
+    }
+    desk.add(box(140, 160, 10, 0, 0, 18, MAT.color('#f1c40f'), 'structure'));
+    const es = cyl(40, 40, MAT.glow(0xe74c3c), 'structure', 16); es.rotation.x = Math.PI / 2; es.position.set(0, 20 * M, 40 * M); desk.add(es);
+    desk.position.set(cxm * M, (D / 2 + 150) * M, (TOP + 245) * M);
+    desk.rotation.x = -0.55;                                   // incliné vers l'opérateur
+    g.add(desk);
+    g.add(box(60, 60, 560, cxm, D / 2 + 330, TOP + 580, steelM, 'structure'));
+    const mon = new THREE.Group();
+    mon.add(box(620, 40, 380, 0, 0, 0, black, 'structure'));
+    mon.add(box(580, 6, 340, 0, -22, 0, MAT.glow(0x24507e), 'structure'));
+    mon.position.set(cxm * M, (D / 2 + 300) * M, (TOP + 980) * M); mon.rotation.x = 0.12;
+    g.add(mon);
+    // ---- tables d'extrémité (entrée / sortie des cartons de commande)
+    for (const x0 of [0, tl + L]) {
+      const tz = TOP - 40;
+      g.add(box(tl, 40, 90, x0 + tl / 2, yC - 330, tz - 45, dark, 'structure'));
+      g.add(box(tl, 40, 90, x0 + tl / 2, yC + 330, tz - 45, dark, 'structure'));
+      for (const dx of [70, tl - 70]) for (const dy of [yC - 330, yC + 330]) {
+        const h2 = tz - 90 - zf;
+        g.add(box(50, 50, h2, x0 + dx, dy, zf + h2 / 2, dark, 'structure'));
+        const f = cyl(40, 60, black, 'structure', 10); f.rotation.x = Math.PI / 2; f.position.set((x0 + dx) * M, dy * M, (zf + 30) * M); g.add(f);
+      }
+      g.add(box(tl - 80, 660, 20, x0 + tl / 2, yC, zf + 250, darker, 'structure'));            // tablette basse
+    }
+    // ---- opérateur debout face à la partie centrale
     const op = new THREE.Group();
     const legs = cyl(140, 820, MAT.color('#2c3e50'), 'structure'); legs.rotation.x = Math.PI / 2; legs.position.z = 410 * M; op.add(legs);
-    const torso = box(260, 420, 620, 0, 0, 1130, MAT.color('#c8ff00'), 'structure'); op.add(torso);
+    op.add(box(260, 420, 620, 0, 0, 1130, MAT.color('#c8ff00'), 'structure'));
     const head = new THREE.Mesh(new THREE.SphereGeometry(110 * M, 14, 10), MAT.color('#f0c8a0')); head.position.z = 1560 * M; tag(head, 'structure'); op.add(head);
     for (const dy of [-150, 150]) { const arm = box(520, 80, 80, 260, dy, 1240, MAT.color('#c8ff00'), 'structure'); arm.rotation.y = 0.35; op.add(arm); }
-    op.position.set(L / 2 * M, yOp * M, zf * M);
-    op.rotation.z = side > 0 ? -Math.PI / 2 : Math.PI / 2;
+    op.position.set(((xc0 + Y.xCtn) / 2 + 200) * M, (-D / 2 - 420) * M, zf * M);
+    op.rotation.z = Math.PI / 2;
     g.add(op);
-    // écran de commande et support
-    g.add(box(40, 40, 900, L / 2 + 700, side * (p.lanePitch / 2 + p.width / 2 + 150), zf + 450 - 0, MAT.leg(), 'structure'));
-    g.add(box(30, 420, 300, L / 2 + 700, side * (p.lanePitch / 2 + p.width / 2 + 150), zf + 1050, MAT.dark(), 'structure'));
+    g.add(box(1400, 800, 25, ((xc0 + Y.xCtn) / 2 + 200), -D / 2 - 420, zf + 12, MAT.color('#2c3e50'), 'structure'));   // tapis anti-fatigue
     // article en cours de transfert (animé par la simulation)
     const dims = C.Types.defs.gtp.articleDims(p.articleSize);
-    const art = box(dims[0], dims[1], dims[2], L / 2, 0, 500, MAT.color('#e74c3c'), 'structure');
+    const art = box(dims[0], dims[1], dims[2], Y.xTote, yT, 500, MAT.color('#e74c3c'), 'structure');
     art.visible = false; g.add(art);
     g.userData.gtpArticle = art;
   };

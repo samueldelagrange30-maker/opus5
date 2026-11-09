@@ -561,13 +561,30 @@
    */
   T.gtp = {
     label: 'Poste GTP (bac → carton)', cat: 'Équipements', conveyor: true,
-    defaults: Object.assign({}, CONV_DEF, { length: 1800, lanePitch: 1000, pickRate: 600, itemsPerTote: 2, itemsPerOrder: 6, articleSize: 'm', opSide: 'left', speed: 0.4, guideH: 60, color: '#00a8a8' }),
-    fields: ['name', 'x', 'y', 'z', 'rot', 'pickRate', 'itemsPerTote', 'itemsPerOrder', 'articleSize', 'length', 'lanePitch', 'opSide', 'width', 'usefulWidth', 'speed', 'running', 'gap', 'rollerDiam', 'rollerPitch', 'guideH', 'color', 'note'],
+    defaults: Object.assign({}, CONV_DEF, { length: 6000, tableLength: 900, pickRate: 600, itemsPerTote: 2, itemsPerOrder: 6, articleSize: 'm', width: 560, usefulWidth: 500, speed: 0.4, guideH: 0, color: '#2b2f35' }),
+    fields: ['name', 'x', 'y', 'z', 'rot', 'pickRate', 'itemsPerTote', 'itemsPerOrder', 'articleSize', 'length', 'tableLength', 'width', 'usefulWidth', 'speed', 'running', 'gap', 'rollerDiam', 'rollerPitch', 'color', 'note'],
     articleDims: s => s === 's' ? [120, 80, 60] : s === 'l' ? [250, 180, 120] : [180, 120, 90],
+    /**
+     * Implantation (repère local, X = longueur du poste, opérateur côté −Y) :
+     *   table d'entrée | aile gauche (2 alvéoles) | partie centrale (2 alvéoles + écrans) | aile droite (2 alvéoles) | table de sortie
+     * Convoyeur cartons : rangée avant (y = yC) sur toute la longueur, tables comprises.
+     * Convoyeur bacs : rangée arrière interne (y = yT), entre les deux tables.
+     */
+    layout(p) {
+      const L = C.clamp(+p.length || 6000, 3600, 20000), tl = C.clamp(+p.tableLength || 900, 400, 3000);
+      const D = 1200, yC = -270, yT = 300, cw = 1600;
+      const xc0 = tl + (L - cw) / 2, xc1 = xc0 + cw, wl = (L - cw) / 2;
+      return {
+        L, tl, D, yC, yT, cw, xc0, xc1, wl, total: L + 2 * tl,
+        xCtn: tl + wl * 0.73,            // alvéole carton présentée à l'opérateur (aile gauche, côté centre)
+        xTote: xc0 + cw * 0.3            // alvéole bac (partie centrale)
+      };
+    },
+    stops(p) { const Y = T.gtp.layout(p); return { ctn: Y.xCtn, tote: Y.xTote - Y.tl }; },
     build: p => {
-      const side = p.opSide === 'right' ? -1 : 1;    // côté opérateur : la voie bacs est côté opérateur
-      const t1 = new C.Turtle(0, side * p.lanePitch / 2, 0, 0); t1.line(p.length);
-      const t2 = new C.Turtle(0, -side * p.lanePitch / 2, 0, 0); t2.line(p.length);
+      const Y = T.gtp.layout(p);
+      const t1 = new C.Turtle(Y.tl, Y.yT, 0, 0); t1.line(Y.L);
+      const t2 = new C.Turtle(0, Y.yC, 0, 0); t2.line(Y.total);
       return {
         tracks: { tote: { segs: t1.segs }, ctn: { segs: t2.segs } },
         ports: [
@@ -577,6 +594,7 @@
       };
     }
   };
+  fld('tableLength', 'Longueur des tables d\'extrémité', 'number', { group: 'Poste GTP', unit: 'mm', min: 400, max: 3000, step: 50 });
 
   /* ---------------- Escalier de trémie (dans une mezzanine) ----------------
    * Origine : nez de la marche haute, au bord de la trémie ; descend suivant +X.
