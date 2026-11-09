@@ -546,6 +546,18 @@
           if (occ && b - half < lim) { lim = b - half; c.reason = 'zone occupée'; }
         }
       }
+      // poste GTP : tant que l'alvéole visée est occupée, attente EN RETRAIT du point d'entrée
+      // (la zone reste libre pour le contenant qui ressort de l'alvéole au même endroit)
+      if (c.route && c.route.track === tr && c.route.to.pocket) {
+        const pk = c.route.to, pair = pk.endLink && pk.endLink.track;
+        // occupée = un contenant dans l'alvéole, en sortie, ou déjà en route vers elle devant nous
+        const busy = pk.cartons.some(o => o !== c) || (pair && pair.cartons.some(o => o !== c)) ||
+          tr.cartons.some(o => o !== c && o.route === c.route && o.s > c.s);
+        if (busy) {
+          const hold = c.route.s - half - 350 - gap;
+          if (c.s <= hold + 0.5 && hold < lim) { lim = hold; c.reason = 'attente alvéole libre'; }
+        }
+      }
       // sortie
       const { exitS, next } = this.exitOf(c);
       const stopAt = tr.endMode === 'center' ? exitS : exitS - half;

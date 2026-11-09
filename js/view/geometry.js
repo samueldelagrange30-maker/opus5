@@ -1356,13 +1356,12 @@
     const zf = floorLocal(el, total / 2, 0, -100);
     const dark = MAT.color(p.color || '#2b2f35'), darker = MAT.color('#1d2024'), cream = MAT.color('#e8e3d6'), light = MAT.color('#d3d7da');
     const steelM = MAT.color('#9aa3ab'), black = MAT.color('#111316');
-    // convoyeur arrière d'arrivée des bacs (visible derrière le poste)
+    // convoyeur arrière des bacs : arrivée, entrée / sortie des alvéoles, départ (visible derrière le poste)
     {
       const path = new C.Path(m.tracks.back.segs, null, false), fr = frames(path, 3), lp = Object.assign({}, p, { color: '#2e86de', guideH: 60 });
       addRollers(g, path, lp); addFrames(g, fr, lp); addGuides(g, fr, path, lp); addLegs(g, path, lp, el); addArrows(g, path, lp, 8); addMotor(g, path, lp);
     }
-    // convoyeur bas de départ des bacs servis (dans le meuble, sortie en bout de poste)
-    addRollers(g, new C.Path(m.tracks.back2.segs, null, false), p);
+
     // convoyeur bas des cartons (dans le meuble, rouleaux visibles sur les tables d'extrémité)
     addRollers(g, new C.Path(m.tracks.ctn.segs, null, false), p);
     // fonds d'alvéoles bacs (rouleaux de transfert) et plateaux élévateurs des cartons
@@ -1426,7 +1425,7 @@
     }
     // ---- partie centrale : portique arrière (les bacs passent dessous) portant le pupitre
     //      incliné (deux écrans tactiles, arrêt d'urgence) et le moniteur
-    const cxm = (xc0 + xc1) / 2, yP = D / 2 + 120;
+    const cxm = (xc0 + xc1) / 2, yP = D / 2 + 25;
     for (const x of [xc0 - 40, xc1 + 40]) g.add(box(80, 120, 520 - zf + TOP, x, yP, (zf + TOP + 520) / 2, light, 'structure'));
     g.add(box(Y.cw + 160, 260, 120, cxm, yP, TOP + 470, light, 'structure'));
     const desk = new THREE.Group();

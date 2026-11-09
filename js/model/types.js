@@ -568,7 +568,8 @@
      * Implantation (repère local, X = longueur du poste, opérateur côté −Y) :
      *   table d'entrée | aile gauche (2 alvéoles cartons) | centre (2 alvéoles bacs) | aile droite (2 alvéoles cartons) | table de sortie
      * - Bacs : convoyeur arrière (y = yB) ; chaque bac entre PAR L'ARRIÈRE dans une alvéole
-     *   centrale libre (1 bac maxi), puis repart en arrière sur le convoyeur après le prélèvement.
+     *   centrale libre (1 bac maxi), ressort par l'arrière au même endroit après le prélèvement
+     *   et repart sur le convoyeur arrière jusqu'à la sortie « to » (bout du poste).
      * - Cartons : convoyeur bas dans le meuble (z = zLow) ; un élévateur monte chaque carton
      *   PAR LE BAS dans une alvéole latérale libre (1 carton maxi), puis le redescend une fois servi.
      */
@@ -588,13 +589,9 @@
     build: p => {
       const Y = T.gtp.layout(p);
       const m = { tracks: {}, ports: [], diverts: [] };
-      // convoyeurs arrière des bacs : arrivée (vers les alvéoles) et départ (bacs servis)
-      const tb = new C.Turtle(Y.tl, Y.yB, 0, 0); tb.line(Y.totes[1] + 60 - Y.tl);
-      m.tracks.back = { segs: tb.segs, endMode: 'flush' };
-      // départ des bacs servis : convoyeur bas interne (rangée arrière) qui remonte en bout de poste
-      const xs = Y.xc0 + 40, xe = Y.tl + Y.L;
-      const tb2 = new C.Turtle(xs, Y.yT, Y.zLow, 0); tb2.line(xe - Y.run - 150 - xs); tb2.line(Y.ramp, Y.ang); tb2.line(150);
-      m.tracks.back2 = { segs: tb2.segs };
+      // convoyeur arrière des bacs : arrivée, entrée / sortie des alvéoles par l'arrière, puis départ
+      const tb = new C.Turtle(Y.tl, Y.yB, 0, 0); tb.line(Y.L);
+      m.tracks.back = { segs: tb.segs };
       // convoyeur bas des cartons : table d'entrée → descente dans le meuble → remontée → table de sortie
       const tc = new C.Turtle(0, Y.yC, 0, 0);
       tc.line(Y.a); tc.line(Y.ramp, -Y.ang); tc.line(Y.total - 2 * (Y.a + Y.run)); tc.line(Y.ramp, Y.ang); tc.line(Y.a);
@@ -604,9 +601,10 @@
         const k = i + 1;
         const tin = new C.Turtle(x, Y.yB, 0, -Math.PI / 2); tin.line(Y.yB - Y.yT);
         m.tracks['p' + k] = { segs: tin.segs, yawMode: 'keep', endMode: 'center', pocket: 'tote', pocketIdx: i, endTo: { track: 'q' + k, s: 0 } };
+        // sortie par là où le bac est entré : retour en arrière sur le convoyeur, au même endroit
         m.tracks['q' + k] = {
-          segs: [{ type: 'line', a: [x, Y.yT, 0], b: [x + 300, Y.yT, Y.zLow] }],
-          yawMode: 'keep', exitOf: 'tote', pocketIdx: i, endTo: { track: 'back2', s: x + 300 - (Y.xc0 + 40), merge: true }
+          segs: [{ type: 'line', a: [x, Y.yT, 0], b: [x, Y.yB, 0] }],
+          yawMode: 'keep', exitOf: 'tote', pocketIdx: i, endTo: { track: 'back', s: x - Y.tl, merge: true }
         };
         m.diverts.push({ track: 'back', s: x - Y.tl, to: 'p' + k, out: k });
       });
@@ -618,7 +616,7 @@
         m.tracks['d' + k] = { segs: [{ type: 'line', a: [x, Y.yC, 0], b: [x + 300, Y.yC, Y.zLow] }], yawMode: 'keep', exitOf: 'ctn', pocketIdx: i, endTo: { track: 'ctn', s: Y.sCtn(x + 300), merge: true } };
         m.diverts.push({ track: 'ctn', s: Y.sCtn(x), to: 'u' + k, out: k + 2 });
       });
-      m.ports.push({ id: 'ti', role: 'in', track: 'back', at: 'start' }, { id: 'to', role: 'out', track: 'back2', at: 'end', out: 0 },
+      m.ports.push({ id: 'ti', role: 'in', track: 'back', at: 'start' }, { id: 'to', role: 'out', track: 'back', at: 'end', out: 0 },
         { id: 'ci', role: 'in', track: 'ctn', at: 'start' }, { id: 'co', role: 'out', track: 'ctn', at: 'end', out: 0 });
       return m;
     }
