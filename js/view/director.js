@@ -19,7 +19,9 @@
     ['chase', 'Poursuite'], ['side', 'Travelling latéral'], ['top', 'Vue de dessus'], ['front', 'Face (arrivée)'],
     ['orbit', 'Orbite'], ['wide', 'Vue d\'ensemble'], ['onboard', 'Caméra embarquée']
   ];
-  const VIEW_LABEL = Object.fromEntries(C.CAMERA_VIEWS);
+  /** Vues « à la place de l'opérateur » d'un poste GTP. */
+  C.OPERATOR_VIEWS = [['eyes', 'Yeux de l\'opérateur'], ['shoulder', 'Par-dessus l\'épaule'], ['opTop', 'Plongée sur le poste']];
+  const VIEW_LABEL = Object.fromEntries(C.CAMERA_VIEWS.concat(C.OPERATOR_VIEWS));
 
   /* ------------------------------ enregistreur ------------------------------ */
   class Recorder {
@@ -96,10 +98,23 @@
       this.opts = Object.assign({ views: ['chase', 'side', 'top', 'orbit'], interval: 6, switchOnElement: true, record: true }, opts);
       if (!this.opts.views.length) this.opts.views = ['chase'];
       this.viewIdx = 0; this.viewT = 0; this.zoom = 1;
-      this.cartonId = null; this.waiting = false; this.endT = null; this.lastNode = null;
+      this.cartonId = null; this.waiting = false; this.endT = null; this.lastNode = null; this.finished = false;
+      this.current = null; this.target = null; this.label = '';
       this.active = true;
       this.prevCamera = app.cameraState();
-      if (this.opts.cartonId) {
+      if (this.opts.gtpId) {
+        // vue de l'opérateur d'un poste GTP (caméra fixe sur le poste)
+        const el = app.project.getElement(this.opts.gtpId);
+        if (!el || el.type !== 'gtp') { this.active = false; C.toast('Poste GTP introuvable', 'warn'); return; }
+        if (!opts.views || !opts.views.length) this.opts.views = ['eyes', 'shoulder', 'opTop'];
+        if (!app.sim.active || !app.sim.running) app.sim.play();
+        this.label = 'Opérateur ' + el.name;
+        app.select([]);
+        this.t0 = performance.now();
+        app.viewport.camera = app.viewport.persp;
+        this.camPos = null;
+        if (this.opts.record) this.recorder.start(`${app.project.name}_operateur_${el.name}`, (ctx, w, h) => this.drawHud(ctx, w, h));
+      } else if (this.opts.cartonId) {
         this.cartonId = this.opts.cartonId;
         this.begin();
       } else {
@@ -142,6 +157,8 @@
       if (!this.active) return;
       this.active = false;
       this.recorder.stop();
+      this.showOperator(true);
+      if (this.baseFov !== undefined) { this.app.viewport.persp.fov = this.baseFov; this.app.viewport.persp.updateProjectionMatrix(); this.baseFov = undefined; }
       if (this.hudEl) { this.hudEl.remove(); this.hudEl = null; }
       const app = this.app, vp = app.viewport;
       // la vue orbitale reprend autour de la dernière position suivie
@@ -154,7 +171,7 @@
         o.theta = Math.atan2(off.y, off.x);
         vp.setProjection('persp');
       }
-      if (!silent) C.toast('Suivi de carton terminé', 'info');
+      if (!silent) C.toast(this.opts && this.opts.gtpId ? 'Vue opérateur terminée' : 'Suivi terminé', 'info');
     }
     nextView(dir) {
       const n = this.opts.views.length;
@@ -184,10 +201,52 @@
       return { cam, look };
     }
 
+    /** Affiche / masque le mannequin de l'opérateur (masqué en vue « yeux »). */
+    showOperator(on) {
+      const id = this.opts && this.opts.gtpId;
+      const g = id && this.app.viewport.meshes.get(id);
+      if (g && g.userData.gtpOperator) g.userData.gtpOperator.visible = on;
+    }
+    /** Caméra à la place de l'opérateur du poste GTP. */
+    operatorShot(el) {
+      const app = this.app, p = el.params, Y = C.Types.defs.gtp.layout(p);
+      const tf = { x: el.x, y: el.y, z: el.z, rot: el.rot };
+      const w0 = C.localToWorld(tf, Y.total / 2, 0, 0);
+      const zf = C.supportAt ? C.supportAt(w0[0], w0[1], el.z - 101, el.id) - el.z : -el.z;
+      const cx = Y.xc0 + Y.cw / 2, opY = -Y.D / 2 - 420;
+      const W = (x, y, z) => { const q = C.localToWorld(tf, x, y, z); return V3(q[0] * M, q[1] * M, q[2] * M); };
+      const k = this.zoom;
+      let cam, look;
+      switch (this.view) {
+        case 'shoulder': cam = W(cx - 650 * k, opY - 750 * k, zf + 1900 + 450 * k); look = W(cx + 250, 250, 100); break;
+        case 'opTop': cam = W(cx, opY + 150, zf + 1800 + 1600 * k); look = W(cx, 250, 100); break;
+        default: {
+          // yeux : la tête suit l'article prélevé (bac → carton)
+          cam = W(cx, opY + 160, zf + 1600);
+          look = W(cx, 150, 100);
+          const g = app.viewport.meshes.get(el.id), art = g && g.userData.gtpArticle;
+          if (art && art.visible) { const v = new THREE.Vector3(); art.getWorldPosition(v); look.lerp(v, 0.5); }
+        }
+      }
+      return { cam, look };
+    }
+    updateOperator(dt) {
+      const app = this.app, el = app.project.getElement(this.opts.gtpId);
+      if (!el || !app.sim.active) { this.stop(); return; }
+      if (this.opts.duration > 0 && (performance.now() - this.t0) / 1000 > this.opts.duration) { this.stop(); return; }
+      this.viewT += dt;
+      if (this.opts.interval > 0 && this.viewT > this.opts.interval) this.nextView();
+      this.showOperator(this.view !== 'eyes');
+      this.target = this.operatorShot(el);
+      this.applyCamera(dt);
+      this.refreshHud();
+    }
+
     /** Appelé à chaque image avant le rendu. */
     update(dt) {
       if (!this.active) return;
       const app = this.app, vp = app.viewport;
+      if (this.opts.gtpId) { this.updateOperator(dt); return; }
       if (this.waiting || !this.cartonId) { this.refreshHud(); return; }
       const c = app.sim.cartonById(this.cartonId);
       if (!c || c.removed) {
@@ -213,7 +272,7 @@
       const vp = this.app.viewport, cam = vp.persp;
       if (vp.camera !== cam) vp.camera = cam;
       if (!this.target) return;
-      const a = 1 - Math.exp(-dt * (this.view === 'onboard' ? 12 : 4));
+      const a = 1 - Math.exp(-dt * (this.view === 'onboard' ? 12 : this.view === 'eyes' ? 3 : 4));
       if (!this.camPos) { this.camPos = this.target.cam.clone(); this.lookPos = this.target.look.clone(); }
       else { this.camPos.lerp(this.target.cam, a); this.lookPos.lerp(this.target.look, a); }
       cam.position.copy(this.camPos);
@@ -221,6 +280,8 @@
       cam.lookAt(this.lookPos);
       cam.aspect = vp.width / Math.max(1, vp.height);
       cam.near = 0.03; cam.far = 1500;
+      if (this.baseFov === undefined) this.baseFov = cam.fov;
+      cam.fov = this.view === 'eyes' ? 72 : this.baseFov;
       cam.updateProjectionMatrix();
     }
     /** Après le rendu : image vidéo. */
@@ -229,6 +290,14 @@
     /* ------------------------------ bandeaux ------------------------------ */
     info() {
       const app = this.app, c = this.current && !this.current.removed ? this.current : null;
+      if (this.opts && this.opts.gtpId) {
+        const node = app.sim.net && app.sim.net.node(this.opts.gtpId), rt = node && node.rt || {};
+        const state = rt.busy ? 'prélèvement en cours' : rt.waitTote ? 'attente d\'un bac' : rt.waitCtn ? 'attente d\'un carton' : 'prêt';
+        return {
+          project: app.project.name, t: C.fmtTime(app.sim.t), view: VIEW_LABEL[this.view] || '', carton: this.label, label: '',
+          where: `${rt.picks || 0} articles · ${rt.totes || 0} bacs · ${rt.orders || 0} cartons · ${state}`, z: null, state, operator: true
+        };
+      }
       return {
         project: app.project.name, t: C.fmtTime(app.sim.t), view: VIEW_LABEL[this.view] || '',
         carton: this.label || '', label: c && c.label ? c.label : (this.current && this.current.label) || '',
@@ -247,7 +316,7 @@
       ctx.fillStyle = '#e8edf2'; ctx.font = `${15 * s}px Arial, sans-serif`;
       ctx.fillText(`${i.project}  ·  t = ${i.t}  ·  ${i.carton}${i.label ? '  ·  étiquette ' + i.label : ''}`, 120 * s, h - 32 * s);
       ctx.fillStyle = '#9fb4cc';
-      ctx.fillText(`Élément : ${i.where}${i.z !== null ? '  ·  Z ' + C.fmt(i.z) + ' mm' : ''}  ·  Vue : ${i.view}`, 120 * s, h - 12 * s);
+      ctx.fillText(`${i.operator ? '' : 'Élément : '}${i.where}${i.z !== null ? '  ·  Z ' + C.fmt(i.z) + ' mm' : ''}  ·  Vue : ${i.view}`, 120 * s, h - 12 * s);
       ctx.restore();
     }
     buildHud() {

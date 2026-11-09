@@ -1466,6 +1466,7 @@
     op.position.set((xc0 + Y.cw / 2) * M, (-D / 2 - 420) * M, zf * M);
     op.rotation.z = Math.PI / 2;
     g.add(op);
+    g.userData.gtpOperator = op;
     g.add(box(2400, 800, 25, xc0 + Y.cw / 2, -D / 2 - 420, zf + 12, MAT.color('#2c3e50'), 'structure'));   // tapis anti-fatigue
     // article en cours de transfert (animé par la simulation)
     const dims = C.Types.defs.gtp.articleDims(p.articleSize);

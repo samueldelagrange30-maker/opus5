@@ -144,6 +144,7 @@
             { label: 'Statistiques détaillées', icon: 'chart', action: () => this.setRightTab('stats') },
             null,
             { label: 'Filmer le parcours d\'un carton ou d\'un bac…', icon: 'video', action: () => this.filmDialog() },
+            { label: 'Filmer à la place de l\'opérateur GTP…', icon: 'video', disabled: () => !a.project.elements.some(e => e.type === 'gtp'), action: () => this.filmDialog(null, { operator: true }) },
             { label: 'Arrêter le suivi de carton', disabled: () => !a.director.active, action: () => a.director.stop() }
           ]
         },
@@ -153,6 +154,7 @@
             { label: 'Exporter la vue de dessus (PNG)', icon: 'image', action: () => this.exportTop() },
             { label: 'Imprimer le plan 2D…', icon: 'print', action: () => this.planDialog() },
             { label: 'Vidéo : filmer un carton ou un bac…', icon: 'video', action: () => this.filmDialog() },
+            { label: 'Vidéo : à la place de l\'opérateur GTP…', icon: 'video', disabled: () => !a.project.elements.some(e => e.type === 'gtp'), action: () => this.filmDialog(null, { operator: true }) },
             { label: 'Vidéo : enregistrer la vue 3D (démarrer / arrêter)', icon: 'video', check: () => a.screenRec.active, action: () => { a.screenRec.toggle(); } },
             { label: 'Nomenclature des convoyeurs…', icon: 'bom', action: () => this.bomDialog() },
             { label: 'Exporter la nomenclature (CSV)', icon: 'export', action: () => C.IO.exportBOMCSV(a) },
@@ -561,6 +563,11 @@
       act('delete', 'Supprimer', () => a.deleteSelection());
       body.appendChild(actions);
       if (el.locked) body.appendChild(h('div', { class: 'notice lock', html: '🔒 Élément verrouillé : il ne peut être ni déplacé, ni tourné, ni supprimé, ni modifié (sauf nom, commentaire et réglages de fonctionnement). <b>L</b> ou le cadenas pour déverrouiller.' }));
+      if (el.type === 'gtp') {
+        const ob = h('button', { class: 'btn small primary block', html: C.icon('video', 14) + ' Filmer à la place de l\'opérateur' });
+        ob.addEventListener('click', () => this.filmDialog(null, { operator: true, gtpId: el.id }));
+        body.appendChild(ob);
+      }
       if (el.type === 'reachtruck') {
         const job = a.fleet.jobs.get(el.id);
         const box3 = h('div', { class: 'mission-box' });
@@ -1293,11 +1300,15 @@
       ], { xwide: true, noFocus: true });
     }
     /** Caméra de suivi d'un carton + enregistrement vidéo. */
-    filmDialog(cartonId) {
+    filmDialog(cartonId, init) {
       const a = this.app;
+      init = init || {};
       const srcs = a.project.elements.filter(e => e.type === 'source' || e.type === 'osr');
+      const gtps = a.project.elements.filter(e => e.type === 'gtp');
       const selC = cartonId || (a.sim.active && Array.from(a.cartonSelection).find(id => a.sim.cartonById(id)));
-      if (!srcs.length && !selC) { C.toast('Ajoutez une entrée (générateur, OSR) ou sélectionnez un contenant en simulation', 'warn'); return; }
+      if (!srcs.length && !selC && !gtps.length) { C.toast('Ajoutez une entrée (générateur, OSR) ou sélectionnez un contenant en simulation', 'warn'); return; }
+      const selG = init.gtpId || (gtps.find(e => a.selection.has(e.id)) || gtps[0] || {}).id;
+      const opFirst = !!init.operator && gtps.length;
       const selSpec = selC && a.sim.cartonById(selC) ? a.sim.cartonById(selC).spec : null;
       const origins = [['', 'Toutes les entrées']];
       for (const s2 of srcs) {
@@ -1310,40 +1321,53 @@
         <section>
           <h4>Contenant suivi</h4>
           <div class="seg">
-            ${selC ? radio('sel', `Contenant sélectionné · ${C.escape(selSpec ? selSpec.name : '')} #${selC}`, true) : ''}
-            ${radio('tote', '🧺 Prochain bac (tote)', !selC)}
+            ${selC ? radio('sel', `Contenant sélectionné · ${C.escape(selSpec ? selSpec.name : '')} #${selC}`, !opFirst) : ''}
+            ${radio('tote', '🧺 Prochain bac (tote)', !selC && !opFirst)}
             ${radio('carton', '📦 Prochain carton', false)}
             ${radio('any', 'Prochain contenant (tous)', false)}
+            ${gtps.length ? radio('op', '👷 Vue de l\'opérateur GTP', opFirst) : ''}
           </div>
           <div class="row" id="fmSrcRow"><label>Provenance</label><select id="fmSrc">${origins.map(o => `<option value="${C.escape(o[0])}">${C.escape(o[1])}</option>`).join('')}</select></div>
+          ${gtps.length ? `<div class="row" id="fmGtpRow"><label>Poste GTP</label><select id="fmGtp">${gtps.map(e => `<option value="${e.id}" ${e.id === selG ? 'selected' : ''}>${C.escape(e.name)}</option>`).join('')}</select></div>
+          <div class="row" id="fmDurRow"><label>Durée du film</label><div class="inline"><input type="number" id="fmDur" value="60" min="0" step="5"><span class="unit">secondes (0 = jusqu'à « Arrêter »)</span></div></div>` : ''}
         </section>
         <section>
           <h4>Vues (alternées automatiquement)</h4>
-          <div class="views-grid">${C.CAMERA_VIEWS.map(([v, l]) => `<label class="chk"><input type="checkbox" value="${v}" ${v !== 'onboard' && v !== 'front' ? 'checked' : ''}> ${l}</label>`).join('')}</div>
+          <div class="views-grid" data-set="follow">${C.CAMERA_VIEWS.map(([v, l]) => `<label class="chk"><input type="checkbox" value="${v}" ${v !== 'onboard' && v !== 'front' ? 'checked' : ''}> ${l}</label>`).join('')}</div>
+          <div class="views-grid" data-set="op">${C.OPERATOR_VIEWS.map(([v, l]) => `<label class="chk"><input type="checkbox" value="${v}" ${v === 'eyes' ? 'checked' : ''}> ${l}</label>`).join('')}</div>
           <div class="row"><label>Changer de vue toutes les</label><div class="inline"><input type="number" id="fmInt" value="6" min="0" step="1"><span class="unit">secondes (0 = jamais)</span></div></div>
-          <label class="chk"><input type="checkbox" id="fmElem" checked> Changer aussi de vue à chaque nouvel équipement traversé</label>
+          <label class="chk" id="fmElemRow"><input type="checkbox" id="fmElem" checked> Changer aussi de vue à chaque nouvel équipement traversé</label>
         </section>
         <section>
           <h4>Enregistrement</h4>
           <div class="row"><label>Vitesse de simulation</label><select id="fmSpeed"><option value="1">×1 (temps réel)</option><option value="2">×2</option><option value="5">×5</option><option value="10">×10</option></select></div>
           <label class="chk"><input type="checkbox" id="fmRec" ${recOk ? 'checked' : 'disabled'}> Enregistrer la vidéo ${recOk ? '(fichier WebM téléchargé à l\'arrivée)' : '(non pris en charge par ce navigateur)'}</label>
         </section>
-        <p class="muted small">La caméra suit le contenant depuis son entrée jusqu'à sa sortie (ou sa remise en stock). Molette : distance de la caméra · ◀ ▶ : changer de vue · Échap : arrêter.</p>
+        <p class="muted small" id="fmHelp"></p>
       </div>`, [{ label: 'Annuler' }, {
         label: 'Démarrer', primary: true, action: b => {
           const kind = (b.querySelector('input[name=fmKind]:checked') || {}).value || 'any';
-          const views = Array.from(b.querySelectorAll('.views-grid input:checked')).map(i => i.value);
+          const views = Array.from(b.querySelectorAll(`.views-grid[data-set=${kind === 'op' ? 'op' : 'follow'}] input:checked`)).map(i => i.value);
           const o = {
             views, interval: Math.max(0, +b.querySelector('#fmInt').value || 0), switchOnElement: b.querySelector('#fmElem').checked,
             record: b.querySelector('#fmRec').checked, simSpeed: +b.querySelector('#fmSpeed').value
           };
-          if (kind === 'sel') o.cartonId = selC;
+          if (kind === 'op') { o.gtpId = b.querySelector('#fmGtp').value; o.duration = Math.max(0, +b.querySelector('#fmDur').value || 0); }
+          else if (kind === 'sel') o.cartonId = selC;
           else { o.kind = kind; o.sourceName = b.querySelector('#fmSrc').value; }
           a.director.start(o);
         }
       }], { noFocus: true, wide: true });
       const body = document.querySelector('.film-dlg');
-      const sync = () => { const k = (body.querySelector('input[name=fmKind]:checked') || {}).value; body.querySelector('#fmSrcRow').style.display = k === 'sel' ? 'none' : ''; };
+      const sync = () => {
+        const k = (body.querySelector('input[name=fmKind]:checked') || {}).value, op = k === 'op';
+        const show = (sel, on) => { const n = body.querySelector(sel); if (n) n.style.display = on ? '' : 'none'; };
+        show('#fmSrcRow', k !== 'sel' && !op); show('#fmGtpRow', op); show('#fmDurRow', op); show('#fmElemRow', !op);
+        show('.views-grid[data-set=follow]', !op); show('.views-grid[data-set=op]', op);
+        body.querySelector('#fmHelp').textContent = op
+          ? 'La caméra se place à la place de l\'opérateur du poste : en vue « yeux », le regard suit chaque article du bac vers le carton. Molette : recul de la caméra · ◀ ▶ : changer de vue · Échap : arrêter.'
+          : 'La caméra suit le contenant depuis son entrée jusqu\'à sa sortie (ou sa remise en stock). Molette : distance de la caméra · ◀ ▶ : changer de vue · Échap : arrêter.';
+      };
       body.querySelectorAll('input[name=fmKind]').forEach(r => r.addEventListener('change', sync));
       sync();
     }
@@ -1396,6 +1420,7 @@
           <div><h4>Simuler</h4><ul>
             <li>Les <b>Entrées</b> génèrent des cartons (cadence, formats), les <b>Sorties</b> les évacuent et les comptent.</li>
             <li>Outil <b>Carton (K)</b> : posez des cartons sur les convoyeurs, même pendant la simulation.</li>
+            <li><b>Filmer</b> (bouton « Filmer ») : la caméra suit le prochain bac ou carton (filtrable par entrée / tour d'OSR) avec plusieurs vues, ou se place <b>à la place de l'opérateur d'un poste GTP</b> (son regard suit chaque article du bac vers le carton). La vidéo WebM est téléchargée à la fin.</li>
             <li>Trieurs, transferts et tables tournantes : règles <i>cyclique</i>, <i>aléatoire</i> ou par <i>critères</i> (ex. <code>1 : format=Petit</code>, <code>2 : poids&gt;10</code>).</li>
             <li>Arrêtez un convoyeur (« En marche ») ou fermez une butée pendant la simulation pour observer l'accumulation.</li>
           </ul></div>

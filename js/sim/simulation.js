@@ -476,7 +476,8 @@
         const tg = cur.target, sj = cur.sJoin, gap = this.gapOf(tg);
         const v = Math.max(0.05, +tg.el.params.speed || 0.3) * 1000;
         // les cartons en amont cèdent le passage (réservation) : seule la zone de jonction doit être libre
-        for (const o of tg.cartons) if (o.s + o.half > sj - c.half - gap && o.s - o.half < sj + c.half + gap) return false;
+        // (tolérance de 2 mm : un carton arrêté pile en limite de fenêtre ne doit pas bloquer la jonction)
+        for (const o of tg.cartons) if (o.s + o.half > sj - c.half - gap + 2 && o.s - o.half < sj + c.half + gap - 2) return false;
         void v;
         return true;
       }
@@ -519,7 +520,7 @@
       for (const b of tr.bridges) for (const o of b.cartons) {
         // on cède le passage seulement si l'on peut encore s'arrêter avant la jonction ;
         // un carton déjà engagé dans la zone de jonction la dégage
-        const l = b.sJoin - o.half - half - gap;
+        const l = b.sJoin - o.half - half - gap - 10;
         if (b.sJoin >= c.s - 1 && l >= c.s - 1 && l < lim) { lim = l; c.reason = 'priorité jonction'; }
       }
       // obstacles
@@ -549,13 +550,29 @@
       // poste GTP : tant que l'alvéole visée est occupée, attente EN RETRAIT du point d'entrée
       // (la zone reste libre pour le contenant qui ressort de l'alvéole au même endroit)
       if (c.route && c.route.track === tr && c.route.to.pocket) {
-        const pk = c.route.to, pair = pk.endLink && pk.endLink.track;
         // occupée = un contenant dans l'alvéole, en sortie, ou déjà en route vers elle devant nous
-        const busy = pk.cartons.some(o => o !== c) || (pair && pair.cartons.some(o => o !== c)) ||
-          tr.cartons.some(o => o !== c && o.route === c.route && o.s > c.s);
-        if (busy) {
-          const hold = c.route.s - half - 350 - gap;
-          if (c.s <= hold + 0.5 && hold < lim) { lim = hold; c.reason = 'attente alvéole libre'; }
+        const busyFor = dv => {
+          const pk = dv.to, pair = pk.endLink && pk.endLink.track;
+          return pk.cartons.some(o => o !== c) || (pair && pair.cartons.some(o => o !== c)) ||
+            tr.cartons.some(o => o !== c && o.route && o.route.to === pk && o.s > c.s);
+        };
+        if (busyFor(c.route)) {
+          // affectation dynamique : on prend la première alvéole libre encore atteignable
+          // (évite d'attendre une alvéole occupée alors qu'une autre est libre)
+          const reach = tr.diverts.filter(dv => dv.to.pocket && dv.s >= c.s + 1).sort((u, v) => u.s - v.s);
+          const free = reach.find(dv => !busyFor(dv));
+          if (free) {
+            const rt = tr.node.rt; rt.res = rt.res || {};
+            if (rt.res[c.route.to.key] > 0) rt.res[c.route.to.key]--;
+            rt.res[free.to.key] = (rt.res[free.to.key] || 0) + 1;
+            c.route = free;
+          } else {
+            // attente EN RETRAIT de la première alvéole atteignable : les jonctions de retour
+            // des alvéoles restent toujours dégagées pour les contenants qui en ressortent
+            const holds = reach.map(dv => dv.s - half - 350 - gap).filter(h => c.s <= h + 0.5);
+            const hold = holds.length ? Math.min(...holds) : null;
+            if (hold !== null && hold < lim) { lim = hold; c.reason = 'attente alvéole libre'; }
+          }
         }
       }
       // sortie
@@ -763,7 +780,9 @@
       const totes = present('tote'), ctns = present('ctn');
       rt.waitTote = !totes.length; rt.waitCtn = !ctns.length;
       if (!totes.length || !ctns.length) return;
-      const tote = totes[0], ctn = ctns[0];
+      // service dans l'ordre d'arrivée (sinon les alvéoles éloignées ne seraient jamais servies)
+      const oldest = l => l.reduce((m, c) => ((c.pocketT || 0) < (m.pocketT || 0) ? c : m));
+      const tote = oldest(totes), ctn = oldest(ctns);
       const n = Math.max(1, Math.min(Math.max(1, Math.round(+p.itemsPerTote || 1)) - (tote.taken || 0), Math.max(1, +p.itemsPerOrder || 1) - (ctn.items || 0)));
       rt.busy = { tote, ctn, n, start: this.t, until: this.t + n * 3600 / Math.max(1, +p.pickRate || 600) };
     }
@@ -849,7 +868,7 @@
         if (next.track.pocket) {
           // arrivée dans l'alvéole : réservation consommée, l'aiguillage est terminé
           const rt3 = next.track.node.rt; if (rt3.res && rt3.res[next.track.key] > 0) rt3.res[next.track.key]--;
-          c.route = null; c.served = false;
+          c.route = null; c.served = false; c.pocketT = this.t;
         }
         if (next.track.node !== fromNode) { this.leaveNode(c, fromNode); this.enterNode(c, next.track.node); }
       }
