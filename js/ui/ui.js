@@ -267,7 +267,7 @@
       this.closeMenus();
       const cat = C.LIBRARY.find(c => c.cat === 'Équipements');
       const pop = h('div', { class: 'tb-pop dropdown' });
-      for (const it of cat.items.concat(C.LIBRARY.find(c => c.cat === 'Entrées / sorties').items, C.LIBRARY.find(c => c.cat === 'Structures et divers').items)) {
+      for (const it of cat.items.concat(...['Stockage', 'Entrées / sorties', 'Structures et divers'].map(k => C.LIBRARY.find(c => c.cat === k).items))) {
         const b = h('button', { class: 'dd-item', html: `<span class="dd-ico">${C.libIcon(it.icon)}</span><span class="dd-label">${C.escape(it.label)}</span>` });
         b.addEventListener('click', () => { this.closeMenus(); this.app.addFromLibrary(it.id); });
         pop.appendChild(b);
@@ -529,6 +529,17 @@
       act('fit', 'Cadrer', () => a.viewport.focus(el.id));
       act('delete', 'Supprimer', () => a.deleteSelection());
       body.appendChild(actions);
+      if (el.type === 'osr') {
+        const n = Math.round(el.params.towers);
+        const bar = h('div', { class: 'tower-bar' });
+        const minus = h('button', { class: 'btn small', text: '− Tour', title: 'Retirer la dernière tour' });
+        const plus = h('button', { class: 'btn small primary', text: '+ Tour', title: 'Ajouter une tour supplémentaire' });
+        minus.disabled = n <= 1 || simLock; plus.disabled = n >= 30 || simLock;
+        minus.addEventListener('click', () => a.setField([el.id], 'towers', n - 1));
+        plus.addEventListener('click', () => a.setField([el.id], 'towers', n + 1));
+        bar.append(h('span', { html: `<b>${n}</b> tour${n > 1 ? 's' : ''}` }), minus, plus);
+        body.appendChild(bar);
+      }
       if (simLock) body.appendChild(h('div', { class: 'notice', text: 'Simulation en cours : seuls les paramètres de fonctionnement (vitesse, marche, butée, aiguillage…) sont modifiables.' }));
       // champs groupés
       const groups = new Map();
@@ -601,9 +612,29 @@
         return;
       }
       if (!def.conveyor) {
-        kv('Encombrement', `${C.fmt(p.length)} × ${C.fmt(p.width || p.thickness)} mm`);
-        kv('Hauteur (haut)', `${C.fmt(el.z + (p.height || 0))} mm`);
+        const sz = C.Types.staticSize(el);
+        kv('Encombrement', `${C.fmt(sz.L)} × ${C.fmt(sz.W)} mm`);
+        kv('Hauteur (haut)', `${C.fmt(el.z + sz.H)} mm`);
+        if (el.type === 'rack') {
+          const rows = +p.rows === 2 ? 2 : 1, perBay = Math.max(1, Math.floor((p.bayLength - 80) / 900));
+          const places = rows * p.bays * p.levels * perBay;
+          kv('Emplacements', `${places} (${perBay} par travée et par niveau)`);
+          kv('Niveaux de dépose', Array.from({ length: p.levels }, (_, k) => C.fmt((p.firstOnFloor ? k : k + 1) * p.levelH)).join(' / ') + ' mm');
+          kv('Occupés (environ)', Math.round(places * p.fill / 100));
+        }
         return;
+      }
+      if (el.type === 'osr') {
+        const n = Math.round(p.towers), rd = Math.min(700, (p.towerWidth - 600) / 2);
+        const f = a.project.format((p.formats || ['bac'])[0]);
+        const slots = Math.max(1, Math.floor((p.rackLength - 100) / (Math.min(f.L, f.W) + 60)));
+        kv('Tours / niveaux', `${n} / ${p.levels}`);
+        kv('Hauteur des tours', C.fmt(el.z * 0 + C.Types.osrHeight(p)) + ' mm');
+        kv('Emprise', `${C.fmt(n * p.towerWidth)} × ${C.fmt(p.width / 2 + p.frontZone + p.rackLength + (p.returnLane ? p.returnOffset + p.width / 2 : p.width / 2))} mm`);
+        kv('Emplacements de caisses', C.fmt(n * 2 * p.levels * slots) + ` (allée ${C.fmt(p.towerWidth - 2 * rd)} mm)`);
+        kv('Débit de sortie total', C.fmt(n * p.towerRate) + ' caisses/h');
+        const node = net.node(el.id);
+        if (a.sim.active && node && node.rt) kv('Caisses sorties / remises en stock', `${node.rt.spawned} / ${node.rt.stored || 0}`);
       }
       const node = net.node(el.id);
       const L = C.Types.devLength(el);

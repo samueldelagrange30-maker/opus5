@@ -49,7 +49,7 @@
             key: el.id + ':' + id, id, el, node, path, length: path.length,
             width: el.params.usefulWidth || el.params.width || 500,
             outerWidth: el.params.width || 600,
-            yawMode: mt.yawMode || 'tangent', endMode: mt.endMode || 'flush',
+            yawMode: mt.yawMode || 'tangent', endMode: mt.endMode || 'flush', absorb: !!mt.absorb,
             bridgeYaw: mt.bridgeYaw || 'blend',
             endLink: null, diverts: [], lift: null, bridges: [], blocks: [], cartons: []
           };
@@ -226,6 +226,14 @@
     for (const e of project.elements) {
       const tf = { x: e.x, y: e.y, z: e.z, rot: e.rot }, p = e.params;
       if (e.type === 'obstacle') res.push({ tf, cx: 0, cy: 0, L: p.length, W: p.width, z0: 0, z1: p.height, label: e.name });
+      if (e.type === 'rack') {
+        const sz = C.Types.staticSize(e);
+        res.push({ tf, cx: 0, cy: 0, L: sz.L, W: sz.W, z0: 0, z1: sz.H, label: e.name });
+      }
+      if (e.type === 'osr') {
+        const n = C.clamp(Math.round(p.towers), 1, 30), y0 = p.width / 2 + p.frontZone;
+        res.push({ tf, cx: n * p.towerWidth / 2, cy: y0 + p.rackLength / 2, L: n * p.towerWidth, W: p.rackLength, z0: -1e5, z1: 1e5, label: e.name + ' (tours)' });
+      }
       if (e.type === 'mezzanine') {
         const t = Math.max(20, p.thickness || 120);
         res.push({ tf, cx: 0, cy: 0, L: p.length, W: p.width, z0: p.deckH - t - 220, z1: p.deckH, label: e.name + ' (plancher)' });

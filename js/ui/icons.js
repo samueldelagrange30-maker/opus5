@@ -96,6 +96,8 @@
     source: '<rect x="10" y="7" width="28" height="14"/><path d="M2 14h8M6 10l4 4-4 4"/><path d="M14 4v20" stroke-width="2.5"/>',
     sink: '<rect x="2" y="7" width="28" height="14"/><path d="M30 14h8M34 10l4 4-4 4"/><path d="M26 4v20" stroke-width="2.5"/>',
     obstacle: '<path d="M20 3l14 22H6z"/><path d="M20 11v7M20 21v.5"/>',
+    rack: '<path d="M6 3v22M34 3v22M20 3v22"/><path d="M6 9h28M6 16h28M6 23h28"/><rect x="9" y="11" width="8" height="5"/><rect x="23" y="18" width="8" height="5"/><rect x="9" y="4" width="8" height="5"/>',
+    osr: '<rect x="4" y="2" width="9" height="18"/><rect x="15" y="2" width="9" height="18"/><rect x="26" y="2" width="9" height="18"/><path d="M4 8h9M4 14h9M15 8h9M15 14h9M26 8h9M26 14h9"/><path d="M2 24h34M33 22l3 2-3 2"/>',
     mezz: '<path d="M4 9h32"/><path d="M4 5h32M4 5v4M36 5v4"/><path d="M8 9v16M32 9v16M20 9v16"/><path d="M8 25h-6M12 13l8 12" stroke-dasharray="2 1.5"/>'
   };
   C.libIcon = function (name) {

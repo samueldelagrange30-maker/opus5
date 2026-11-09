@@ -406,8 +406,8 @@
             }
           }
         } else {
-          const hh = el.type === 'mezzanine' ? el.params.deckH : el.params.height;
-          add([el.x, el.y, el.z + (hh || 100) + 150], `<b>${C.escape(el.name)}</b> · ${C.fmt(el.params.length)}×${C.fmt(el.params.width || el.params.thickness)}${el.type === 'mezzanine' ? ' · plancher Z ' + C.fmt(el.z + hh) : '×' + C.fmt(hh)}`, sel ? 'sel' : '');
+          const sz = C.Types.staticSize(el), hh = el.type === 'mezzanine' ? el.params.deckH : sz.H;
+          add([el.x, el.y, el.z + (hh || 100) + 150], `<b>${C.escape(el.name)}</b> · ${C.fmt(sz.L)}×${C.fmt(sz.W)}${el.type === 'mezzanine' ? ' · plancher Z ' + C.fmt(el.z + hh) : '×' + C.fmt(hh)}${el.type === 'rack' ? ' · ' + el.params.levels + ' niveaux' : ''}`, sel ? 'sel' : '');
         }
       }
       // mesures

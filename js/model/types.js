@@ -138,6 +138,27 @@
   fld('stairs', 'Escalier', 'select', { group: 'Mezzanine', options: [['none', 'Aucun'], ['front', 'Côté avant (−Y)'], ['back', 'Côté arrière (+Y)'], ['left', 'Côté gauche (−X)'], ['right', 'Côté droit (+X)']] });
   fld('stairsWidth', 'Largeur de l\'escalier', 'number', { group: 'Mezzanine', unit: 'mm', min: 600, max: 3000, step: 50 });
   fld('load', 'Charge admissible', 'number', { group: 'Mezzanine', unit: 'kg/m²', min: 0, step: 50 });
+  // --- Racks
+  fld('levels', 'Nombre de niveaux', 'number', { group: 'Stockage', min: 1, max: 60, step: 1 });
+  fld('bays', 'Nombre de travées', 'number', { group: 'Stockage', min: 1, max: 60, step: 1 });
+  fld('bayLength', 'Longueur de travée', 'number', { group: 'Stockage', unit: 'mm', min: 800, step: 50 });
+  fld('depth', 'Profondeur', 'number', { group: 'Stockage', unit: 'mm', min: 300, step: 50 });
+  fld('rows', 'Implantation', 'select', { group: 'Stockage', options: [[1, 'Simple'], [2, 'Double (dos à dos)']] });
+  fld('levelH', 'Hauteur entre niveaux', 'number', { group: 'Stockage', unit: 'mm', min: 150, step: 10 });
+  fld('firstOnFloor', '1er niveau au sol', 'bool', { group: 'Stockage' });
+  fld('loadType', 'Charges stockées', 'select', { group: 'Stockage', options: [['palette', 'Palettes filmées'], ['carton', 'Cartons sur palette'], ['vide', 'Aucune (vide)']] });
+  fld('loadH', 'Hauteur de charge', 'number', { group: 'Stockage', unit: 'mm', min: 100, step: 50 });
+  fld('fill', 'Taux de remplissage', 'number', { group: 'Stockage', unit: '%', min: 0, max: 100, step: 5 });
+  fld('beamColor', 'Couleur des lisses', 'color', { group: 'Apparence' });
+  // --- Stockage à navettes (type OSR)
+  fld('towers', 'Nombre de tours (allées)', 'number', { group: 'Stockage à navettes', min: 1, max: 30, step: 1 });
+  fld('rackLength', 'Longueur des tours', 'number', { group: 'Stockage à navettes', unit: 'mm', min: 2000, step: 100 });
+  fld('towerWidth', 'Largeur d\'une tour', 'number', { group: 'Stockage à navettes', unit: 'mm', min: 1400, step: 50 });
+  fld('frontZone', 'Profondeur de la pré-zone (élévateurs)', 'number', { group: 'Stockage à navettes', unit: 'mm', min: 600, step: 50 });
+  fld('towerRate', 'Débit de sortie par tour', 'number', { group: 'Stockage à navettes', unit: 'caisses/h', min: 1, step: 10, live: true });
+  fld('returnLane', 'Ligne de retour en stock', 'bool', { group: 'Stockage à navettes' });
+  fld('returnOffset', 'Écart de la ligne de retour', 'number', { group: 'Stockage à navettes', unit: 'mm', min: 700, step: 50 });
+  fld('endLength', 'Longueur du convoyeur de sortie', 'number', { group: 'Stockage à navettes', unit: 'mm', min: 300, step: 50 });
   fld('color', 'Couleur', 'color', { group: 'Apparence', live: true });
   fld('note', 'Commentaire', 'textarea', { group: 'Apparence' });
 
@@ -326,6 +347,42 @@
     fields: ['name', 'x', 'y', 'zBase', 'rot', 'length', 'width', 'deckH', 'thickness', 'columnSpacing', 'railH', 'stairs', 'stairsWidth', 'load', 'color', 'note'],
     build: () => ({ tracks: {}, ports: [], diverts: [] })
   };
+  /* ---------------- Rack à palettes ------------------------------------ */
+  T.rack = {
+    label: 'Rack à palettes', cat: 'Stockage', conveyor: false, centered: true,
+    defaults: { levels: 4, bays: 3, bayLength: 2700, depth: 1100, rows: 1, levelH: 1500, firstOnFloor: true, loadType: 'palette', loadH: 1200, fill: 75, color: '#1f5fa8', beamColor: '#e67e22', note: '' },
+    fields: ['name', 'x', 'y', 'zBase', 'rot', 'levels', 'bays', 'bayLength', 'depth', 'rows', 'levelH', 'firstOnFloor', 'loadType', 'loadH', 'fill', 'color', 'beamColor', 'note'],
+    build: () => ({ tracks: {}, ports: [], diverts: [] })
+  };
+
+  /* ---------------- Stockage à navettes type OSR -------------------------
+   * Tours de stockage (allée + navettes par niveau + élévateur) alignées
+   * derrière un convoyeur collecteur qui évacue les caisses vers la sortie.
+   * Ligne de retour optionnelle : les caisses qui y arrivent sont remises en stock.
+   */
+  T.osr = {
+    label: 'Stockage à navettes (type OSR)', cat: 'Stockage', conveyor: true, osr: true,
+    defaults: Object.assign({}, CONV_DEF, {
+      towers: 1, levels: 16, levelH: 380, rackLength: 8000, towerWidth: 2200, frontZone: 1500, fill: 75,
+      towerRate: 400, formats: ['bac'], orientation: 0, maxCount: 0, startDelay: 0, jitter: 20,
+      returnLane: true, returnOffset: 1800, endLength: 1000, speed: 0.6, guideH: 60, color: '#5b6d82'
+    }),
+    fields: ['name', 'x', 'y', 'z', 'rot', 'towers', 'levels', 'levelH', 'rackLength', 'towerWidth', 'frontZone', 'fill', 'towerRate', 'formats', 'orientation', 'maxCount', 'startDelay', 'jitter',
+      'returnLane', 'returnOffset', 'endLength', 'width', 'usefulWidth', 'speed', 'running', 'gap', 'rollerDiam', 'rollerPitch', 'guideH', 'color', 'note'],
+    collectorLength: p => C.clamp(Math.round(p.towers), 1, 30) * p.towerWidth + p.endLength,
+    build: p => {
+      const L = T.osr.collectorLength(p);
+      const t = new C.Turtle(); t.line(L);
+      const m = { tracks: { main: { segs: t.segs } }, ports: [{ id: 'out', role: 'out', track: 'main', at: 'end', out: 0 }], diverts: [] };
+      if (p.returnLane) {
+        const r = new C.Turtle(L, -p.returnOffset, 0, Math.PI); r.line(L);
+        m.tracks.ret = { segs: r.segs, absorb: true };
+        m.ports.push({ id: 'in', role: 'in', track: 'ret', at: 'start', optional: true });
+      }
+      return m;
+    }
+  };
+
   T.guide = {
     label: 'Guide latéral', cat: 'Équipements', conveyor: false,
     defaults: { length: 2000, height: 100, thickness: 20, color: '#bdc3c7', note: '' },
@@ -376,6 +433,19 @@
         case 'elevator': p.elevH = dz; break;
       }
     },
+    /** Encombrement (mm) d'un élément statique : L (X local), W (Y local), H. */
+    staticSize(el) {
+      const p = el.params;
+      if (el.type === 'rack') {
+        const rows = +p.rows === 2 ? 2 : 1;
+        return { L: p.bays * p.bayLength + 80, W: rows * p.depth + (rows - 1) * 200, H: Types.rackHeight(p) };
+      }
+      if (el.type === 'mezzanine') return { L: p.length, W: p.width, H: p.deckH + (p.railH || 0) };
+      return { L: p.length, W: p.width || p.thickness || 0, H: p.height || 0 };
+    },
+    rackHeight(p) { return (p.firstOnFloor ? p.levels - 1 : p.levels) * p.levelH + p.loadH + 150; },
+    /** Hauteur totale des tours d'un stockage à navettes (depuis le sol). */
+    osrHeight(p) { return 300 + p.levels * p.levelH + 400; },
     rollerCount(el) {
       return Math.max(1, Math.floor(Types.devLength(el) / Math.max(15, el.params.rollerPitch || 100)));
     },
@@ -445,6 +515,15 @@
         { id: 'eq-station', label: 'Poste de préparation', icon: 'station', type: 'workstation', params: {} },
         { id: 'eq-table', label: 'Table de travail', icon: 'table', type: 'table', params: {} },
         { id: 'eq-sorter', label: 'Trieur', icon: 'sorter', type: 'sorter', params: {} }
+      ]
+    },
+    {
+      cat: 'Stockage', items: [
+        { id: 'st-rack', label: 'Rack à palettes 4 niveaux', icon: 'rack', type: 'rack', params: {} },
+        { id: 'st-rack2', label: 'Rack double 4 niveaux', icon: 'rack', type: 'rack', params: { rows: 2 } },
+        { id: 'st-rack-ctn', label: 'Rack à cartons 4 niveaux', icon: 'rack', type: 'rack', params: { loadType: 'carton', depth: 800, bayLength: 1800, levelH: 1200, loadH: 800 } },
+        { id: 'st-osr', label: 'Stockage à navettes OSR (1 tour)', icon: 'osr', type: 'osr', params: {} },
+        { id: 'st-osr3', label: 'Stockage à navettes OSR (3 tours)', icon: 'osr', type: 'osr', params: { towers: 3 } }
       ]
     },
     {

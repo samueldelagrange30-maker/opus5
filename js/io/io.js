@@ -72,8 +72,8 @@
         const row = {
           ref: el.name, type: def.label,
           tech: def.conveyor && p.surface ? C.SURFACE_LABEL[p.surface] : '',
-          length: def.conveyor ? C.Types.devLength(el) : p.length,
-          width: p.width || p.thickness || '', useful: p.usefulWidth || '',
+          length: def.conveyor ? C.Types.devLength(el) : C.Types.staticSize(el).L,
+          width: def.conveyor ? p.width : C.Types.staticSize(el).W, useful: p.usefulWidth || '',
           zin, zout, slope: def.conveyor ? C.Types.meanSlope(el) : 0,
           radius: el.type === 'curve' || el.type === 'spiral' ? p.radius : '',
           angle: el.type === 'curve' ? p.angle : el.type === 'spiral' ? p.turns * 360 : '',
@@ -171,9 +171,19 @@
             polys.push(poly);
           }
           const flow = net.mainTrack(el.id);
+          if (el.type === 'osr') {
+            // tours de stockage
+            const n = C.clamp(Math.round(p.towers), 1, 30), y0 = p.width / 2 + p.frontZone;
+            for (let i = 0; i < n; i++) {
+              const q = [[i * p.towerWidth, y0], [(i + 1) * p.towerWidth, y0], [(i + 1) * p.towerWidth, y0 + p.rackLength], [i * p.towerWidth, y0 + p.rackLength]].map(v => C.localToWorld(tf, v[0], v[1], 0));
+              q.forEach(v => ext(v[0], v[1]));
+              polys.push(q.map(v => [v[0], v[1]]));
+            }
+          }
           shapes.push({ el, polys, flow });
         } else {
-          const hl = p.length / 2, hw = (p.width || p.thickness || 20) / 2;
+          const sz = C.Types.staticSize(el);
+          const hl = sz.L / 2, hw = (sz.W || 20) / 2;
           const cx = def.centered ? 0 : hl;
           const pts = [[cx - hl, -hw], [cx + hl, -hw], [cx + hl, hw], [cx - hl, hw]].map(q => C.localToWorld(tf, q[0], q[1], 0));
           pts.forEach(q => ext(q[0], q[1]));
@@ -217,7 +227,7 @@
         const node = net.node(el.id);
         let lp = [el.x, el.y];
         if (node) { const t = net.mainTrack(el.id); lp = t.path.at(t.length / 2).p; }
-        const L = C.Types.get(el.type).conveyor ? C.Types.devLength(el) : el.params.length;
+        const L = C.Types.get(el.type).conveyor ? C.Types.devLength(el) : C.Types.staticSize(el).L;
         if (el.type === 'mezzanine') { const q = C.localToWorld({ x: el.x, y: el.y, z: 0, rot: el.rot }, -el.params.length / 2 + 300, el.params.width / 2 - 300, 0); lp = [q[0], q[1]]; }
         s += `<text x="${X(lp[0])}" y="${+Y(lp[1]) - 4}" font-size="11" font-weight="600" fill="#1d2731" text-anchor="${el.type === 'mezzanine' ? 'start' : 'middle'}">${C.escape(el.name)}${el.type === 'mezzanine' ? ` — plancher Z${C.fmt(el.z + el.params.deckH)}` : ''}</text>`;
         s += `<text x="${X(lp[0])}" y="${+Y(lp[1]) + 9}" font-size="9" fill="#4b5a69" text-anchor="middle">${C.fmt(L)} mm</text>`;

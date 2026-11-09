@@ -152,10 +152,15 @@
       for (const tr of net.tracks) tr.cartons = [];
       for (const node of net.nodes.values()) {
         node.rt = { occ: 0, cooldownUntil: 0, lastRelease: -1e9, passId: null, holdId: null, holdStart: 0, rr: 0, passed: 0, entered: 0, occInt: 0, blockedTime: 0, maxQ: 0, blockedNow: 0, angle: 0, angleTarget: 0, carZ: 0, spawned: 0, nextSpawn: 0, occNow: 0 };
-        if (node.el.type === 'source') {
+        if (node.el.type === 'source' || node.el.type === 'osr') {
           node.rt.nextSpawn = +node.el.params.startDelay || 0;
           this.sourceIndex.set(node.el.id, this.sources.length);
           this.sources.push(node);
+        }
+        if (node.el.type === 'osr') {
+          const n = C.clamp(Math.round(node.el.params.towers), 1, 30), per = 3600 / Math.max(1, +node.el.params.towerRate || 300);
+          node.rt.towerNext = Array.from({ length: n }, (_, i) => node.rt.nextSpawn + per * i / n);
+          node.rt.stored = 0;
         }
         if (node.def.routing) node.rules = parseRules(node.el.params.rules);
       }
@@ -491,7 +496,7 @@
       this.t += dt;
       const net = this.net;
       // 1. génération
-      for (const node of this.sources) this.runSource(node);
+      for (const node of this.sources) { if (node.el.type === 'osr') this.runOSR(node); else this.runSource(node); }
       // 2. occupation des éléments à capacité limitée
       for (const node of net.nodes.values()) { node.rt.occ = 0; node.rt.blockedNow = 0; node.rt.occNow = 0; }
       for (const c of this.cartons) {
@@ -539,6 +544,37 @@
       rt.nextSpawn = this.t + base * (1 + j * (this.rng.next() * 2 - 1));
     }
 
+    /** Stockage à navettes : chaque tour dépose des caisses sur le collecteur. */
+    runOSR(node) {
+      const el = node.el, p = el.params, rt = node.rt;
+      if (this.t < (+p.startDelay || 0)) return;
+      const tr = node.tracks.main;
+      const ids = Array.isArray(p.formats) && p.formats.length ? p.formats : ['bac'];
+      const v = Math.max(0.05, +p.speed || 0.5) * 1000;
+      rt.towerNext.forEach((next, i) => {
+        if (this.t < next) return;
+        if (+p.maxCount > 0 && rt.spawned >= +p.maxCount) return;
+        if (p.running === false) return;
+        const fid = ids[Math.floor(this.rng.next() * ids.length) % ids.length];
+        const f = this.formats.find(x => x.id === fid) || this.formats[0];
+        const spec = { name: f.name, ref: f.ref, formatName: f.name, formatId: f.id, L: f.L, W: f.W, H: f.H, weight: f.weight, color: f.color, speed: 0 };
+        const ori = (+p.orientation || 0) * C.DEG;
+        const half = lenAlong(spec, ori) / 2, gap = this.gapOf(tr);
+        const s = (i + 0.5) * p.towerWidth;
+        // fenêtre libre sur le collecteur (y compris les caisses qui arrivent de l'amont)
+        const lookBack = v * 0.6;
+        for (const o of tr.cartons) {
+          if (o.s + o.half > s - half - gap - lookBack && o.s - o.half < s + half + gap) { this.stats.spawnBlocked++; return; }
+        }
+        const c = this.spawn(tr, s, spec, ori, el.name + ' · tour ' + (i + 1));
+        c.v = +p.speed || 0;
+        rt.spawned++;
+        const base = 3600 / Math.max(1, +p.towerRate || 300);
+        const j = C.clamp(+p.jitter || 0, 0, 100) / 100;
+        rt.towerNext[i] = this.t + base * (1 + j * (this.rng.next() * 2 - 1));
+      });
+    }
+
     moveCarton(c, dt) {
       const tr = c.track, el = tr.el, p = el.params;
       // rotation sur table tournante
@@ -577,7 +613,10 @@
     transitions(c) {
       for (let it = 0; it < 4; it++) {
         const tr = c.track, el = tr.el;
-        if (el.type === 'sink' && tr.id === 'main' && c.s >= tr.length - c.half - 1) { this.removeCarton(c, true); return; }
+        if (((el.type === 'sink' && tr.id === 'main') || tr.absorb) && c.s >= tr.length - c.half - 1) {
+          if (tr.absorb) tr.node.rt.stored = (tr.node.rt.stored || 0) + 1;
+          this.removeCarton(c, true); return;
+        }
         const { exitS, next } = this.exitOf(c);
         if (!next || c.s < exitS - 1e-6) return;
         if (next.turn && !c.turnDone) {
@@ -703,6 +742,7 @@
         if (!g || !node.rt) continue;
         const rt = node.rt, p = node.el.params;
         if (g.userData.spin) g.userData.spin.rotation.z = rt.angle;
+        if (g.userData.osr && C.animateOSR) C.animateOSR(g, this.t);
         if (g.userData.carriage) {
           const c = this.cartons.find(x => x.node === node && x.track.lift);
           let target = 0;

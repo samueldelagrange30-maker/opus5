@@ -716,6 +716,189 @@
     }
   };
 
+  /** Petit générateur déterministe (remplissage reproductible des stocks). */
+  function seeded(str) {
+    let hsh = 2166136261;
+    for (let i = 0; i < str.length; i++) { hsh ^= str.charCodeAt(i); hsh = Math.imul(hsh, 16777619); }
+    return new C.RNG(hsh >>> 0);
+  }
+  /** Instances de boîtes (positions mm, dimensions mm, couleurs optionnelles). */
+  function boxInstances(g, items, material, layer) {
+    if (!items.length) return null;
+    const im = new THREE.InstancedMesh(new THREE.BoxGeometry(1, 1, 1), material, items.length);
+    const col = new THREE.Color();
+    items.forEach((it, i) => {
+      _m4.makeScale(it.l * M, it.w * M, it.h * M);
+      if (it.rz) _m4.premultiply(new THREE.Matrix4().makeRotationZ(it.rz));
+      _m4.setPosition(it.x * M, it.y * M, it.z * M);
+      im.setMatrixAt(i, _m4);
+      if (it.c) im.setColorAt(i, col.set(it.c));
+    });
+    im.castShadow = true; im.receiveShadow = true;
+    tag(im, layer || 'body');
+    g.add(im);
+    return im;
+  }
+
+  /* ---------------- Rack à palettes ---------------- */
+  builders.rack = (el, m, g) => {
+    const p = el.params;
+    const rows = +p.rows === 2 ? 2 : 1, nb = Math.max(1, Math.round(p.bays)), bl = p.bayLength, d = p.depth, flue = 200;
+    const L = nb * bl, Wt = rows * d + (rows - 1) * flue;
+    const H = C.Types.rackHeight(p);
+    const nl = Math.max(1, Math.round(p.levels));
+    const levelZ = k => (p.firstOnFloor ? k : k + 1) * p.levelH;   // niveau de dépose k
+    const upr = MAT.color(p.color || '#1f5fa8'), beam = MAT.color(p.beamColor || '#e67e22');
+    const posts = [], braces = [], beams = [], plates = [];
+    for (let r = 0; r < rows; r++) {
+      const y0 = -Wt / 2 + r * (d + flue);
+      for (let j = 0; j <= nb; j++) {
+        const x = -L / 2 + j * bl;
+        for (const y of [y0 + 40, y0 + d - 40]) { posts.push({ x, y, z: H / 2, l: 80, w: 60, h: H }); plates.push({ x, y, z: 5, l: 150, w: 130, h: 10 }); }
+        // contreventement en zigzag dans le plan du cadre
+        const n = Math.max(2, Math.round(H / 900));
+        const dz = (H - 200) / n, len = Math.hypot(dz, d - 80);
+        for (let k = 0; k < n; k++) {
+          const ang = Math.atan2(dz, d - 80) * (k % 2 ? -1 : 1);
+          braces.push({ x, y: y0 + d / 2, z: 100 + dz * (k + 0.5), l: 30, w: len, h: 25, rx: ang });
+        }
+      }
+      for (let k = 0; k < nl; k++) {
+        const z = levelZ(k);
+        if (z <= 1) continue;
+        for (let j = 0; j < nb; j++) {
+          const x = -L / 2 + (j + 0.5) * bl;
+          for (const y of [y0 + 40, y0 + d - 40]) beams.push({ x, y, z: z - 60, l: bl - 80, w: 50, h: 120 });
+        }
+      }
+    }
+    boxInstances(g, posts, upr, 'body');
+    boxInstances(g, plates, MAT.leg(), 'structure');
+    boxInstances(g, beams, beam, 'body');
+    // contreventements (rotation autour de X)
+    if (braces.length) {
+      const im = new THREE.InstancedMesh(new THREE.BoxGeometry(1, 1, 1), upr, braces.length);
+      braces.forEach((b, i) => {
+        _m4.makeRotationX(b.rx); _m4.scale(new THREE.Vector3(b.l * M, b.w * M, b.h * M));
+        _m4.setPosition(b.x * M, b.y * M, b.z * M); im.setMatrixAt(i, _m4);
+      });
+      tag(im, 'structure'); g.add(im);
+    }
+    // charges stockées
+    if (p.loadType !== 'vide') {
+      const rng = seeded(el.id + ':' + nb + ':' + nl + ':' + rows);
+      const pal = [], loads = [];
+      const perBay = Math.max(1, Math.floor((bl - 80) / 900));
+      const film = ['#d9dde3', '#c9b18a', '#b98b52', '#e3d3b4', '#9fb3c8', '#cfa77a'];
+      for (let r = 0; r < rows; r++) {
+        const y0 = -Wt / 2 + r * (d + flue);
+        for (let k = 0; k < nl; k++) for (let j = 0; j < nb; j++) for (let q = 0; q < perBay; q++) {
+          if (rng.next() * 100 >= p.fill) continue;
+          const x = -L / 2 + j * bl + 40 + (q + 0.5) * (bl - 80) / perBay, z = levelZ(k);
+          const pw = Math.min(800, (bl - 80) / perBay - 60), pd = Math.min(d - 40, 1200);
+          pal.push({ x, y: y0 + d / 2, z: z + 72, l: pw, w: pd, h: 144 });
+          const lh = (p.loadH - 144) * (0.55 + 0.45 * rng.next());
+          if (p.loadType === 'carton') {
+            const nx = 2, ny = 2, nz = Math.max(1, Math.floor(lh / 250));
+            for (let a = 0; a < nx; a++) for (let b = 0; b < ny; b++) for (let c2 = 0; c2 < nz; c2++)
+              loads.push({ x: x - pw / 4 + a * pw / 2, y: y0 + d / 2 - pd / 4 + b * pd / 2, z: z + 144 + 125 + c2 * 250, l: pw / 2 - 10, w: pd / 2 - 10, h: 240, c: film[(a + b + c2 + k) % 3 + 1] });
+          } else loads.push({ x, y: y0 + d / 2, z: z + 144 + lh / 2, l: pw - 20, w: pd - 20, h: lh, c: film[Math.floor(rng.next() * film.length)] });
+        }
+      }
+      boxInstances(g, pal, MAT.wood(), 'body');
+      boxInstances(g, loads, new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.75, metalness: 0.05 }), 'body');
+    }
+  };
+
+  /* ---------------- Stockage à navettes (type OSR) ---------------- */
+  builders.osr = (el, m, g) => {
+    const p = el.params;
+    // convoyeur collecteur et ligne de retour
+    for (const id of ['main', 'ret']) {
+      if (!m.tracks[id]) continue;
+      const path = new C.Path(m.tracks[id].segs, null, false), fr = frames(path, 3);
+      addSurface(g, path, fr, p); addFrames(g, fr, p); addGuides(g, fr, path, p); addLegs(g, path, p, el);
+      addArrows(g, path, p, 8);
+      if (id === 'main') addMotor(g, path, p);
+    }
+    const n = C.clamp(Math.round(p.towers), 1, 30), tw = p.towerWidth, Ld = p.rackLength;
+    const rd = Math.min(700, (tw - 600) / 2), aisle = tw - 2 * rd;
+    const y0 = p.width / 2 + p.frontZone, y1 = y0 + Ld;
+    const zf = floorLocal(el, tw / 2, (y0 + y1) / 2, 0);
+    const H = C.Types.osrHeight(p);
+    const nl = Math.max(1, Math.round(p.levels));
+    const frame = MAT.color('#c3cad3'), clad = new THREE.MeshStandardMaterial({ color: new THREE.Color(p.color || '#5b6d82'), transparent: true, opacity: 0.28, side: THREE.DoubleSide, depthWrite: false });
+    clad.userData.owned = true;
+    const posts = [], shelves = [], totes = [], lifts = [];
+    const fmt = (C.app && C.app.project && C.app.project.format((p.formats || ['bac'])[0])) || { L: 600, W: 400, H: 220, color: '#3d7fd6' };
+    const rng = seeded(el.id + ':' + n + ':' + nl);
+    const nSlots = Math.max(1, Math.floor((Ld - 100) / (Math.min(fmt.L, fmt.W) + 60)));
+    const shuttles = [];
+    for (let i = 0; i < n; i++) {
+      const xa = i * tw, xc = xa + tw / 2;
+      for (const side of [-1, 1]) {
+        const bx0 = side < 0 ? xa : xa + tw - rd;            // bloc de rayonnage
+        for (const x of [bx0 + 25, bx0 + rd - 25]) for (let y = y0; y <= y1 + 1; y += Math.max(800, Ld / Math.ceil(Ld / 1300))) posts.push({ x, y, z: zf + H / 2, l: 50, w: 50, h: H });
+        for (let k = 0; k < nl; k++) {
+          const z = zf + 300 + k * p.levelH;
+          shelves.push({ x: bx0 + rd / 2, y: (y0 + y1) / 2, z, l: rd, w: Ld, h: 12 });
+          for (let q = 0; q < nSlots; q++) {
+            if (rng.next() * 100 >= p.fill) continue;
+            totes.push({ x: bx0 + rd / 2, y: y0 + 50 + (q + 0.5) * (Ld - 100) / nSlots, z: z + 6 + fmt.H / 2, l: Math.min(rd - 40, Math.max(fmt.L, fmt.W)), w: Math.min(fmt.L, fmt.W), h: Math.min(fmt.H, p.levelH - 60) });
+          }
+        }
+      }
+      // rails de navettes et navettes (une par niveau)
+      for (let k = 0; k < nl; k++) {
+        const z = zf + 300 + k * p.levelH;
+        for (const sx of [xa + rd + 20, xa + tw - rd - 20]) shelves.push({ x: sx, y: (y0 + y1) / 2, z: z - 10, l: 30, w: Ld, h: 30 });
+        shuttles.push({ i, k, x: xc, z: z + 40, l: aisle - 80, w: 650, h: 110 });
+      }
+      // élévateur en pré-zone + table de transfert vers le collecteur
+      const ly = p.width / 2 + p.frontZone * 0.55;
+      for (const dx of [-aisle / 2 + 60, aisle / 2 - 60]) posts.push({ x: xc + dx, y: ly + 250, z: zf + H / 2, l: 90, w: 90, h: H });
+      lifts.push({ i, x: xc, y: ly, zMin: -40, zMax: zf + 300 + (nl - 1) * p.levelH });
+      const tp = new C.Path(new C.Turtle(xc, p.width / 2, 0, Math.PI / 2).line(p.frontZone * 0.55).segs, null, false);
+      addRollers(g, tp, Object.assign({}, p, { usefulWidth: Math.min(500, aisle - 100) }), { width: Math.min(500, aisle - 100) });
+      addFrames(g, frames(tp), Object.assign({}, p, { width: Math.min(620, aisle), usefulWidth: Math.min(500, aisle - 100), frameH: 120 }));
+      // numéro de tour
+      const lab = C.textSprite && C.textSprite('Tour ' + (i + 1), { height: 0.32, color: '#ffffff', bg: 'rgba(30,40,55,0.85)' });
+      if (lab) { lab.center.set(0.5, 0); lab.position.set(xc * M, (y0 - 60) * M, (zf + H + 80) * M); tag(lab, 'body'); g.add(lab); }
+    }
+    boxInstances(g, posts, frame, 'body');
+    boxInstances(g, shelves, MAT.plate(), 'body');
+    boxInstances(g, totes, C.cartonMaterial ? C.cartonMaterial(fmt.color) : MAT.color(fmt.color), 'body');
+    // navettes animées
+    const shIm = boxInstances(g, shuttles.map(s => Object.assign({}, s, { y: (y0 + y1) / 2 })), MAT.glow(0xf39c12), 'body');
+    // nacelles d'élévateur animées
+    const liftIm = boxInstances(g, lifts.map(l => ({ x: l.x, y: l.y, z: 0, l: aisle - 140, w: 650, h: 80 })), MAT.glow(0x2ecc71), 'body');
+    g.userData.osr = { shuttles, shIm, lifts, liftIm, y0, y1, aisle };
+    // habillage : bardage latéral translucide, toiture, bandeau de façade
+    const W = n * tw;
+    for (const x of [0, W]) g.add(box(10, Ld, H, x, (y0 + y1) / 2, zf + H / 2, clad, 'structure'));
+    g.add(box(W, 10, H, W / 2, y1, zf + H / 2, clad, 'structure'));
+    g.add(box(W + 40, Ld + 40, 30, W / 2, (y0 + y1) / 2, zf + H + 15, MAT.color(p.color || '#5b6d82'), 'structure'));
+    g.add(box(W + 40, 40, 500, W / 2, y0 - 20, zf + H - 250, MAT.color(p.color || '#5b6d82'), 'structure'));
+  };
+  /** Animation des navettes et élévateurs (appelée pendant la simulation). */
+  C.animateOSR = function (g, t) {
+    const o = g.userData.osr;
+    if (!o) return;
+    const mid = (o.y0 + o.y1) / 2, amp = (o.y1 - o.y0) / 2 - 400;
+    o.shuttles.forEach((s, idx) => {
+      const y = mid + amp * Math.sin(t * (0.35 + 0.05 * (s.k % 5)) + s.k * 1.7 + s.i * 0.9);
+      _m4.makeScale(s.l * M, s.w * M, s.h * M); _m4.setPosition(s.x * M, y * M, s.z * M);
+      o.shIm.setMatrixAt(idx, _m4);
+    });
+    o.shIm.instanceMatrix.needsUpdate = true;
+    o.lifts.forEach((l, idx) => {
+      const u = 0.5 - 0.5 * Math.cos(t * 0.9 + l.i * 1.3);
+      _m4.makeScale((o.aisle - 140) * M, 650 * M, 80 * M); _m4.setPosition(l.x * M, l.y * M, (l.zMin + (l.zMax - l.zMin) * u) * M);
+      o.liftIm.setMatrixAt(idx, _m4);
+    });
+    o.liftIm.instanceMatrix.needsUpdate = true;
+  };
+
   builders.guide = (el, m, g) => {
     const p = el.params;
     g.add(box(p.length, p.thickness, p.height, p.length / 2, 0, p.height / 2, MAT.guide(), 'body'));

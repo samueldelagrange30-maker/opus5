@@ -44,6 +44,7 @@
         cap = 3600 / cycle; break;
       }
       case 'source': cap = Math.min(cap, +p.rate || 0); break;
+      case 'osr': cap = Math.min(cap, C.clamp(Math.round(p.towers), 1, 30) * (+p.towerRate || 0)); break;
     }
     if (p.running === false) cap = 0;
     return cap;
@@ -59,7 +60,7 @@
     for (const node of net.nodes.values()) {
       const el = node.el;
       for (const p of node.ports) {
-        if (p.role === 'in' && !p.linkedFrom.length && el.type !== 'source' && p.status !== 'error') {
+        if (p.role === 'in' && !p.linkedFrom.length && el.type !== 'source' && !p.optional && p.status !== 'error') {
           add('warn', el, `${el.name} : entrée non alimentée (aucun convoyeur raccordé en amont).`);
         }
         if (p.role === 'out' && !p.link && !p.optional && el.type !== 'sink' && p.status !== 'error') {
@@ -194,8 +195,9 @@
       for (const p of node.ports) if (p.role === 'out' && p.link) res.add(p.link.track.node);
       return Array.from(res);
     };
+    const returns = node => node.ports.filter(p => p.role === 'out' && p.link && p.link.track.absorb).map(p => p.link.track.el.name + ' (retour en stock)');
     for (const node of net.nodes.values()) {
-      if (node.el.type !== 'source') continue;
+      if (node.el.type !== 'source' && node.el.type !== 'osr') continue;
       const sinks = new Set();
       let bottleneck = null;
       const seen = new Set();
@@ -208,9 +210,10 @@
         const cap = capacity(n.el, ref);
         if (n !== node && (!bottleneck || cap < bottleneck.cap)) bottleneck = { el: n.el, cap };
         if (n.el.type === 'sink') sinks.add(n.el.name);
+        returns(n).forEach(x => sinks.add(x));
         for (const m of nextNodes(n)) stack.push(m);
       }
-      const rate = +node.el.params.rate || 0;
+      const rate = node.el.type === 'osr' ? C.clamp(Math.round(node.el.params.towers), 1, 30) * (+node.el.params.towerRate || 0) : +node.el.params.rate || 0;
       lines.push({ source: node.el, rate, sinks: Array.from(sinks), bottleneck, modules: seen.size });
       if (!sinks.size) add('warn', node.el, `Les cartons de ${node.el.name} n'atteignent aucune sortie (évacuation).`);
       if (bottleneck && bottleneck.cap < rate * 0.98) add('warn', bottleneck.el, `Goulot : ${bottleneck.el.name} (capacité ≈ ${C.fmt(bottleneck.cap)} c/h) < cadence de ${node.el.name} (${C.fmt(rate)} c/h).`);
