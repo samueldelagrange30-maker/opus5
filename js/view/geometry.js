@@ -637,6 +637,19 @@
     g.add(box(L, 80, beamH, 0, -W / 2 + 40, H - t - beamH / 2, frame, 'body'));
     g.add(box(80, W, beamH, L / 2 - 40, 0, H - t - beamH / 2, frame, 'body'));
     g.add(box(80, W, beamH, -L / 2 + 40, 0, H - t - beamH / 2, frame, 'body'));
+    // modules voisins (accolés bord à bord, même hauteur de plancher)
+    const tf = { x: el.x, y: el.y, z: el.z, rot: el.rot };
+    const top = el.z + H;
+    const others = (C.mezzanineList ? C.mezzanineList() : []).filter(o => o.id !== el.id && Math.abs(o.z + o.params.deckH - top) < 10);
+    /** Module voisin couvrant le point local (x, y), sinon null. */
+    const joinedAt = (x, y) => {
+      const w = C.localToWorld(tf, x, y, 0);
+      for (const o of others) {
+        const l = C.worldToLocal({ x: o.x, y: o.y, z: 0, rot: o.rot }, w[0], w[1], 0);
+        if (Math.abs(l[0]) <= o.params.length / 2 + 2 && Math.abs(l[1]) <= o.params.width / 2 + 2) return o;
+      }
+      return null;
+    };
     // trame de poteaux + poutres principales
     const sp = Math.max(1000, p.columnSpacing || 4000);
     const nx = Math.max(2, Math.ceil(L / sp) + 1), ny = Math.max(2, Math.ceil(W / sp) + 1);
@@ -645,6 +658,15 @@
     for (let j = 0; j < ny; j++) ys.push(-W / 2 + 75 + (W - 150) * j / (ny - 1));
     for (const y of ys) g.add(box(L, 100, beamH, 0, y, H - t - beamH / 2, frame, 'body'));
     for (const x of xs) for (const y of ys) {
+      // poteau de rive sur une jonction : un seul des deux modules le porte
+      let skip = false;
+      for (const [dx, dy] of [[-1, 0], [1, 0], [0, -1], [0, 1]]) {
+        const onEdge = (dx && Math.abs(x - dx * L / 2) < 100) || (dy && Math.abs(y - dy * W / 2) < 100);
+        if (!onEdge) continue;
+        const o = joinedAt(x + dx * 160, y + dy * 160);
+        if (o && o.id < el.id) skip = true;
+      }
+      if (skip) continue;
       const zf = floorLocal(el, x, y, H - t - beamH);
       const ch = H - t - beamH - zf;
       if (ch <= 10) continue;
@@ -705,13 +727,29 @@
         left: [[-L / 2 + ins, -W / 2 + ins], [-L / 2 + ins, W / 2 - ins], 'y'],
         right: [[L / 2 - ins, -W / 2 + ins], [L / 2 - ins, W / 2 - ins], 'y']
       };
+      const outward = { front: [0, -1], back: [0, 1], left: [-1, 0], right: [1, 0] };
       for (const k in edges) {
         const [a, b, ax] = edges[k];
-        if (open && open.edge === k) {
-          const i0 = open.a - sw / 2, i1 = open.a + sw / 2;
-          if (ax === 'x') { rail(a[0], a[1], i0, a[1]); rail(i1, a[1], b[0], b[1]); }
-          else { rail(a[0], a[1], a[0], i0); rail(a[0], i1, b[0], b[1]); }
-        } else rail(a[0], a[1], b[0], b[1]);
+        const o = outward[k];
+        // portions libres du bord : ni jonction avec un module voisin, ni trémie d'escalier
+        const len = ax === 'x' ? b[0] - a[0] : b[1] - a[1];
+        const step = 50, free = [];
+        for (let u = 0; u <= len + 1e-6; u += step) {
+          const x = ax === 'x' ? a[0] + u : a[0], y = ax === 'y' ? a[1] + u : a[1];
+          const along = ax === 'x' ? x : y;
+          let isFree = !joinedAt(x + o[0] * 90, y + o[1] * 90);
+          if (isFree && open && open.edge === k && along > open.a - sw / 2 - 1 && along < open.a + sw / 2 + 1) isFree = false;
+          free.push(isFree);
+        }
+        let start = -1;
+        for (let i = 0; i <= free.length; i++) {
+          if (i < free.length && free[i]) { if (start < 0) start = i; continue; }
+          if (start >= 0) {
+            const u0 = start * step, u1 = Math.min(len, (i - 1) * step);
+            if (ax === 'x') rail(a[0] + u0, a[1], a[0] + u1, a[1]); else rail(a[0], a[1] + u0, a[0], a[1] + u1);
+            start = -1;
+          }
+        }
       }
     }
   };

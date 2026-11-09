@@ -690,7 +690,7 @@
       if (!p) return;
       // changement de support (sol ↔ plancher de mezzanine) selon ce que vise la souris
       let zShift = 0;
-      if (!e.altKey) {
+      if (!e.altKey && dr.prim.type !== 'mezzanine') {
         const rel = o.z - dr.origSupport;
         let sup = this.deckUnderCursor(e, dr.exclude);
         if (sup === null) sup = app.supportAt(o.x + p[0] - dr.start[0], o.y + p[1] - dr.start[1], o.z, dr.exclude);
@@ -703,7 +703,7 @@
       dx = nx - o.x; dy = ny - o.y;
       let rotOverride = null, dz = zShift, snapped = null;
       if (st.snapPorts && !e.altKey) {
-        const sn = app.findSnap(dr.ids, dx, dy, dr.orig, zShift);
+        const sn = app.findSnap(dr.ids, dx, dy, dr.orig, zShift, dr.prim.id);
         if (sn) { dx = sn.dx; dy = sn.dy; dz = sn.dz; rotOverride = sn.rot; snapped = sn; }
       }
       dr.cur = { dx, dy, dz, rot: rotOverride };
@@ -793,7 +793,7 @@
       if (!p) return;
       // pose sur le plancher de mezzanine visé (Alt : rester au sol)
       let base = 0;
-      if (!e.altKey) {
+      if (!e.altKey && el.type !== 'mezzanine') {
         const deck = this.deckUnderCursor(e, null);
         if (deck !== null) { base = deck; const p2 = this.planePoint(e, base + zOff); if (p2) p = p2; }
       }
@@ -804,6 +804,9 @@
       let sn = null;
       if (st.snapPorts && !e.altKey && !centered) {
         sn = app.findSnapFor(el, el);
+        if (sn) { el.x = sn.x; el.y = sn.y; el.z = sn.z; el.rot = sn.rot; }
+      } else if (st.snapPorts && !e.altKey && el.type === 'mezzanine') {
+        sn = app.findMezzSnap(el, el);
         if (sn) { el.x = sn.x; el.y = sn.y; el.z = sn.z; el.rot = sn.rot; }
       }
       this.ghostMesh.visible = true;

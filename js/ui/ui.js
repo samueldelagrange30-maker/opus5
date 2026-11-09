@@ -529,6 +529,30 @@
       act('fit', 'Cadrer', () => a.viewport.focus(el.id));
       act('delete', 'Supprimer', () => a.deleteSelection());
       body.appendChild(actions);
+      if (el.type === 'mezzanine') {
+        const pl = a.plateau(el);
+        const area = pl.reduce((s2, m) => s2 + m.params.length * m.params.width, 0) / 1e6;
+        const box2 = h('div', { class: 'mezz-ext' });
+        box2.appendChild(h('div', { class: 'small', html: `Plateau : <b>${pl.length}</b> module${pl.length > 1 ? 's' : ''} · <b>${C.fmt(area, 1)} m²</b>` }));
+        const grid = h('div', { class: 'ext-grid' });
+        const mk = (dir, label, title, cls) => {
+          const b = h('button', { class: 'btn small ' + cls, text: label, title, disabled: simLock || null });
+          b.addEventListener('click', () => a.extendMezzanine(el, dir));
+          grid.appendChild(b);
+        };
+        grid.appendChild(h('span', { class: 'ext-title small muted', text: 'Étendre :' }));
+        mk('yp', '↑ Arrière', 'Ajouter un module identique côté arrière (+Y local)', 'up');
+        mk('xn', '← Gauche', 'Ajouter un module identique côté gauche (−X local)', 'left');
+        mk('xp', 'Droite →', 'Ajouter un module identique côté droit (+X local)', 'right');
+        mk('yn', '↓ Avant', 'Ajouter un module identique côté avant (−Y local)', 'down');
+        box2.appendChild(grid);
+        if (pl.length > 1) {
+          const sb = h('button', { class: 'btn small block', text: `Sélectionner tout le plateau (${pl.length} modules)` });
+          sb.addEventListener('click', () => a.select(pl.map(m => m.id)));
+          box2.appendChild(sb);
+        }
+        body.appendChild(box2);
+      }
       if (el.type === 'osr') {
         const n = Math.round(el.params.towers);
         const bar = h('div', { class: 'tower-bar' });
@@ -592,7 +616,9 @@
         const area = p.length * p.width / 1e6;
         const sp = Math.max(1000, p.columnSpacing || 4000);
         const nc = Math.max(2, Math.ceil(p.length / sp) + 1) * Math.max(2, Math.ceil(p.width / sp) + 1);
-        kv('Surface du plancher', C.fmt(area, 2) + ' m²');
+        kv('Surface du module', C.fmt(area, 2) + ' m²');
+        const pl = a.plateau(el);
+        if (pl.length > 1) kv('Surface du plateau', `${C.fmt(pl.reduce((s2, m) => s2 + m.params.length * m.params.width, 0) / 1e6, 2)} m² (${pl.length} modules)`);
         kv('Dessus du plancher', C.fmt(el.z + p.deckH) + ' mm');
         kv('Hauteur libre sous poutres', C.fmt(p.deckH - p.thickness - 220) + ' mm');
         kv('Charge admissible totale', C.fmt(area * (p.load || 0)) + ' kg');
@@ -1186,6 +1212,7 @@
             <li>Déplacez un élément en le faisant glisser : il s'<b>accroche magnétiquement</b> aux ports libres proches (alignement, cap et hauteur). Alt : désactiver le magnétisme.</li>
             <li>Ports : <span class="pill ok">vert</span> raccordé, <span class="pill err">rouge</span> libre ou défaut, <span class="pill warn">orange</span> écart de hauteur, <span class="pill opt">gris</span> sortie optionnelle.</li>
             <li>Une sortie qui débouche sur le côté d'un convoyeur crée une <b>jonction</b> (fusion de flux).</li>
+            <li><b>Mezzanine modulaire</b> : accolez des modules bord à bord (accrochage magnétique ou boutons « Étendre ») pour obtenir la surface voulue ; les garde-corps disparaissent sur les jonctions.</li>
             <li><b>Mezzanine</b> : tout objet placé ou glissé au-dessus du plancher s'y pose automatiquement (Alt : garder la hauteur). Déplacer la mezzanine emporte les objets posés dessus.</li>
             <li>Modifiez toutes les cotes dans le panneau <b>Propriétés</b> (longueur, largeur, pente en ° ou %, hauteur de sortie, rayon, rouleaux…).</li>
           </ul></div>

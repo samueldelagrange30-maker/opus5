@@ -18,6 +18,111 @@
       this.network = new C.Network(this.project);
       this.currentFormat = 'moyen';
       C.supportAt = (x, y, maxZ, exclude) => this.supportAt(x, y, maxZ, exclude);
+      C.mezzanineList = () => this.project.elements.filter(e => e.type === 'mezzanine');
+    }
+
+    /* ------------------------ mezzanines modulaires ------------------------ */
+    /** Deux modules se touchent-ils (bord à bord, même hauteur de plancher) ? */
+    mezzTouch(a, b) {
+      if (Math.abs(a.z + a.params.deckH - b.z - b.params.deckH) > 10) return false;
+      const L = a.params.length, W = a.params.width;
+      for (const [x0, y0, x1, y1, ox, oy] of [[-L / 2, -W / 2, L / 2, -W / 2, 0, -1], [-L / 2, W / 2, L / 2, W / 2, 0, 1], [-L / 2, -W / 2, -L / 2, W / 2, -1, 0], [L / 2, -W / 2, L / 2, W / 2, 1, 0]]) {
+        for (let i = 1; i < 10; i++) {
+          const u = i / 10;
+          const w = C.localToWorld({ x: a.x, y: a.y, z: 0, rot: a.rot }, x0 + (x1 - x0) * u + ox * 40, y0 + (y1 - y0) * u + oy * 40, 0);
+          if (this.onMezzanine(b, w[0], w[1])) return true;
+        }
+      }
+      return false;
+    }
+    /** Un rectangle (centre, cap, dimensions) chevauche-t-il un module existant de même niveau ? */
+    mezzOverlap(x, y, rot, L, W, top, exclude) {
+      const rect = (cx, cy, r, l, w) => {
+        const c = Math.cos(r * D), s2 = Math.sin(r * D);
+        return [[-l, -w], [l, -w], [l, w], [-l, w]].map(([a, b]) => [cx + a / 2 * c - b / 2 * s2, cy + a / 2 * s2 + b / 2 * c]);
+      };
+      const A = rect(x, y, rot, L - 60, W - 60);
+      for (const m of this.project.elements) {
+        if (m.type !== 'mezzanine' || (exclude && exclude.has(m.id)) || Math.abs(m.z + m.params.deckH - top) > 10) continue;
+        const B = rect(m.x, m.y, m.rot, m.params.length - 60, m.params.width - 60);
+        let sep = false;
+        for (const P of [A, B]) for (let i = 0; i < 4 && !sep; i++) {
+          const e = [P[(i + 1) % 4][0] - P[i][0], P[(i + 1) % 4][1] - P[i][1]], n = [-e[1], e[0]];
+          const pa = A.map(q => q[0] * n[0] + q[1] * n[1]), pb = B.map(q => q[0] * n[0] + q[1] * n[1]);
+          if (Math.max(...pa) < Math.min(...pb) || Math.max(...pb) < Math.min(...pa)) sep = true;
+        }
+        if (!sep) return m;
+      }
+      return null;
+    }
+    /** Ensemble des modules accolés formant un même plateau. */
+    plateau(m) {
+      const all = this.project.elements.filter(e => e.type === 'mezzanine');
+      const seen = new Set([m.id]), stack = [m];
+      while (stack.length) {
+        const a = stack.pop();
+        for (const b of all) if (!seen.has(b.id) && this.mezzTouch(a, b)) { seen.add(b.id); stack.push(b); }
+      }
+      return all.filter(e => seen.has(e.id));
+    }
+    /**
+     * Accrochage bord à bord d'un module de mezzanine contre un autre :
+     * bords jointifs, coins alignés (ou centrés) et même hauteur de plancher.
+     * translateOnly : ne pas changer l'orientation (déplacement avec objets posés).
+     */
+    findMezzSnap(el, tf, moving, translateOnly) {
+      const R = Math.max(600, this.project.settings.snapRadius || 300);
+      let best = null;
+      for (const m of this.project.elements) {
+        if (m.type !== 'mezzanine' || m.id === el.id || (moving && moving.has(m.id))) continue;
+        const rel = C.normAngle((tf.rot - m.rot) * D);
+        const k = Math.round(rel / (Math.PI / 2));
+        if (Math.abs(rel - k * Math.PI / 2) > (translateOnly ? 0.5 : 10) * D) continue;
+        const swap = Math.abs(k) % 2 === 1;
+        const hl = (swap ? el.params.width : el.params.length) / 2, hw = (swap ? el.params.length : el.params.width) / 2;
+        const ml = m.params.length / 2, mw = m.params.width / 2;
+        const mtf = { x: m.x, y: m.y, z: 0, rot: m.rot };
+        const c = C.worldToLocal(mtf, tf.x, tf.y, 0);
+        const sides = [
+          { name: 'droite', perp: 0, target: ml + hl, mh: mw, ch: hw }, { name: 'gauche', perp: 0, target: -ml - hl, mh: mw, ch: hw },
+          { name: 'arrière', perp: 1, target: mw + hw, mh: ml, ch: hl }, { name: 'avant', perp: 1, target: -mw - hw, mh: ml, ch: hl }
+        ];
+        for (const sd of sides) {
+          const cp = c[sd.perp], ca = c[1 - sd.perp];
+          const d = Math.abs(cp - sd.target);
+          if (d > R || Math.abs(ca) > sd.mh + sd.ch - 100) continue;
+          // alignement le long du bord : coin bas, coin haut ou centré
+          let na = ca, da = Infinity;
+          for (const opt of [-sd.mh + sd.ch, sd.mh - sd.ch, 0]) if (Math.abs(opt - ca) < Math.min(R, Math.abs(da))) { da = opt - ca; na = opt; }
+          const loc = sd.perp === 0 ? [sd.target, na] : [na, sd.target];
+          const w = C.localToWorld(mtf, loc[0], loc[1], 0);
+          const score = d + (isFinite(da) ? Math.abs(da) * 0.3 : 0);
+          const nrot = translateOnly ? tf.rot : C.normAngle((m.rot + k * 90) * D) / D;
+          const ex = new Set(moving || []); ex.add(el.id);
+          if (this.mezzOverlap(w[0], w[1], nrot, el.params.length, el.params.width, m.z + m.params.deckH, ex)) continue;
+          if (!best || score < best.score) best = {
+            x: C.round(w[0], 1), y: C.round(w[1], 1), z: C.round(m.z + m.params.deckH - el.params.deckH, 1),
+            rot: translateOnly ? tf.rot : C.round(C.normAngle((m.rot + k * 90) * D) / D, 3), score, label: `Accolé à ${m.name} (côté ${sd.name})`
+          };
+        }
+      }
+      return best;
+    }
+    /** Ajoute un module identique accolé (dir : 'xp' droite, 'xn' gauche, 'yp' arrière, 'yn' avant). */
+    extendMezzanine(el, dir) {
+      if (!this.guardSim()) return;
+      const p = el.params;
+      const off = { xp: [p.length, 0], xn: [-p.length, 0], yp: [0, p.width], yn: [0, -p.width] }[dir];
+      const w = C.localToWorld({ x: el.x, y: el.y, z: 0, rot: el.rot }, off[0], off[1], 0);
+      const top = el.z + p.deckH;
+      if (this.project.elements.some(m => m.type === 'mezzanine' && m.id !== el.id && Math.abs(m.z + m.params.deckH - top) < 10 && this.onMezzanine(m, w[0], w[1]))) {
+        C.toast('Un module de mezzanine occupe déjà cet emplacement', 'warn'); return;
+      }
+      const params = C.clone(p); params.stairs = 'none';
+      const n = this.project.createElement('mezzanine', params, { x: C.round(w[0], 1), y: C.round(w[1], 1), z: el.z, rot: el.rot });
+      this.commitNew(n);
+      const pl = this.plateau(n);
+      C.toast(`Module ajouté — plateau de ${pl.length} modules, ${C.fmt(pl.reduce((a, m) => a + m.params.length * m.params.width, 0) / 1e6, 1)} m²`, 'ok');
     }
 
     /* --------------------------- mezzanines / supports --------------------------- */
@@ -297,8 +402,16 @@
       return best;
     }
     /** Accrochage pendant un déplacement (un ou plusieurs éléments). */
-    findSnap(ids, dx, dy, orig, dz0) {
+    findSnap(ids, dx, dy, orig, dz0, primId) {
       const moving = new Set(ids);
+      const prim = primId && this.project.getElement(primId);
+      if (prim && prim.type === 'mezzanine') {
+        const o = orig.get(prim.id);
+        const sn = this.findMezzSnap(prim, { x: o.x + dx, y: o.y + dy, z: o.z + (dz0 || 0), rot: o.rot }, moving, ids.length > 1);
+        if (!sn) return null;
+        if (ids.length === 1) return { dx: sn.x - o.x, dy: sn.y - o.y, dz: sn.z - o.z, rot: Object.assign({}, sn), label: sn.label };
+        return { dx: sn.x - o.x, dy: sn.y - o.y, dz: sn.z - o.z, rot: null, label: sn.label };
+      }
       if (ids.length === 1) {
         const el = this.project.getElement(ids[0]);
         if (!C.Types.get(el.type).conveyor) return null;
@@ -349,7 +462,11 @@
         const at = st.snapGrid ? opts.at.map(v => Math.round(v / g) * g) : opts.at;
         const el = this.project.createElement(item.type, item.params);
         el.x = at[0]; el.y = at[1];
-        el.z = this.supportAt(at[0], at[1]) + (def.conveyor ? st.defaultZ : 0);
+        el.z = (el.type === 'mezzanine' ? 0 : this.supportAt(at[0], at[1])) + (def.conveyor ? st.defaultZ : 0);
+        if (el.type === 'mezzanine' && st.snapPorts) {
+          const sn = this.findMezzSnap(el, el);
+          if (sn) { el.x = sn.x; el.y = sn.y; el.z = sn.z; el.rot = sn.rot; }
+        }
         if (def.conveyor) {
           const sn = st.snapPorts ? this.findSnapFor(el, { x: el.x, y: el.y, z: el.z, rot: 0 }) : null;
           if (sn) { el.x = sn.x; el.y = sn.y; el.z = sn.z; el.rot = sn.rot; }
