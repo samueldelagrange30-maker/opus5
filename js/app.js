@@ -35,6 +35,79 @@
       }
       return false;
     }
+    /* ------------------------- cariste : missions ------------------------- */
+    /** Emplacement de rack sous un point monde (m, Three.js). */
+    rackSlotAt(rack, pt) {
+      const l = C.worldToLocal({ x: rack.x, y: rack.y, z: rack.z, rot: rack.rot }, pt.x * 1000, pt.y * 1000, pt.z * 1000);
+      return C.Types.defs.rack.slotAt(rack.params, l[0], l[1], l[2]);
+    }
+    /** Niveau le plus proche (même colonne) dont l'état d'occupation correspond à `want`. */
+    nearestSlot(rack, s, want) {
+      const R = C.Types.defs.rack, G = R.geom(rack.params);
+      let best = null;
+      for (let k = 0; k < G.nl; k++) {
+        const key = R.slotKey(s.r, s.j, k, s.q);
+        if (R.slotOccupied(rack, key) === want && (!best || Math.abs(k - s.k) < Math.abs(best.k - s.k))) best = { r: s.r, j: s.j, k, q: s.q, key };
+      }
+      return best;
+    }
+    /** Démarre la saisie d'une mission (clic origine puis clic destination). */
+    newMission(truckId) {
+      this.missionCtx = { truckId, step: 1 };
+      this.viewport.setMode('mission');
+      this.missionCtx = { truckId, step: 1 };
+      this.ui.refreshToolbar();
+    }
+    endMissionPick() {
+      if (this._missionMarker) { this.viewport.gOverlay.remove(this._missionMarker); this._missionMarker = null; }
+      this.missionCtx = null;
+    }
+    missionClick(e, hit) {
+      const ctx = this.missionCtx, vp = this.viewport, R = C.Types.defs.rack;
+      if (!ctx) return;
+      const el = hit && hit.element ? this.project.getElement(hit.element) : null;
+      if (ctx.step === 1) {
+        if (el && el.type === 'pallet') ctx.from = { kind: 'pallet', id: el.id };
+        else if (el && el.type === 'rack') {
+          let s = this.rackSlotAt(el, hit.point);
+          if (!R.slotOccupied(el, s.key)) {
+            const n = this.nearestSlot(el, s, true);
+            if (!n) { C.toast(`Aucune palette dans la colonne ${R.address(el.params, s.r, s.j, s.k)}`, 'warn'); return; }
+            s = n;
+          }
+          ctx.from = Object.assign({ kind: 'rack', rackId: el.id }, s);
+        }
+        if (!ctx.from) { C.toast('Cliquez sur une palette posée au sol ou sur une palette dans un rack', 'warn'); return; }
+        ctx.step = 2;
+        // repère visuel de la palette choisie
+        const mk = new THREE.Mesh(new THREE.BoxGeometry(1.25, 0.85, 0.06), new THREE.MeshBasicMaterial({ color: 0x00e5ff, transparent: true, opacity: 0.6, depthTest: false }));
+        const t = this.fleet.target(ctx.from, { pose: Object.assign({}, this.project.getElement(ctx.truckId)) });
+        if (t) { mk.position.set(t.x / 1000, t.y / 1000, t.z / 1000 + 0.03); mk.rotation.z = t.rot * C.DEG; mk.renderOrder = 9; vp.gOverlay.add(mk); this._missionMarker = mk; }
+        C.toast(`Palette choisie : ${this.fleet.describe(ctx.from)} — cliquez maintenant où la déposer`, 'info');
+        this.ui.refreshToolbar();
+        return;
+      }
+      let to = null;
+      if (el && el.type === 'rack') {
+        let s = this.rackSlotAt(el, hit.point);
+        if (R.slotOccupied(el, s.key) && !(ctx.from.kind === 'rack' && ctx.from.rackId === el.id && ctx.from.key === s.key)) {
+          const n = this.nearestSlot(el, s, false);
+          if (!n) { C.toast(`Colonne pleine : aucun emplacement libre en ${R.address(el.params, s.r, s.j, s.k)}`, 'warn'); return; }
+          s = n;
+        }
+        to = Object.assign({ kind: 'rack', rackId: el.id }, s);
+      }
+      if (!to) {
+        const deck = vp.deckUnderCursor(e, null);
+        const z = deck === null ? 0 : deck;
+        const p = vp.planePoint(e, z);
+        if (!p) return;
+        to = { kind: 'floor', x: C.round(p[0], 0), y: C.round(p[1], 0), z };
+      }
+      this.fleet.addMission(ctx.truckId, ctx.from, to);
+      vp.setMode('select');
+    }
+
     /* ------------------------------ murs ------------------------------ */
     /** Accrochage d'une extrémité de mur sur l'extrémité d'un autre mur (angles, prolongements). */
     findWallSnap(el, tf, moving) {
@@ -225,11 +298,12 @@
       this.sim = new C.Simulation(this);
       this.director = new C.Director(this);
       this.screenRec = new C.ScreenRecorder(this);
+      this.fleet = new C.Fleet(this);
       this.ui = new C.UI(this);
       this.ui.build();
       this.project.on('changed', e => this.onChanged(e));
       this.sim.on('state', () => { this.ui.refreshSim(true); if (!this.sim.active && this.director.active) this.director.stop(); });
-      this.viewport.on('mode', () => this.ui.refreshToolbar());
+      this.viewport.on('mode', m => { if (m !== 'mission') this.endMissionPick(); this.ui.refreshToolbar(); });
       this.loadInitial();
       this.bindKeys();
       let last = performance.now();
@@ -237,6 +311,7 @@
         const dt = (now - last) / 1000; last = now;
         this.sim.frame(dt);
         this.director.update(Math.min(dt, 0.1));
+        this.fleet.update(dt);
         this.viewport.render();
         this.director.afterRender();
         this.screenRec.afterRender();
@@ -895,6 +970,10 @@
       after(e, 'out', 'sink', { name: 'OUT-PICK' });
       // rayonnage double à 4 niveaux
       add('rack', { name: 'RK-01', rows: 2, levels: 4, bays: 3 }, { x: 33000, y: 8500, z: 0, rot: 90 });
+      // cariste CACES 5 et palettes au sol
+      add('reachtruck', { name: 'CAR-01', driverName: 'Cariste 1' }, { x: 28800, y: 8500, z: 0, rot: 0 });
+      add('pallet', { name: 'PAL-01', palletType: 'euro', loaded: true }, { x: 28500, y: 5200, z: 0, rot: 90 });
+      add('pallet', { name: 'PAL-02', palletType: 'perdue', loaded: true, loadColor: '#c49a62' }, { x: 30000, y: 5200, z: 0, rot: 90 });
       add('obstacle', { name: 'POTEAU-01', length: 300, width: 300, height: 4000 }, { x: 30000, y: 12000, z: 0 });
       // mezzanine avec un poste de travail à l'étage
       add('mezzanine', { name: 'MEZ-01', stairs: 'left' }, { x: 27500, y: 18500, z: 0, rot: 0 });

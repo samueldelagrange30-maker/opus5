@@ -887,15 +887,17 @@
       }
     }
     // charges stockées
-    if (p.loadType !== 'vide') {
-      const rng = seeded(el.id + ':' + nb + ':' + nl + ':' + rows);
+    {
+      const R = C.Types.defs.rack;
       const pal = [], loads = [];
       const perBay = Math.max(1, Math.floor((bl - 80) / 900));
       const film = ['#d9dde3', '#c9b18a', '#b98b52', '#e3d3b4', '#9fb3c8', '#cfa77a'];
       for (let r = 0; r < rows; r++) {
         const y0 = -Wt / 2 + r * (d + flue);
         for (let k = 0; k < nl; k++) for (let j = 0; j < nb; j++) for (let q = 0; q < perBay; q++) {
-          if (rng.next() * 100 >= p.fill) continue;
+          const key = R.slotKey(r, j, k, q);
+          if (!R.slotOccupied(el, key)) continue;
+          const rng = { next: (() => { let i = 0; return () => R.slotRand(el, key, 'v' + (i++)); })() };
           const x = -L / 2 + j * bl + 40 + (q + 0.5) * (bl - 80) / perBay, z = levelZ(k);
           const pw = Math.min(800, (bl - 80) / perBay - 60), pd = Math.min(d - 40, 1200);
           pal.push({ x, y: y0 + d / 2, z: z + 72, l: pw, w: pd, h: 144 });
@@ -1097,6 +1099,67 @@
     g.userData.applicator = { obj: ap, axis, rest, active };
     // cellule de détection
     g.add(box(40, 40, 100, xs - 300, -side * (p.width / 2 + 25), 70, MAT.color('#f1c40f'), 'structure'));
+  };
+
+  /* ---------------- Chariot à mât rétractable + cariste ---------------- */
+  builders.reachtruck = (el, m, g) => {
+    const p = el.params;
+    const body = MAT.color(p.color || '#f39c12'), dark = MAT.color('#2b2f35'), steel = MAT.color('#5d6670'), black = MAT.color('#15181c');
+    // châssis / batterie (arrière) : x ∈ [−1300, 0]
+    g.add(box(1300, 1260, 900, -650, 0, 520, body, 'body'));
+    g.add(box(1240, 1200, 80, -650, 0, 30, dark, 'body'));
+    g.add(box(500, 1250, 260, -1050, 0, 1100, body, 'body'));           // capot moteur arrière
+    // poste de conduite (assis de côté) + protège-conducteur
+    for (const [x, y] of [[-1250, 600], [-1250, -600], [-160, 600], [-160, -600]]) g.add(box(70, 70, 1400, x, y, 1600, dark, 'body'));
+    g.add(box(1200, 1290, 60, -700, 0, 2300, dark, 'body'));
+    for (let i = 0; i < 6; i++) g.add(box(1150, 30, 30, -700, -520 + i * 208, 2270, steel, 'body'));
+    g.add(box(400, 420, 80, -620, 230, 1010, MAT.color('#1f2a36'), 'body'));    // siège
+    g.add(box(80, 420, 500, -810, 230, 1290, MAT.color('#1f2a36'), 'body'));    // dossier
+    g.add(box(200, 300, 250, -300, -300, 1110, dark, 'body'));                // pupitre / commandes
+    const wheel = (x, y, r, w) => { const c = cyl(r, w, black, 'body', 18); c.position.set(x * M, y * M, r * M); g.add(c); };
+    wheel(-1000, -450, 180, 160);                                             // roue motrice
+    // longerons (bras de support) avec galets avant : x ∈ [0, 1250]
+    for (const y of [-520, 520]) { g.add(box(1250, 140, 200, 625, y, 120, body, 'body')); wheel(1150, y, 110, 120); }
+    // gyrophare + spot bleu de sécurité au sol
+    const beacon = new THREE.Mesh(new THREE.SphereGeometry(70 * M, 12, 8), MAT.glow(0xff8c00)); beacon.position.set(-1150 * M, 0, 2390 * M); tag(beacon, 'body'); g.add(beacon);
+    const spot = new THREE.Mesh(new THREE.CircleGeometry(220 * M, 20), new THREE.MeshBasicMaterial({ color: 0x2f7dff, transparent: true, opacity: 0.55, depthWrite: false }));
+    spot.material.userData.owned = true; spot.position.set(2600 * M, 0, 3 * M); tag(spot, 'body'); g.add(spot);
+    // cariste assis (gilet haute visibilité)
+    const op = new THREE.Group();
+    const torso = box(260, 380, 520, 0, 0, 260, MAT.color('#c8ff00'), 'body'); op.add(torso);
+    const head = new THREE.Mesh(new THREE.SphereGeometry(105 * M, 14, 10), MAT.color('#f0c8a0')); head.position.z = 640 * M; tag(head, 'body'); op.add(head);
+    const helmet = new THREE.Mesh(new THREE.SphereGeometry(112 * M, 14, 8, 0, Math.PI * 2, 0, Math.PI / 2), MAT.color('#ffffff')); helmet.position.z = 665 * M; tag(helmet, 'body'); op.add(helmet);
+    op.add(box(380, 300, 140, 160, 0, -40, MAT.color('#2c3e50'), 'body'));    // cuisses
+    op.add(box(120, 300, 380, 330, 0, -230, MAT.color('#2c3e50'), 'body'));   // jambes
+    op.add(box(320, 90, 90, 160, -170, 330, MAT.color('#c8ff00'), 'body'));   // bras vers les commandes
+    op.position.set(-600 * M, 230 * M, 1080 * M);
+    op.rotation.z = -Math.PI / 2 + 0.25;                                      // assis de côté
+    g.add(op);
+    // mât rétractable (groupe mobile en X) : deux étages télescopiques
+    const mast = new THREE.Group(); mast.position.x = 150 * M; g.add(mast);
+    for (const y of [-380, 380]) mast.add(box(90, 120, 2500, 0, y, 1300, steel, 'body'));
+    mast.add(box(90, 860, 90, 0, 0, 2500, steel, 'body'));
+    const inner = new THREE.Group(); mast.add(inner);
+    for (const y of [-300, 300]) inner.add(box(80, 100, 2400, 60, y, 1300, MAT.color('#79838e'), 'body'));
+    inner.add(box(80, 680, 80, 60, 0, 2480, MAT.color('#79838e'), 'body'));
+    // tablier + fourches
+    const car = new THREE.Group(); mast.add(car);
+    car.add(box(60, 900, 500, 120, 0, 250, dark, 'body'));
+    car.add(box(40, 900, 900, 120, 0, 700, MAT.color('#3a4048'), 'body'));    // dosseret
+    for (const y of [-220, 220]) { car.add(box(1150, 120, 45, 150 + 575, y, 22, MAT.color('#3a4048'), 'body')); car.add(box(50, 120, 450, 150, y, 225, MAT.color('#3a4048'), 'body')); }
+    const payload = new THREE.Group(); payload.name = 'payload'; payload.position.x = 600 * M; car.add(payload);
+    g.userData.truck = { mast, inner, car, payload, beacon };
+  };
+
+  /** Visuel d'une palette transportée (centre au sol). */
+  C.palletVisual = function (desc) {
+    const euro = desc.palletType !== 'perdue', ph = euro ? 144 : 120;
+    const W = !euro && desc.palletSize === '1200x1000' ? 1000 : 800;
+    if (desc.loaded) return C.buildPallet(euro ? 'euro-load' : 'perdue-load', 1200, W, ph + Math.max(100, desc.loadH || 1000), desc.loadColor || '#b98b52');
+    const grp = new THREE.Group();
+    const n = C.clamp(Math.round(desc.stack || 1), 1, 30);
+    for (let i = 0; i < n; i++) { const pg = C.buildPallet(euro ? 'euro' : 'perdue', 1200, W, ph, null); pg.position.z = i * ph * M; grp.add(pg); }
+    return grp;
   };
 
   /* ---------------- Palettes ---------------- */

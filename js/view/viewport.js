@@ -579,6 +579,7 @@
       if (this.mode === 'place') { this.down.kind = 'place'; return; }
       if (this.mode === 'measure') { this.down.kind = 'measure'; return; }
       if (this.mode === 'carton') { this.down.kind = 'carton'; return; }
+      if (this.mode === 'mission') { this.down.kind = 'mission'; return; }
       const hit = this.pick(e);
       if (!hit) { this.down.kind = e.shiftKey ? 'box' : 'orbit'; return; }
       if (hit.carton || hit.simCarton) { this.down.kind = 'cartonSel'; this.down.hit = hit; return; }
@@ -632,6 +633,7 @@
         case 'place': if (!d.moved) this.confirmPlace(e); break;
         case 'measure': if (!d.moved) this.measureClick(e); break;
         case 'carton': if (!d.moved) this.cartonClick(e); break;
+        case 'mission': if (!d.moved) app.missionClick(e, this.pick(e, { cartons: false })); break;
       }
       if (d.moved && (d.kind === 'orbit' || d.kind === 'pan')) this.emit('cameraMoved');
       // si l'utilisateur a fait tourner la vue en mode placement/mesure
@@ -642,9 +644,9 @@
       if (this._hoverT && performance.now() - this._hoverT < 40) return;
       this._hoverT = performance.now();
       if (e.target !== this.renderer.domElement) return;
-      const h = this.mode === 'select' || this.mode === 'carton' ? this.pick(e) : null;
+      const h = this.mode === 'select' || this.mode === 'carton' || this.mode === 'mission' ? this.pick(e) : null;
       const id = h ? (h.element || h.carton || h.simCarton) : null;
-      this.renderer.domElement.style.cursor = this.mode === 'place' || this.mode === 'measure' || this.mode === 'carton' ? 'crosshair' : (id ? 'pointer' : 'default');
+      this.renderer.domElement.style.cursor = this.mode === 'place' || this.mode === 'measure' || this.mode === 'carton' || this.mode === 'mission' ? 'crosshair' : (id ? 'pointer' : 'default');
       if (this.mode === 'place') this.updateGhost(e);
       if (id !== this.hoverId) {
         this.hoverId = id;
@@ -700,7 +702,7 @@
       if (!p) return;
       // changement de support (sol ↔ plancher de mezzanine) selon ce que vise la souris
       let zShift = 0;
-      if (!e.altKey && dr.prim.type !== 'mezzanine' && dr.prim.type !== 'wall') {
+      if (!e.altKey && dr.prim.type !== 'mezzanine' && !C.Types.get(dr.prim.type).floor) {
         const rel = o.z - dr.origSupport;
         let sup = this.deckUnderCursor(e, dr.exclude);
         if (sup === null) sup = app.supportAt(o.x + p[0] - dr.start[0], o.y + p[1] - dr.start[1], o.z, dr.exclude);
@@ -803,7 +805,7 @@
       if (!p) return;
       // pose sur le plancher de mezzanine visé (Alt : rester au sol)
       let base = 0;
-      if (!e.altKey && el.type !== 'mezzanine' && el.type !== 'wall') {
+      if (!e.altKey && el.type !== 'mezzanine' && !C.Types.get(el.type).floor) {
         const deck = this.deckUnderCursor(e, null);
         if (deck !== null) { base = deck; const p2 = this.planePoint(e, base + zOff); if (p2) p = p2; }
       }

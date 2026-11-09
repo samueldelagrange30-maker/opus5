@@ -301,7 +301,11 @@
       if (r) r.disabled = !a.project.canRedo();
       const mi = $('modeInfo');
       if (mi) {
-        const txt = { select: '', place: 'Placement : cliquez pour poser · R tourner · Maj multiple · Échap annuler', measure: 'Mesure : cliquez deux points (accroche aux ports) · Échap pour quitter', carton: 'Pose de cartons : cliquez sur un convoyeur · Échap pour quitter' }[mode];
+        const mc = a.missionCtx;
+        const txt = {
+          mission: mc && mc.step === 2 ? 'Mission cariste — 2/2 : cliquez où déposer la palette (sol, mezzanine ou emplacement de rack libre) · Échap annuler'
+            : 'Mission cariste — 1/2 : cliquez la palette à prendre (au sol ou dans un rack) · Échap annuler',
+          select: '', place: 'Placement : cliquez pour poser · R tourner · Maj multiple · Échap annuler', measure: 'Mesure : cliquez deux points (accroche aux ports) · Échap pour quitter', carton: 'Pose de cartons : cliquez sur un convoyeur · Échap pour quitter' }[mode];
         mi.textContent = txt || ''; mi.style.display = txt ? '' : 'none';
       }
       const wbtn = $('vbWalls');
@@ -550,6 +554,24 @@
       act('fit', 'Cadrer', () => a.viewport.focus(el.id));
       act('delete', 'Supprimer', () => a.deleteSelection());
       body.appendChild(actions);
+      if (el.type === 'reachtruck') {
+        const job = a.fleet.jobs.get(el.id);
+        const box3 = h('div', { class: 'mission-box' });
+        box3.appendChild(h('div', { class: 'small', html: `<b>${C.escape(el.params.driverName || 'Cariste')}</b> · CACES R489 catégorie 5 · ${job && job.cur ? `<span class="busy">● ${C.escape(job.status || 'En mission')}</span>` : '<span class="ok-msg">● Disponible</span>'}` }));
+        const nb = h('button', { class: 'btn small primary block', html: '➕ Nouvelle mission : prendre une palette → la déposer' });
+        nb.addEventListener('click', () => a.newMission(el.id));
+        box3.appendChild(nb);
+        const list = [];
+        if (job && job.cur) list.push(['En cours', job.cur.mission]);
+        if (job) job.queue.forEach((m2, i) => list.push([`En attente ${i + 1}`, m2]));
+        if (list.length) {
+          const links = h('div', { class: 'links' });
+          for (const [lab, m2] of list) links.appendChild(h('div', { class: 'link-row ' + (lab === 'En cours' ? 'warn' : 'optional'), html: `<span class="pdot"></span><span>${lab}</span><b>${C.escape(a.fleet.describe(m2.from))} → ${C.escape(a.fleet.describe(m2.to))}</b>` }));
+          box3.appendChild(links);
+          if (job.queue.length) { const cb = h('button', { class: 'btn small block', text: 'Annuler les missions en attente' }); cb.addEventListener('click', () => a.fleet.cancel(el.id)); box3.appendChild(cb); }
+        } else box3.appendChild(h('p', { class: 'muted small', text: 'Cliquez « Nouvelle mission », puis la palette à prendre (au sol ou dans un rack), puis l\'endroit où la déposer. Plusieurs missions s\'enchaînent dans l\'ordre.' }));
+        body.appendChild(box3);
+      }
       if (el.type === 'mezzanine') {
         const pl = a.plateau(el);
         const area = pl.reduce((s2, m) => s2 + m.params.length * m.params.width, 0) / 1e6;
@@ -686,7 +708,9 @@
           const places = rows * p.bays * p.levels * perBay;
           kv('Emplacements', `${places} (${perBay} par travée et par niveau)`);
           kv('Niveaux de dépose', Array.from({ length: p.levels }, (_, k) => C.fmt((p.firstOnFloor ? k : k + 1) * p.levelH)).join(' / ') + ' mm');
-          kv('Occupés (environ)', Math.round(places * p.fill / 100));
+          { const R2 = C.Types.defs.rack, G = R2.geom(p); let occ = 0;
+            for (let r = 0; r < G.rows; r++) for (let j = 0; j < G.nb; j++) for (let k = 0; k < G.nl; k++) for (let q = 0; q < G.perBay; q++) if (R2.slotOccupied(el, R2.slotKey(r, j, k, q))) occ++;
+            kv('Emplacements occupés', `${occ} / ${places}`); }
           const R = C.Types.defs.rack, rowsN = +p.rows === 2 ? 2 : 1;
           kv('Adresses', `${R.address(p, 0, 0, 0)} … ${R.address(p, rowsN - 1, p.bays - 1, p.levels - 1)}`);
         }
@@ -1299,6 +1323,7 @@
             <li>Déplacez un élément en le faisant glisser : il s'<b>accroche magnétiquement</b> aux ports libres proches (alignement, cap et hauteur). Alt : désactiver le magnétisme.</li>
             <li>Ports : <span class="pill ok">vert</span> raccordé, <span class="pill err">rouge</span> libre ou défaut, <span class="pill warn">orange</span> écart de hauteur, <span class="pill opt">gris</span> sortie optionnelle.</li>
             <li>Une sortie qui débouche sur le côté d'un convoyeur crée une <b>jonction</b> (fusion de flux).</li>
+            <li><b>Cariste CACES 5</b> : sélectionnez le chariot, « Nouvelle mission », cliquez la palette à prendre (sol ou rack) puis l'endroit où la déposer. Le trajet est en ligne droite (pas d'évitement d'obstacles).</li>
             <li><b>Murs d'entrepôt</b> : un convoyeur (ou un objet) qui traverse un mur y perce automatiquement une ouverture. Portes : champ « Portes / ouvertures manuelles ». Bouton « Murs » en haut à droite : visibles / translucides / masqués.</li>
             <li><b>Mezzanine modulaire</b> : accolez des modules bord à bord (accrochage magnétique ou boutons « Étendre ») pour obtenir la surface voulue ; les garde-corps disparaissent sur les jonctions.</li>
             <li><b>Mezzanine</b> : tout objet placé ou glissé au-dessus du plancher s'y pose automatiquement (Alt : garder la hauteur). Déplacer la mezzanine emporte les objets posés dessus.</li>

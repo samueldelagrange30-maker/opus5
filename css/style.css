@@ -137,6 +137,8 @@ button { cursor: pointer; }
 .follow-hud .rec { color: #ff4d4d; font-weight: 700; font-size: 12px; white-space: nowrap; animation: blink 1s steps(2) infinite; }
 @keyframes blink { 50% { opacity: .35; } }
 .views-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 12px; }
+.mission-box { display: flex; flex-direction: column; gap: 6px; padding: 6px 0 8px; border-bottom: 1px solid var(--border); }
+.mission-box .busy { color: var(--warn); }
 .tower-bar { display: flex; align-items: center; gap: 6px; padding: 6px 0; border-bottom: 1px solid var(--border); }
 .tower-bar span { flex: 1; }
 .notice { background: rgba(243,156,18,.12); border: 1px solid rgba(243,156,18,.4); color: #f5c87a; padding: 6px 8px; border-radius: 4px; font-size: 11.5px; margin: 6px 0; }

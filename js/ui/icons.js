@@ -106,6 +106,7 @@
     pallet: '<path d="M3 13h34M3 17h34"/><rect x="5" y="17" width="5" height="5"/><rect x="17.5" y="17" width="5" height="5"/><rect x="30" y="17" width="5" height="5"/><path d="M3 22h34"/>',
     palletload: '<rect x="5" y="3" width="10" height="8"/><rect x="15" y="3" width="10" height="8"/><rect x="25" y="3" width="10" height="8"/><path d="M3 13h34"/><rect x="5" y="15" width="5" height="5"/><rect x="17.5" y="15" width="5" height="5"/><rect x="30" y="15" width="5" height="5"/><path d="M3 21h34"/>',
     labeler: '<rect x="2" y="17" width="36" height="8"/><rect x="24" y="2" width="12" height="13"/><circle cx="30" cy="7" r="3"/><path d="M24 11h-8v5"/><rect x="12" y="11" width="9" height="6" stroke-dasharray="1.5 1"/>',
+    forklift: '<path d="M3 22h20"/><rect x="5" y="10" width="11" height="12"/><path d="M8 10V4h7v6"/><path d="M24 2v20M24 18h12"/><circle cx="8" cy="23" r="2"/><circle cx="32" cy="23" r="2"/><path d="M16 22h18"/>',
     mezz: '<path d="M4 9h32"/><path d="M4 5h32M4 5v4M36 5v4"/><path d="M8 9v16M32 9v16M20 9v16"/><path d="M8 25h-6M12 13l8 12" stroke-dasharray="2 1.5"/>'
   };
   C.libIcon = function (name) {

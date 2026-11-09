@@ -381,6 +381,48 @@
       showNumbers: true, aisleName: 'A', rackNumber: '01', firstBay: 1, bayStep: 1, levelStyle: 'letters', note: '' },
     fields: ['name', 'x', 'y', 'zBase', 'rot', 'levels', 'bays', 'bayLength', 'depth', 'rows', 'levelH', 'firstOnFloor', 'loadType', 'loadH', 'fill',
       'showNumbers', 'aisleName', 'rackNumber', 'firstBay', 'bayStep', 'levelStyle', 'color', 'beamColor', 'note'],
+    /** Géométrie d'un rack (mm, repère local du rack). */
+    geom(p) {
+      const rows = +p.rows === 2 ? 2 : 1, nb = Math.max(1, Math.round(p.bays)), bl = p.bayLength, d = p.depth, flue = 200;
+      const nl = Math.max(1, Math.round(p.levels));
+      return {
+        rows, nb, bl, d, flue, nl, L: nb * bl, Wt: rows * d + (rows - 1) * flue,
+        perBay: Math.max(1, Math.floor((bl - 80) / 900)),
+        levelZ: k => (p.firstOnFloor ? k : k + 1) * p.levelH
+      };
+    },
+    slotKey: (r, j, k, q) => `${r}-${j}-${k}-${q}`,
+    /** Valeur pseudo-aléatoire stable par emplacement (remplissage initial, aspect). */
+    slotRand(el, key, salt) {
+      let h = 2166136261;
+      const str = el.id + '|' + key + '|' + (salt || '');
+      for (let i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 16777619); }
+      h ^= h >>> 13; h = Math.imul(h, 0x5bd1e995); h ^= h >>> 15;
+      return (h >>> 0) / 4294967296;
+    },
+    /** Emplacement occupé ? (état saisi par le cariste, sinon taux de remplissage) */
+    slotOccupied(el, key) {
+      const s = el.params.slots;
+      if (s && s[key] !== undefined) return !!s[key];
+      if (el.params.loadType === 'vide') return false;
+      return T.rack.slotRand(el, key, 'occ') * 100 < el.params.fill;
+    },
+    /** Centre local d'un emplacement : dessus de lisse (z), face d'accès (−1 avant / +1 arrière). */
+    slotLocal(p, r, j, k, q) {
+      const G = T.rack.geom(p);
+      const y0 = -G.Wt / 2 + r * (G.d + G.flue);
+      return { x: -G.L / 2 + j * G.bl + 40 + (q + 0.5) * (G.bl - 80) / G.perBay, y: y0 + G.d / 2, z: G.levelZ(k), face: G.rows === 2 && r === 1 ? 1 : -1, y0 };
+    },
+    /** Emplacement le plus proche d'un point local du rack. */
+    slotAt(p, lx, ly, lz) {
+      const G = T.rack.geom(p);
+      const r = G.rows === 2 && ly > -G.Wt / 2 + G.d + G.flue / 2 ? 1 : 0;
+      const j = C.clamp(Math.floor((lx + G.L / 2) / G.bl), 0, G.nb - 1);
+      const q = C.clamp(Math.floor((lx - (-G.L / 2 + j * G.bl + 40)) / ((G.bl - 80) / G.perBay)), 0, G.perBay - 1);
+      let k = 0;
+      for (let i = 0; i < G.nl; i++) if (G.levelZ(i) <= lz + 50) k = i;
+      return { r, j, k, q, key: T.rack.slotKey(r, j, k, q) };
+    },
     /** Adresse d'un emplacement : allée+rack - travée - niveau (ex. A01-03-B). */
     address(p, row, bay, level) {
       const b = (+p.firstBay || 0) + bay * (+p.bayStep || 1);
@@ -416,6 +458,21 @@
       }
       return m;
     }
+  };
+
+  /* ---------------- Cariste CACES 5 : chariot à mât rétractable ---------------- */
+  fld('maxLift', 'Hauteur de levée maxi', 'number', { group: 'Chariot', unit: 'mm', min: 1000, max: 14000, step: 100 });
+  fld('travelSpeed', 'Vitesse de déplacement', 'number', { group: 'Chariot', unit: 'm/s', min: 0.2, max: 4, step: 0.1, live: true });
+  fld('liftSpeed2', 'Vitesse de levée', 'number', { group: 'Chariot', unit: 'm/s', min: 0.05, max: 1, step: 0.05, live: true });
+  FL.liftSpeed2.k = 'forkSpeed';
+  fld('driverName', 'Nom du cariste', 'text', { group: 'Chariot' });
+  T.reachtruck = {
+    label: 'Cariste CACES 5 (chariot à mât rétractable)', cat: 'Stockage', conveyor: false, centered: true, floor: true,
+    defaults: { maxLift: 10500, travelSpeed: 1.8, forkSpeed: 0.35, driverName: 'Cariste', color: '#f39c12', note: '' },
+    fields: ['name', 'x', 'y', 'rot', 'driverName', 'maxLift', 'travelSpeed', 'liftSpeed2', 'color', 'note'],
+    // cinématique : centre des fourches = mât (150 → 900 mm) + 600 mm
+    reachIn: 750, reachOut: 1500,
+    build: () => ({ tracks: {}, ports: [], diverts: [] })
   };
 
   /* ---------------- Palette (objet posé) ---------------- */
@@ -493,6 +550,7 @@
       }
       if (el.type === 'mezzanine') return { L: p.length, W: p.width, H: p.deckH + (p.railH || 0) };
       if (el.type === 'wall') return { L: p.length, W: p.thickness, H: p.height };
+      if (el.type === 'reachtruck') return { L: 2600, W: 1300, H: 2300 };
       if (el.type === 'pallet') {
         const euro = p.palletType !== 'perdue', ph = euro ? 144 : 120;
         return { L: 1200, W: !euro && p.palletSize === '1200x1000' ? 1000 : 800, H: p.loaded ? ph + Math.max(100, p.loadH) : ph * C.clamp(Math.round(p.stack || 1), 1, 30) };
@@ -583,6 +641,7 @@
         { id: 'st-pal-pp', label: 'Palette perdue', icon: 'pallet', type: 'pallet', params: { palletType: 'perdue' } },
         { id: 'st-pal-eu-c', label: 'Palette Europe avec cartons', icon: 'palletload', type: 'pallet', params: { palletType: 'euro', loaded: true } },
         { id: 'st-pal-pp-c', label: 'Palette perdue avec cartons', icon: 'palletload', type: 'pallet', params: { palletType: 'perdue', loaded: true, loadColor: '#c49a62' } },
+        { id: 'st-reach', label: 'Cariste CACES 5 (mât rétractable)', icon: 'forklift', type: 'reachtruck', params: {} },
         { id: 'st-osr', label: 'Stockage à navettes OSR (1 tour)', icon: 'osr', type: 'osr', params: {} },
         { id: 'st-osr3', label: 'Stockage à navettes OSR (3 tours)', icon: 'osr', type: 'osr', params: { towers: 3 } }
       ]
