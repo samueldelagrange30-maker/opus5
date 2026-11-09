@@ -59,6 +59,8 @@
     panelR: '<rect x="3" y="4" width="18" height="16" rx="1"/><path d="M15 4v16"/>',
     wallv: '<rect x="3" y="5" width="18" height="14"/><path d="M3 12h18M9 5v7M15 5v7M6 12v7M12 12v7M18 12v7"/>',
     video: '<rect x="2" y="6" width="14" height="12" rx="2"/><path d="M16 10l6-3v10l-6-3z"/>',
+    lock: '<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 018 0v3"/>',
+    unlock: '<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 017.5-2"/>',
     heat: '<path d="M12 2c0 4-5 6-5 11a5 5 0 0010 0c0-3-2-4-2-6-1 2-3 2-3 2s2-3 0-7z"/>'
   };
   C.icon = function (name, size) {

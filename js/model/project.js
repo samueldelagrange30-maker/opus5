@@ -161,7 +161,7 @@
         if (!def) { console.warn('Type ignoré', e.type); continue; }
         this.elements.push({
           id: e.id || C.uid('e'), type: e.type, name: e.name || this.nextName(e.type),
-          x: C.num(e.x), y: C.num(e.y), z: C.num(e.z), rot: C.num(e.rot), groupId: e.groupId || null,
+          x: C.num(e.x), y: C.num(e.y), z: C.num(e.z), rot: C.num(e.rot), groupId: e.groupId || null, ...(e.locked ? { locked: true } : {}),
           params: Object.assign(C.clone(def.defaults), e.params || {})
         });
       }

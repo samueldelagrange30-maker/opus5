@@ -79,7 +79,11 @@
             { label: 'Déplacer de… (cotes)', icon: 'move', action: () => this.moveDialog() },
             { label: 'Inverser le sens de circulation', icon: 'reverse', key: 'I', action: () => a.reverseSelection() },
             { label: 'Ajouter le même module à la suite', key: 'N', action: () => a.appendSame() },
-            { label: 'Accrocher au port le plus proche', icon: 'magnet', action: () => a.snapSelectionNow() }
+            { label: 'Accrocher au port le plus proche', icon: 'magnet', action: () => a.snapSelectionNow() },
+            null,
+            { label: 'Verrouiller la sélection', icon: 'lock', key: 'L', action: () => a.setLocked(true) },
+            { label: 'Déverrouiller la sélection', icon: 'unlock', action: () => a.setLocked(false) },
+            { label: 'Tout déverrouiller', action: () => a.unlockAll() }
           ]
         },
         {
@@ -139,7 +143,7 @@
             null,
             { label: 'Statistiques détaillées', icon: 'chart', action: () => this.setRightTab('stats') },
             null,
-            { label: 'Filmer le parcours d\'un carton…', icon: 'video', action: () => this.filmDialog() },
+            { label: 'Filmer le parcours d\'un carton ou d\'un bac…', icon: 'video', action: () => this.filmDialog() },
             { label: 'Arrêter le suivi de carton', disabled: () => !a.director.active, action: () => a.director.stop() }
           ]
         },
@@ -148,7 +152,7 @@
             { label: 'Capture d\'écran de la vue 3D (PNG)', icon: 'camera', action: () => this.screenshot() },
             { label: 'Exporter la vue de dessus (PNG)', icon: 'image', action: () => this.exportTop() },
             { label: 'Imprimer le plan 2D…', icon: 'print', action: () => this.planDialog() },
-            { label: 'Vidéo : filmer le parcours d\'un carton…', icon: 'video', action: () => this.filmDialog() },
+            { label: 'Vidéo : filmer un carton ou un bac…', icon: 'video', action: () => this.filmDialog() },
             { label: 'Vidéo : enregistrer la vue 3D (démarrer / arrêter)', icon: 'video', check: () => a.screenRec.active, action: () => { a.screenRec.toggle(); } },
             { label: 'Nomenclature des convoyeurs…', icon: 'bom', action: () => this.bomDialog() },
             { label: 'Exporter la nomenclature (CSV)', icon: 'export', action: () => C.IO.exportBOMCSV(a) },
@@ -412,7 +416,7 @@
       const list = h('div', { class: 'tree' });
       const row = el => {
         const def = C.Types.get(el.type);
-        const r = h('div', { class: 'tree-row' + (a.selection.has(el.id) ? ' sel' : ''), html: `<span class="dot" style="background:${el.params.color || '#888'}"></span><b>${C.escape(el.name)}</b><span class="muted">${C.escape(def.label)}</span>` });
+        const r = h('div', { class: 'tree-row' + (a.selection.has(el.id) ? ' sel' : ''), html: `<span class="dot" style="background:${el.params.color || '#888'}"></span><b>${C.escape(el.name)}</b>${el.locked ? '<span class="lock-badge" title="Verrouillé">🔒</span>' : ''}<span class="muted">${C.escape(def.label)}</span>` });
         r.addEventListener('click', e => { if (e.ctrlKey || e.metaKey || e.shiftKey) a.toggleSelect(el.id); else a.select([el.id]); });
         r.addEventListener('dblclick', () => a.viewport.focus(el.id));
         return r;
@@ -544,7 +548,7 @@
     elementProps(body, el) {
       const a = this.app, def = C.Types.get(el.type);
       const simLock = a.sim.active;
-      body.appendChild(h('div', { class: 'prop-title', html: `<span class="dot big" style="background:${el.params.color || '#888'}"></span><div><b>${C.escape(el.name)}</b><div class="muted small">${C.escape(def.label)}${el.groupId ? ' · groupé' : ''}</div></div>` }));
+      body.appendChild(h('div', { class: 'prop-title', html: `<span class="dot big" style="background:${el.params.color || '#888'}"></span><div><b>${C.escape(el.name)}</b>${el.locked ? ' <span class="lock-badge">🔒 verrouillé</span>' : ''}<div class="muted small">${C.escape(def.label)}${el.groupId ? ' · groupé' : ''}</div></div>` }));
       const actions = h('div', { class: 'prop-actions' });
       const act = (icon, title, fn) => { const b = h('button', { class: 'icon-btn', title, html: C.icon(icon, 16) }); b.addEventListener('click', fn); actions.appendChild(b); };
       act('duplicate', 'Dupliquer', () => a.duplicate());
@@ -553,8 +557,10 @@
       if (def.conveyor) act('plus', 'Ajouter le même module à la suite (N)', () => a.appendSame());
       if (def.conveyor) act('magnet', 'Accrocher au port libre le plus proche', () => a.snapSelectionNow());
       act('fit', 'Cadrer', () => a.viewport.focus(el.id));
+      act(el.locked ? 'unlock' : 'lock', el.locked ? 'Déverrouiller (L)' : 'Verrouiller (L) : empêche déplacement, rotation, suppression et modification', () => a.toggleLock());
       act('delete', 'Supprimer', () => a.deleteSelection());
       body.appendChild(actions);
+      if (el.locked) body.appendChild(h('div', { class: 'notice lock', html: '🔒 Élément verrouillé : il ne peut être ni déplacé, ni tourné, ni supprimé, ni modifié (sauf nom, commentaire et réglages de fonctionnement). <b>L</b> ou le cadenas pour déverrouiller.' }));
       if (el.type === 'reachtruck') {
         const job = a.fleet.jobs.get(el.id);
         const box3 = h('div', { class: 'mission-box' });
@@ -624,7 +630,7 @@
           const row = h('div', { class: 'prop-row' + (f.type === 'textarea' || f.type === 'formats' ? ' wide' : '') });
           row.appendChild(h('label', { text: f.label, title: f.help || f.label }));
           const wrap = h('div', { class: 'prop-in' });
-          wrap.appendChild(this.fieldInput(f, val, v => a.setField([el.id], f.id, v), simLock && !f.live));
+          wrap.appendChild(this.fieldInput(f, val, v => a.setField([el.id], f.id, v), (simLock && !f.live) || (el.locked && !f.live && f.id !== 'name' && f.id !== 'note')));
           if (f.unit) wrap.appendChild(h('span', { class: 'unit', text: f.unit }));
           row.appendChild(wrap);
           if (f.help) row.appendChild(h('div', { class: 'help', text: f.help }));
@@ -820,7 +826,9 @@
       const act = (icon, title, fn) => { const b = h('button', { class: 'icon-btn', title, html: C.icon(icon, 16) }); b.addEventListener('click', fn); actions.appendChild(b); };
       act('group', 'Grouper', () => a.group()); act('ungroup', 'Dégrouper', () => a.ungroup());
       act('duplicate', 'Dupliquer', () => a.duplicate()); act('rotate', 'Rotation', () => a.rotateSelection(a.project.settings.angleStep));
-      act('move', 'Déplacer de…', () => this.moveDialog()); act('fit', 'Cadrer', () => a.viewport.fit(true, els.map(e => e.id))); act('delete', 'Supprimer', () => a.deleteSelection());
+      act('move', 'Déplacer de…', () => this.moveDialog()); act('fit', 'Cadrer', () => a.viewport.fit(true, els.map(e => e.id)));
+      act('lock', 'Verrouiller la sélection', () => a.setLocked(true)); act('unlock', 'Déverrouiller la sélection', () => a.setLocked(false));
+      act('delete', 'Supprimer', () => a.deleteSelection());
       body.appendChild(actions);
       const common = ['z', 'speed', 'running', 'gap', 'width', 'usefulWidth', 'guideH', 'rollerDiam', 'rollerPitch', 'surface', 'color'];
       const sec = this.section(body, 'Paramètres communs');
@@ -887,9 +895,9 @@
       const c = a.sim.active && a.sim.cartonById(id);
       if (!c) { this.emptyProps(body); return; }
       const sp = c.spec;
-      body.appendChild(h('div', { class: 'prop-title', html: `<span class="dot big" style="background:${sp.color}"></span><div><b>${C.escape(sp.name)} <span class="muted">#${c.id}</span></b><div class="muted small">Carton en simulation</div></div>` }));
+      body.appendChild(h('div', { class: 'prop-title', html: `<span class="dot big" style="background:${sp.color}"></span><div><b>${C.escape(sp.name)} <span class="muted">#${c.id}</span></b><div class="muted small">${C.isTote(sp) ? 'Bac (tote)' : 'Carton'} en simulation</div></div>` }));
       const fb = h('div', { class: 'prop-actions' });
-      const b1 = h('button', { class: 'btn small primary', html: C.icon('video', 14) + ' Suivre ce carton' });
+      const b1 = h('button', { class: 'btn small primary', html: C.icon('video', 14) + (C.isTote(sp) ? ' Suivre ce bac' : ' Suivre ce carton') });
       b1.addEventListener('click', () => a.director.start({ cartonId: id, record: false, views: ['chase', 'side', 'top', 'orbit', 'front'] }));
       const b2 = h('button', { class: 'btn small', html: '● Filmer son parcours' });
       b2.addEventListener('click', () => this.filmDialog(id));
@@ -1289,33 +1297,55 @@
       const a = this.app;
       const srcs = a.project.elements.filter(e => e.type === 'source' || e.type === 'osr');
       const selC = cartonId || (a.sim.active && Array.from(a.cartonSelection).find(id => a.sim.cartonById(id)));
-      if (!srcs.length && !selC) { C.toast('Ajoutez une entrée (générateur) ou sélectionnez un carton en simulation', 'warn'); return; }
-      const opts = [];
-      if (selC) opts.push([`c:${selC}`, `Carton sélectionné (#${selC})`]);
-      for (const s of srcs) opts.push([`s:${s.name}`, `Prochain carton de ${s.name} (du début à la fin)`]);
+      if (!srcs.length && !selC) { C.toast('Ajoutez une entrée (générateur, OSR) ou sélectionnez un contenant en simulation', 'warn'); return; }
+      const selSpec = selC && a.sim.cartonById(selC) ? a.sim.cartonById(selC).spec : null;
+      const origins = [['', 'Toutes les entrées']];
+      for (const s2 of srcs) {
+        origins.push([s2.name, s2.type === 'osr' ? `${s2.name} (toutes les tours)` : s2.name]);
+        if (s2.type === 'osr') for (let k = 1; k <= Math.round(s2.params.towers); k++) origins.push([`${s2.name} · tour ${k}`, `${s2.name} · tour ${k}`]);
+      }
       const recOk = C.Recorder.supported();
-      const body = this.modal('Filmer le parcours d\'un carton', `<div class="form-grid">
-        <label>Carton suivi</label><select id="fmWho">${opts.map(o => `<option value="${C.escape(o[0])}">${C.escape(o[1])}</option>`).join('')}</select>
-        <label class="span2">Vues utilisées (alternées automatiquement)</label>
-        <div class="span2 views-grid">${C.CAMERA_VIEWS.map(([v, l]) => `<label class="chk"><input type="checkbox" value="${v}" ${v !== 'onboard' && v !== 'front' ? 'checked' : ''}> ${l}</label>`).join('')}</div>
-        <label>Changer de vue toutes les</label><div class="prop-in"><input type="number" id="fmInt" value="6" min="0" step="1"><span class="unit">s</span></div>
-        <label class="chk span2"><input type="checkbox" id="fmElem" checked> Changer aussi de vue à chaque nouvel équipement traversé</label>
-        <label>Vitesse de simulation</label><select id="fmSpeed"><option value="1">×1 (temps réel)</option><option value="2">×2</option><option value="5">×5</option><option value="10">×10</option></select>
-        <label class="chk span2"><input type="checkbox" id="fmRec" ${recOk ? 'checked' : 'disabled'}> Enregistrer la vidéo (fichier ${recOk ? 'WebM' : 'non pris en charge par ce navigateur'})</label>
-        <p class="span2 muted small">La caméra suit le carton depuis son entrée jusqu'à sa sortie ; la vidéo est téléchargée automatiquement à l'arrivée. Molette : distance de la caméra · ◀ ▶ : changer de vue · Échap : arrêter.</p>
+      const radio = (v, l, chk) => `<label><input type="radio" name="fmKind" value="${v}" ${chk ? 'checked' : ''}> ${l}</label>`;
+      this.modal('Filmer le parcours d\'un carton ou d\'un bac', `<div class="film-dlg">
+        <section>
+          <h4>Contenant suivi</h4>
+          <div class="seg">
+            ${selC ? radio('sel', `Contenant sélectionné · ${C.escape(selSpec ? selSpec.name : '')} #${selC}`, true) : ''}
+            ${radio('tote', '🧺 Prochain bac (tote)', !selC)}
+            ${radio('carton', '📦 Prochain carton', false)}
+            ${radio('any', 'Prochain contenant (tous)', false)}
+          </div>
+          <div class="row" id="fmSrcRow"><label>Provenance</label><select id="fmSrc">${origins.map(o => `<option value="${C.escape(o[0])}">${C.escape(o[1])}</option>`).join('')}</select></div>
+        </section>
+        <section>
+          <h4>Vues (alternées automatiquement)</h4>
+          <div class="views-grid">${C.CAMERA_VIEWS.map(([v, l]) => `<label class="chk"><input type="checkbox" value="${v}" ${v !== 'onboard' && v !== 'front' ? 'checked' : ''}> ${l}</label>`).join('')}</div>
+          <div class="row"><label>Changer de vue toutes les</label><div class="inline"><input type="number" id="fmInt" value="6" min="0" step="1"><span class="unit">secondes (0 = jamais)</span></div></div>
+          <label class="chk"><input type="checkbox" id="fmElem" checked> Changer aussi de vue à chaque nouvel équipement traversé</label>
+        </section>
+        <section>
+          <h4>Enregistrement</h4>
+          <div class="row"><label>Vitesse de simulation</label><select id="fmSpeed"><option value="1">×1 (temps réel)</option><option value="2">×2</option><option value="5">×5</option><option value="10">×10</option></select></div>
+          <label class="chk"><input type="checkbox" id="fmRec" ${recOk ? 'checked' : 'disabled'}> Enregistrer la vidéo ${recOk ? '(fichier WebM téléchargé à l\'arrivée)' : '(non pris en charge par ce navigateur)'}</label>
+        </section>
+        <p class="muted small">La caméra suit le contenant depuis son entrée jusqu'à sa sortie (ou sa remise en stock). Molette : distance de la caméra · ◀ ▶ : changer de vue · Échap : arrêter.</p>
       </div>`, [{ label: 'Annuler' }, {
         label: 'Démarrer', primary: true, action: b => {
-          const who = b.querySelector('#fmWho').value;
+          const kind = (b.querySelector('input[name=fmKind]:checked') || {}).value || 'any';
           const views = Array.from(b.querySelectorAll('.views-grid input:checked')).map(i => i.value);
           const o = {
             views, interval: Math.max(0, +b.querySelector('#fmInt').value || 0), switchOnElement: b.querySelector('#fmElem').checked,
             record: b.querySelector('#fmRec').checked, simSpeed: +b.querySelector('#fmSpeed').value
           };
-          if (who.startsWith('c:')) o.cartonId = who.slice(2); else o.sourceName = who.slice(2);
+          if (kind === 'sel') o.cartonId = selC;
+          else { o.kind = kind; o.sourceName = b.querySelector('#fmSrc').value; }
           a.director.start(o);
         }
-      }], { noFocus: true });
-      void body;
+      }], { noFocus: true, wide: true });
+      const body = document.querySelector('.film-dlg');
+      const sync = () => { const k = (body.querySelector('input[name=fmKind]:checked') || {}).value; body.querySelector('#fmSrcRow').style.display = k === 'sel' ? 'none' : ''; };
+      body.querySelectorAll('input[name=fmKind]').forEach(r => r.addEventListener('change', sync));
+      sync();
     }
     screenshot() {
       const url = this.app.viewport.screenshot();
@@ -1381,6 +1411,7 @@
             <tr><td>Ctrl+C / V / D</td><td>Copier / Coller / Dupliquer</td></tr><tr><td>Ctrl+G / Ctrl+Maj+G</td><td>Grouper / Dégrouper</td></tr>
             <tr><td>R / Maj+R</td><td>Rotation ± pas</td></tr><tr><td>Flèches, PgPréc/PgSuiv</td><td>Déplacer en X/Y, Z (Maj ×10)</td></tr>
             <tr><td>N</td><td>Même module à la suite</td></tr><tr><td>I</td><td>Inverser le sens</td></tr>
+            <tr><td>L</td><td>Verrouiller / déverrouiller</td></tr>
             <tr><td>1 2 3 4 5</td><td>Dessus, face, côté, iso, 3D</td></tr><tr><td>P</td><td>Perspective / ortho</td></tr>
             <tr><td>F</td><td>Cadrer</td></tr><tr><td>M / K</td><td>Mesurer / Poser des cartons</td></tr>
             <tr><td>Espace</td><td>Lecture / pause</td></tr><tr><td>Ctrl+S / Ctrl+O</td><td>Enregistrer / Projets</td></tr>

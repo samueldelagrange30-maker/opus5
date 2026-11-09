@@ -331,7 +331,8 @@
       for (const id of app.selection) {
         const g = this.meshes.get(id);
         if (!g) continue;
-        const bh = new THREE.BoxHelper(g, 0x00e5ff);
+        const el0 = app.project.getElement(id);
+        const bh = new THREE.BoxHelper(g, el0 && el0.locked ? 0xff9f1a : 0x00e5ff);
         bh.material.depthTest = false; bh.material.transparent = true; bh.material.opacity = 0.9;
         bh.renderOrder = 5;
         this.gSelection.add(bh);

@@ -67,6 +67,7 @@
       if (!ctx) return;
       const el = hit && hit.element ? this.project.getElement(hit.element) : null;
       if (ctx.step === 1) {
+        if (el && el.type === 'pallet' && el.locked) { C.toast(`🔒 ${el.name} est verrouillée : le cariste ne peut pas la prendre`, 'warn'); return; }
         if (el && el.type === 'pallet') ctx.from = { kind: 'pallet', id: el.id };
         else if (el && el.type === 'rack') {
           let s = this.rackSlotAt(el, hit.point);
@@ -581,7 +582,33 @@
       }
       return best;
     }
-    beginMove() { return this.guardSim(); }
+    /* ---------------------------- verrouillage ---------------------------- */
+    /** Éléments verrouillés parmi des identifiants. */
+    lockedIn(ids) { return Array.from(ids).map(id => this.project.getElement(id)).filter(e => e && e.locked); }
+    /** Refuse l'action si un élément concerné est verrouillé. */
+    guardLock(ids, action) {
+      const lk = this.lockedIn(ids);
+      if (!lk.length) return true;
+      C.toast(`🔒 ${lk.slice(0, 3).map(e => e.name).join(', ')}${lk.length > 3 ? '…' : ''} ${lk.length > 1 ? 'sont verrouillés' : 'est verrouillé'} : déverrouillez pour ${action}.`, 'warn');
+      return false;
+    }
+    setLocked(on, ids) {
+      const els = (ids || Array.from(this.selection)).map(id => this.project.getElement(id)).filter(Boolean);
+      if (!els.length) { C.toast('Sélectionnez les éléments à ' + (on ? 'verrouiller' : 'déverrouiller'), 'warn'); return; }
+      this.project.change(on ? 'Verrouiller' : 'Déverrouiller', () => els.forEach(e => { if (on) e.locked = true; else delete e.locked; }));
+      C.toast(`${els.length} élément(s) ${on ? 'verrouillé(s) 🔒' : 'déverrouillé(s)'}`, 'ok');
+    }
+    toggleLock() {
+      const els = this.selectedElements();
+      if (!els.length) return;
+      this.setLocked(!els.every(e => e.locked));
+    }
+    unlockAll() {
+      const els = this.project.elements.filter(e => e.locked);
+      if (!els.length) { C.toast('Aucun élément verrouillé', 'info'); return; }
+      this.setLocked(false, els.map(e => e.id));
+    }
+    beginMove() { return this.guardSim() && this.guardLock(this.selection, 'le déplacer'); }
     commitMove(dr) {
       const { dx, dy, dz, rot } = dr.cur;
       if (Math.abs(dx) < 0.01 && Math.abs(dy) < 0.01 && Math.abs(dz) < 0.01 && !rot) { this.viewport.sync(new Set(dr.ids)); return; }
@@ -683,7 +710,9 @@
     /* ------------------------- édition de la sélection ------------------------- */
     deleteSelection() {
       if (!this.guardSim()) return;
-      const ids = Array.from(this.selection), cids = Array.from(this.cartonSelection);
+      const locked = this.lockedIn(this.selection);
+      if (locked.length) C.toast(`🔒 ${locked.length} élément(s) verrouillé(s) conservé(s)`, 'warn');
+      const ids = Array.from(this.selection).filter(id => !locked.some(e => e.id === id)), cids = Array.from(this.cartonSelection);
       if (!ids.length && !cids.length) return;
       this.project.change('Supprimer', () => {
         this.project.removeElements(ids);
@@ -710,6 +739,7 @@
         n.id = C.uid('e'); map.set(e.id, n.id);
         n.x += off[0]; n.y += off[1];
         if (n.groupId) { if (!gmap.has(n.groupId)) gmap.set(n.groupId, C.uid('g')); n.groupId = gmap.get(n.groupId); }
+        delete n.locked;                                   // une copie n'est pas verrouillée
         return n;
       });
       this.project.change('Coller', () => {
@@ -729,7 +759,7 @@
       this.clipboard = keep || this.clipboard;
     }
     rotateSelection(deg) {
-      if (!this.guardSim()) return;
+      if (!this.guardSim() || !this.guardLock(this.selection, 'le tourner')) return;
       const base = this.selectedElements();
       if (!base.length) return;
       const els = this.withRiders(base.map(e => e.id)).map(id => this.project.getElement(id));
@@ -746,7 +776,7 @@
       });
     }
     nudge(dx, dy, dz) {
-      if (!this.guardSim()) return;
+      if (!this.guardSim() || !this.guardLock(this.selection, 'le déplacer')) return;
       const sel = this.selectedElements();
       if (!sel.length) return;
       const els = this.withRiders(sel.map(e => e.id)).map(id => this.project.getElement(id));
@@ -754,7 +784,7 @@
     }
     moveBy(dx, dy, dz) { this.nudge(dx, dy, dz); }
     reverseSelection() {
-      if (!this.guardSim()) return;
+      if (!this.guardSim() || !this.guardLock(this.selection, 'inverser son sens')) return;
       const els = this.selectedElements().filter(e => C.Types.get(e.type).fields.includes('reverse'));
       if (!els.length) { C.toast('Aucun élément réversible sélectionné', 'warn'); return; }
       this.project.change('Inverser le sens', () => els.forEach(e => { e.params.reverse = !e.params.reverse; }));
@@ -775,6 +805,7 @@
       const els = this.selectedElements();
       if (els.length !== 1 || !this.guardSim()) return;
       const el = els[0];
+      if (!this.guardLock([el.id], 'l\'accrocher')) return;
       const old = this.project.settings.snapRadius;
       this.project.settings.snapRadius = 3000;
       const sn = this.findSnapFor(el, el);
@@ -791,6 +822,7 @@
       const f = C.FIELDS[fid];
       if (!f) return;
       if (this.sim.active && !f.live) { C.toast('Paramètre géométrique : arrêtez la simulation pour le modifier.', 'warn'); this.ui.refreshProps(); return; }
+      if (!f.live && fid !== 'name' && fid !== 'note' && !this.guardLock(ids, 'le modifier')) { this.ui.refreshProps(); return; }
       let v = value;
       if (f.type === 'number') {
         v = parseFloat(String(value).replace(',', '.'));
@@ -875,6 +907,8 @@
         items.push(['Dupliquer', () => this.duplicate()], ['Rotation +' + this.project.settings.angleStep + '°', () => this.rotateSelection(this.project.settings.angleStep)]);
         items.push(['Rotation +90°', () => this.rotateSelection(90)], ['Inverser le sens', () => this.reverseSelection()]);
         items.push(['Accrocher au port le plus proche', () => this.snapSelectionNow()], ['Cadrer la vue', () => this.viewport.focus(hit.element)]);
+        const hel = this.project.getElement(hit.element);
+        items.push([hel && hel.locked ? '🔓 Déverrouiller' : '🔒 Verrouiller', () => this.toggleLock()]);
         items.push(['Copier', () => this.copy()], null, ['Supprimer', () => this.deleteSelection()]);
       } else if (hit && (hit.carton || hit.simCarton)) {
         this.selectCarton(hit.carton || hit.simCarton);
@@ -925,6 +959,7 @@
         else if (k === 'm') this.viewport.setMode(this.viewport.mode === 'measure' ? 'select' : 'measure');
         else if (k === 'k') this.viewport.setMode(this.viewport.mode === 'carton' ? 'select' : 'carton');
         else if (k === 'i') this.reverseSelection();
+        else if (k === 'l') this.toggleLock();
         else if (k === 'n') this.appendSame();
         else if (k === ' ') this.sim.toggle();
         else if (k === 'arrowleft') this.nudge(-step, 0, 0);

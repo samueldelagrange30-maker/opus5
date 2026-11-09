@@ -12,6 +12,9 @@
   const M = 0.001;
   const V3 = (x, y, z) => new THREE.Vector3(x, y, z);
 
+  /** Bac / tote (caisse plastique) plutôt que carton ? */
+  C.isTote = spec => !!spec && (spec.formatId === 'bac' || /\b(bac|tote|caisse)/i.test(spec.formatName || spec.name || ''));
+
   C.CAMERA_VIEWS = [
     ['chase', 'Poursuite'], ['side', 'Travelling latéral'], ['top', 'Vue de dessus'], ['front', 'Face (arrivée)'],
     ['orbit', 'Orbite'], ['wide', 'Vue d\'ensemble'], ['onboard', 'Caméra embarquée']
@@ -102,7 +105,7 @@
       } else {
         this.waiting = true;
         if (!app.sim.running) app.sim.play();
-        C.toast(`En attente du prochain carton de ${this.opts.sourceName}…`, 'info');
+        C.toast(`En attente du prochain ${this.waitLabel()}…`, 'info');
       }
       if (this.opts.simSpeed && app.sim.active) app.sim.setSpeed(this.opts.simSpeed);
       this.buildHud();
@@ -110,9 +113,15 @@
     onSpawn(c) {
       if (!this.active || !this.waiting) return;
       if (this.opts.sourceName && !String(c.source).startsWith(this.opts.sourceName)) return;
+      if (this.opts.kind === 'tote' && !C.isTote(c.spec)) return;
+      if (this.opts.kind === 'carton' && C.isTote(c.spec)) return;
       this.waiting = false;
       this.cartonId = c.id;
       this.begin();
+    }
+    waitLabel() {
+      const k = this.opts.kind === 'tote' ? 'bac' : this.opts.kind === 'carton' ? 'carton' : 'contenant';
+      return k + (this.opts.sourceName ? ' de ' + this.opts.sourceName : '');
     }
     begin() {
       const app = this.app;
@@ -254,7 +263,7 @@
       this._hudT = now;
       const i = this.info();
       const rec = this.recorder.active ? `<span class="rec">● REC ${C.fmtTime(this.recorder.elapsed())}</span>` : '';
-      const status = this.waiting ? `En attente d'un carton de <b>${C.escape(this.opts.sourceName)}</b>…` : this.finished ? `<b>${C.escape(i.carton)}</b> est arrivé à destination` :
+      const status = this.waiting ? `En attente du prochain <b>${C.escape(this.waitLabel())}</b>…` : this.finished ? `<b>${C.escape(i.carton)}</b> est arrivé à destination` :
         `<b>${C.escape(i.carton)}</b> · ${C.escape(i.where)}${i.label ? ' · ' + C.escape(i.label) : ''}`;
       this.hudEl.innerHTML = `${rec}<span class="fh-txt">🎥 ${status} · <i>${C.escape(i.view)}</i></span>
         <button class="btn small" data-a="prev" title="Vue précédente">◀</button><button class="btn small" data-a="next" title="Vue suivante">▶</button>
