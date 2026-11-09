@@ -173,7 +173,7 @@
           const flow = net.mainTrack(el.id);
           if (el.type === 'osr') {
             // tours de stockage
-            const n = C.clamp(Math.round(p.towers), 1, 30), y0 = p.width / 2 + p.frontZone;
+            const n = C.clamp(Math.round(p.towers), 1, 30), y0 = C.Types.defs.osr.rackY0(p);
             for (let i = 0; i < n; i++) {
               const q = [[i * p.towerWidth, y0], [(i + 1) * p.towerWidth, y0], [(i + 1) * p.towerWidth, y0 + p.rackLength], [i * p.towerWidth, y0 + p.rackLength]].map(v => C.localToWorld(tf, v[0], v[1], 0));
               q.forEach(v => ext(v[0], v[1]));

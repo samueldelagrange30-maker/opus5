@@ -163,7 +163,9 @@
   fld('frontZone', 'Profondeur de la pré-zone (élévateurs)', 'number', { group: 'Stockage à navettes', unit: 'mm', min: 600, step: 50 });
   fld('towerRate', 'Débit de sortie par tour', 'number', { group: 'Stockage à navettes', unit: 'caisses/h', min: 1, step: 10, live: true });
   fld('returnLane', 'Ligne de retour en stock (convoyeur avant)', 'bool', { group: 'Stockage à navettes' });
-  FL.convH = Object.assign({}, FL.z, { id: 'convH', label: 'Hauteur du convoyeur de sortie', group: 'Stockage à navettes', help: 'Hauteur (Z) du dessus des rouleaux du collecteur, mesurée depuis le sol. Les tours restent posées au sol.' });
+  fld('laneLength', 'Longueur des convoyeurs d\'entrée / sortie', 'number', { group: 'Stockage à navettes', unit: 'mm', min: 600, step: 50 });
+  fld('inSide', 'Position de l\'entrée (vue de face)', 'select', { group: 'Stockage à navettes', options: [['left', 'Entrée à gauche, sortie à droite'], ['right', 'Entrée à droite, sortie à gauche']] });
+  FL.convH = Object.assign({}, FL.z, { id: 'convH', label: 'Hauteur des convoyeurs d\'entrée / sortie', group: 'Stockage à navettes', help: 'Hauteur (Z) du dessus des rouleaux des convoyeurs d\'entrée et de sortie, mesurée depuis le sol. Les tours restent posées au sol.' });
   fld('returnOffset', 'Écart de la ligne de retour', 'number', { group: 'Stockage à navettes', unit: 'mm', min: 700, step: 50 });
   fld('endLength', 'Longueur du convoyeur de sortie', 'number', { group: 'Stockage à navettes', unit: 'mm', min: 300, step: 50 });
   // --- Murs
@@ -437,24 +439,41 @@
    * derrière un convoyeur collecteur qui évacue les caisses vers la sortie.
    * Ligne de retour optionnelle : les caisses qui y arrivent sont remises en stock.
    */
+  /*
+   * Stockage à navettes type OSR : chaque tour possède sa propre pré-zone avec
+   * un convoyeur d'ENTRÉE (caisses montées par l'élévateur d'entrée puis stockées)
+   * et un convoyeur de SORTIE (caisses déstockées par l'élévateur de sortie).
+   * Repère local : tours alignées suivant +X, convoyeurs de pré-zone suivant +Y,
+   * ports d'entrée / sortie sur la façade avant (y = 0).
+   */
   T.osr = {
     label: 'Stockage à navettes (type OSR)', cat: 'Stockage', conveyor: true, osr: true,
     defaults: Object.assign({}, CONV_DEF, {
       towers: 1, levels: 16, levelH: 380, rackLength: 8000, towerWidth: 2200, frontZone: 1500, fill: 75,
       towerRate: 400, formats: ['bac'], orientation: 0, maxCount: 0, startDelay: 0, jitter: 20,
-      returnLane: false, returnOffset: 1800, endLength: 1000, speed: 0.6, guideH: 60, color: '#5b6d82'
+      laneLength: 2500, inSide: 'left', width: 640, usefulWidth: 560, speed: 0.6, guideH: 60, color: '#5b6d82'
     }),
-    fields: ['name', 'x', 'y', 'rot', 'towers', 'convH', 'levels', 'levelH', 'rackLength', 'towerWidth', 'frontZone', 'fill', 'towerRate', 'formats', 'orientation', 'maxCount', 'startDelay', 'jitter',
-      'returnLane', 'returnOffset', 'endLength', 'width', 'usefulWidth', 'speed', 'running', 'gap', 'rollerDiam', 'rollerPitch', 'guideH', 'color', 'note'],
-    collectorLength: p => C.clamp(Math.round(p.towers), 1, 30) * p.towerWidth + p.endLength,
+    fields: ['name', 'x', 'y', 'rot', 'towers', 'convH', 'laneLength', 'inSide', 'levels', 'levelH', 'rackLength', 'towerWidth', 'frontZone', 'fill', 'towerRate', 'formats', 'orientation',
+      'maxCount', 'startDelay', 'jitter', 'width', 'usefulWidth', 'speed', 'running', 'gap', 'rollerDiam', 'rollerPitch', 'guideH', 'color', 'note'],
+    /** Abscisses locales des convoyeurs d'entrée et de sortie de la tour i. */
+    lanesX(p, i) {
+      const xc = (i + 0.5) * p.towerWidth, off = Math.min(p.towerWidth / 4, Math.max(p.width / 2 + 120, p.towerWidth * 0.23));
+      return p.inSide === 'right' ? { xin: xc + off, xout: xc - off, xc } : { xin: xc - off, xout: xc + off, xc };
+    },
+    /** Début des rayonnages (y local). */
+    rackY0: p => p.laneLength + p.frontZone,
     build: p => {
-      const L = T.osr.collectorLength(p);
-      const t = new C.Turtle(); t.line(L);
-      const m = { tracks: { main: { segs: t.segs } }, ports: [{ id: 'out', role: 'out', track: 'main', at: 'end', out: 0 }], diverts: [] };
-      if (p.returnLane) {
-        const r = new C.Turtle(L, -p.returnOffset, 0, Math.PI); r.line(L);
-        m.tracks.ret = { segs: r.segs, absorb: true };
-        m.ports.push({ id: 'in', role: 'in', track: 'ret', at: 'start', optional: true });
+      const n = C.clamp(Math.round(p.towers), 1, 30);
+      const m = { tracks: {}, ports: [], diverts: [] };
+      const L = p.laneLength + p.frontZone * 0.5;           // jusqu'à l'élévateur
+      for (let i = 0; i < n; i++) {
+        const k = i + 1, X = T.osr.lanesX(p, i);
+        const tin = new C.Turtle(X.xin, 0, 0, Math.PI / 2); tin.line(L);
+        const tout = new C.Turtle(X.xout, L, 0, -Math.PI / 2); tout.line(L);
+        m.tracks['in' + k] = { segs: tin.segs, absorb: true };
+        m.tracks['out' + k] = { segs: tout.segs };
+        m.ports.push({ id: 'e' + k, role: 'in', track: 'in' + k, at: 'start', optional: true });
+        m.ports.push({ id: 's' + k, role: 'out', track: 'out' + k, at: 'end', out: 0 });
       }
       return m;
     }
@@ -559,6 +578,7 @@
         if (id === 'main' || id === 'in') L += m.tracks[id].segs.reduce((a, s) => a + C.segLength(s), 0);
       }
       if (el.type === 'turntable') L = el.params.diameter;
+      if (el.type === 'osr') { L = 0; for (const id in m.tracks) L += m.tracks[id].segs.reduce((a, s) => a + C.segLength(s), 0); }
       return L;
     },
     /** Dénivelé géométrique (fin - origine) de la trajectoire principale. */

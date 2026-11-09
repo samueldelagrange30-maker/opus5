@@ -320,7 +320,12 @@
       this.ui = new C.UI(this);
       this.ui.build();
       this.project.on('changed', e => this.onChanged(e));
-      this.sim.on('state', () => { this.ui.refreshSim(true); if (!this.sim.active && this.director.active) this.director.stop(); });
+      this.sim.on('state', () => {
+        this.ui.refreshSim(true);
+        if (!this.sim.active && this.director.active) this.director.stop();
+        // le panneau de propriétés se (dé)verrouille au démarrage / à l'arrêt de la simulation
+        if (this._simWasActive !== this.sim.active) { this._simWasActive = this.sim.active; this.ui.refreshProps(); }
+      });
       this.viewport.on('mode', m => { if (m !== 'mission') this.endMissionPick(); this.ui.refreshToolbar(); });
       this.loadInitial();
       this.bindKeys();
@@ -805,15 +810,7 @@
           }
           const def = C.Types.get(el.type);
           if (!def.fields.includes(fid) && !(fid === 'z' && (def.fields.includes('zBase') || def.fields.includes('convH')))) continue;
-          if (el.type === 'osr' && ['towers', 'towerWidth', 'endLength'].includes(fid)) {
-            // les tours sont ajoutées / retirées côté début du collecteur : la sortie
-            // (et la ligne de retour) restent en place et raccordées
-            const outBefore = this.elementPorts(el, el).find(q => q.id === 'out').pos;
-            el.params[f.k] = fid === 'towers' ? Math.round(v) : v;
-            const outAfter = this.elementPorts(el, el).find(q => q.id === 'out').pos;
-            el.x = C.round(el.x + outBefore[0] - outAfter[0], 1); el.y = C.round(el.y + outBefore[1] - outAfter[1], 1);
-            continue;
-          }
+          if (el.type === 'osr' && fid === 'towers') { el.params.towers = Math.round(v); continue; }
           if (f.set) { f.set(el, v); continue; }
           if (f.attr) { el[f.k] = v; continue; }
           if (fid === 'width' && el.params.usefulWidth !== undefined) {
@@ -992,14 +989,17 @@
       let b = after(tt, 'o2', 'straight', { length: 1500 }); after(b, 'out', 'sink', { name: 'OUT-TT-B' });
       // obstacle / table / guide pour illustration
       add('table', { name: 'TAB-01' }, { x: 33500, y: 2200, z: 0, rot: 0 });
-      // stockage à navettes (2 tours) → poste de picking → évacuation
-      const osr = add('osr', { name: 'OSR-01', towers: 2, rackLength: 6000, towerRate: 250 }, { x: 22000, y: 2500, z: 800, rot: 0 });
-      e = after(osr, 'out', 'straight', { length: 1000 });
-      e = after(e, 'out', 'workstation', { processTime: 5, name: 'PICK-01' });
-      e = after(e, 'out', 'curve', { angle: 90, side: 'right' });
-      e = after(e, 'out', 'curve', { angle: 90, side: 'right' });
-      e = after(e, 'out', 'straight', { length: 1500 });
-      after(e, 'out', 'sink', { name: 'OUT-PICK' });
+      // stockage à navettes (2 tours) : chaque tour a son entrée et sa sortie de caisses ;
+      // boucle de picking par tour : sortie → poste → demi-tour → retour dans l'entrée de la même tour
+      const osr = add('osr', { name: 'OSR-01', towers: 2, towerWidth: 3000, rackLength: 5500, towerRate: 250 }, { x: 22000, y: 6000, z: 800, rot: 0 });
+      for (let k = 1; k <= 2; k++) {
+        const off = C.Types.defs.osr.lanesX(osr.params, 0);
+        e = after(osr, 's' + k, 'straight', { length: 1000 });
+        e = after(e, 'out', 'workstation', { processTime: 6, name: 'PICK-0' + k, opSide: 'left' });
+        e = after(e, 'out', 'straight', { length: 600 });
+        e = after(e, 'out', 'curve', { angle: 180, side: 'right', radius: off.xout - off.xc });
+        after(e, 'out', 'straight', { length: 4000 });
+      }
       // rayonnage double à 4 niveaux
       add('rack', { name: 'RK-01', rows: 2, levels: 4, bays: 3 }, { x: 33000, y: 8500, z: 0, rot: 90 });
       // cariste CACES 5 et palettes au sol

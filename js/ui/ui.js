@@ -723,11 +723,15 @@
         const slots = Math.max(1, Math.floor((p.rackLength - 100) / (Math.min(f.L, f.W) + 60)));
         kv('Tours / niveaux', `${n} / ${p.levels}`);
         kv('Hauteur des tours', C.fmt(el.z * 0 + C.Types.osrHeight(p)) + ' mm');
-        kv('Emprise', `${C.fmt(n * p.towerWidth)} × ${C.fmt(p.width / 2 + p.frontZone + p.rackLength + (p.returnLane ? p.returnOffset + p.width / 2 : p.width / 2))} mm`);
+        kv('Emprise', `${C.fmt(n * p.towerWidth)} × ${C.fmt(p.laneLength + p.frontZone + p.rackLength)} mm`);
+        kv('Entrées / sorties', `${n} convoyeur${n > 1 ? 's' : ''} d'entrée (ports e1…e${n}) · ${n} de sortie (ports s1…s${n})`);
         kv('Emplacements de caisses', C.fmt(n * 2 * p.levels * slots) + ` (allée ${C.fmt(p.towerWidth - 2 * rd)} mm)`);
         kv('Débit de sortie total', C.fmt(n * p.towerRate) + ' caisses/h');
         const node = net.node(el.id);
-        if (a.sim.active && node && node.rt) kv('Caisses sorties / remises en stock', `${node.rt.spawned} / ${node.rt.stored || 0}`);
+        if (a.sim.active && node && node.rt) {
+          kv('Caisses sorties / entrées en stock', `${node.rt.spawned} / ${node.rt.stored || 0}`);
+          for (let i = 0; i < n; i++) kv(`Tour ${i + 1} : sorties / entrées`, `${(node.rt.towerOut || [])[i] || 0} / ${(node.rt.towerIn || [])[i] || 0}`);
+        }
       }
       const node = net.node(el.id);
       const L = C.Types.devLength(el);

@@ -582,31 +582,28 @@
       rt.nextSpawn = this.t + base * (1 + j * (this.rng.next() * 2 - 1));
     }
 
-    /** Stockage à navettes : chaque tour dépose des caisses sur le collecteur. */
+    /** Stockage à navettes : chaque tour déstocke des caisses sur SON convoyeur de sortie. */
     runOSR(node) {
       const el = node.el, p = el.params, rt = node.rt;
       if (this.t < (+p.startDelay || 0)) return;
-      const tr = node.tracks.main;
       const ids = Array.isArray(p.formats) && p.formats.length ? p.formats : ['bac'];
-      const v = Math.max(0.05, +p.speed || 0.5) * 1000;
       rt.towerNext.forEach((next, i) => {
         if (this.t < next) return;
         if (+p.maxCount > 0 && rt.spawned >= +p.maxCount) return;
         if (p.running === false) return;
+        const tr = node.tracks['out' + (i + 1)];
+        if (!tr) return;
         const fid = ids[Math.floor(this.rng.next() * ids.length) % ids.length];
         const f = this.formats.find(x => x.id === fid) || this.formats[0];
         const spec = { name: f.name, ref: f.ref, formatName: f.name, formatId: f.id, L: f.L, W: f.W, H: f.H, weight: f.weight, color: f.color, speed: 0, kind: f.kind || 'box' };
         const ori = (+p.orientation || 0) * C.DEG;
-        const half = lenAlong(spec, ori) / 2, gap = this.gapOf(tr);
-        const s = (i + 0.5) * p.towerWidth;
-        // fenêtre libre sur le collecteur (y compris les caisses qui arrivent de l'amont)
-        const lookBack = v * 0.6;
-        for (const o of tr.cartons) {
-          if (o.s + o.half > s - half - gap - lookBack && o.s - o.half < s + half + gap) { this.stats.spawnBlocked++; return; }
-        }
+        const half = lenAlong(spec, ori) / 2, s = half + 5;
+        const first = this.firstFrom(tr, 0);
+        if (first && first.s - first.half < s + half + this.gapOf(tr)) { this.stats.spawnBlocked++; return; }
         const c = this.spawn(tr, s, spec, ori, el.name + ' · tour ' + (i + 1));
         c.v = +p.speed || 0;
         rt.spawned++;
+        rt.towerOut = rt.towerOut || []; rt.towerOut[i] = (rt.towerOut[i] || 0) + 1;
         const base = 3600 / Math.max(1, +p.towerRate || 300);
         const j = C.clamp(+p.jitter || 0, 0, 100) / 100;
         rt.towerNext[i] = this.t + base * (1 + j * (this.rng.next() * 2 - 1));
@@ -669,7 +666,11 @@
       for (let it = 0; it < 4; it++) {
         const tr = c.track, el = tr.el;
         if (((el.type === 'sink' && tr.id === 'main') || tr.absorb) && c.s >= tr.length - c.half - 1) {
-          if (tr.absorb) tr.node.rt.stored = (tr.node.rt.stored || 0) + 1;
+          if (tr.absorb) {
+            const rt2 = tr.node.rt; rt2.stored = (rt2.stored || 0) + 1;
+            const ti = +String(tr.id).replace(/\D/g, '') - 1;
+            if (ti >= 0) { rt2.towerIn = rt2.towerIn || []; rt2.towerIn[ti] = (rt2.towerIn[ti] || 0) + 1; }
+          }
           this.removeCarton(c, true); return;
         }
         const { exitS, next } = this.exitOf(c);

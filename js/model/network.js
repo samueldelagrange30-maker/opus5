@@ -239,7 +239,7 @@
         res.push({ tf, cx: 0, cy: 0, L: sz.L, W: sz.W, z0: 0, z1: sz.H, label: e.name });
       }
       if (e.type === 'osr') {
-        const n = C.clamp(Math.round(p.towers), 1, 30), y0 = p.width / 2 + p.frontZone;
+        const n = C.clamp(Math.round(p.towers), 1, 30), y0 = C.Types.defs.osr.rackY0(p);
         res.push({ tf, cx: n * p.towerWidth / 2, cy: y0 + p.rackLength / 2, L: n * p.towerWidth, W: p.rackLength, z0: -1e5, z1: 1e5, label: e.name + ' (tours)' });
       }
       if (e.type === 'mezzanine') {

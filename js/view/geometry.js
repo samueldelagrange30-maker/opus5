@@ -917,20 +917,31 @@
   /* ---------------- Stockage à navettes (type OSR) ---------------- */
   builders.osr = (el, m, g) => {
     const p = el.params;
-    // convoyeur collecteur et ligne de retour
-    for (const id of ['main', 'ret']) {
-      if (!m.tracks[id]) continue;
-      const path = new C.Path(m.tracks[id].segs, null, false), fr = frames(path, 3);
-      addSurface(g, path, fr, p); addFrames(g, fr, p); addGuides(g, fr, path, p); addLegs(g, path, p, el);
-      addArrows(g, path, p, 8);
-      if (id === 'main') addMotor(g, path, p);
-    }
     const n = C.clamp(Math.round(p.towers), 1, 30), tw = p.towerWidth, Ld = p.rackLength;
     const rd = Math.min(700, (tw - 600) / 2), aisle = tw - 2 * rd;
-    const y0 = p.width / 2 + p.frontZone, y1 = y0 + Ld;
+    const y0 = C.Types.defs.osr.rackY0(p), y1 = y0 + Ld;
     const zf = floorLocal(el, tw / 2, (y0 + y1) / 2, 0);
     const H = C.Types.osrHeight(p);
     const nl = Math.max(1, Math.round(p.levels));
+    const liftY = p.laneLength + p.frontZone * 0.5;
+    // convoyeurs de pré-zone : entrée (vers la tour) et sortie (vers l'avant), un couple par tour
+    for (let i = 0; i < n; i++) {
+      for (const id of ['in' + (i + 1), 'out' + (i + 1)]) {
+        const tr = m.tracks[id];
+        if (!tr) continue;
+        const path = new C.Path(tr.segs, null, false), fr = frames(path, 3);
+        const lp = Object.assign({}, p, { color: id.startsWith('in') ? '#2e86de' : '#e67e22' });
+        addSurface(g, path, fr, lp); addFrames(g, fr, lp); addGuides(g, fr, path, lp); addLegs(g, path, lp, el);
+        addArrows(g, path, lp, 8);
+        addMotor(g, path, lp, id.startsWith('in') ? path.length - 300 : 300);
+      }
+      // panneaux ENTRÉE / SORTIE au-dessus des convoyeurs
+      const X = C.Types.defs.osr.lanesX(p, i);
+      for (const [x, txt, col] of [[X.xin, 'ENTRÉE ' + (i + 1), '#1f5fa8'], [X.xout, 'SORTIE ' + (i + 1), '#c0602a']]) {
+        const lab = C.textSprite && C.textSprite(txt, { height: 0.22, color: '#ffffff', bg: col, bold: true });
+        if (lab) { lab.center.set(0.5, 0); lab.position.set(x * M, (p.laneLength * 0.35) * M, 700 * M); tag(lab, 'body'); g.add(lab); }
+      }
+    }
     const frame = MAT.color('#c3cad3'), clad = new THREE.MeshStandardMaterial({ color: new THREE.Color(p.color || '#5b6d82'), transparent: true, opacity: 0.28, side: THREE.DoubleSide, depthWrite: false });
     clad.userData.owned = true;
     const posts = [], shelves = [], totes = [], lifts = [];
@@ -952,37 +963,32 @@
           }
         }
       }
-      // rails de navettes et navettes (une par niveau)
       for (let k = 0; k < nl; k++) {
         const z = zf + 300 + k * p.levelH;
         for (const sx of [xa + rd + 20, xa + tw - rd - 20]) shelves.push({ x: sx, y: (y0 + y1) / 2, z: z - 10, l: 30, w: Ld, h: 30 });
         shuttles.push({ i, k, x: xc, z: z + 40, l: aisle - 80, w: 650, h: 110 });
       }
-      // élévateur en pré-zone + table de transfert vers le collecteur
-      const ly = p.width / 2 + p.frontZone * 0.55;
-      for (const dx of [-aisle / 2 + 60, aisle / 2 - 60]) posts.push({ x: xc + dx, y: ly + 250, z: zf + H / 2, l: 90, w: 90, h: H });
-      lifts.push({ i, x: xc, y: ly, zMin: -40, zMax: zf + 300 + (nl - 1) * p.levelH });
-      const tp = new C.Path(new C.Turtle(xc, p.width / 2, 0, Math.PI / 2).line(p.frontZone * 0.55).segs, null, false);
-      addRollers(g, tp, Object.assign({}, p, { usefulWidth: Math.min(500, aisle - 100) }), { width: Math.min(500, aisle - 100) });
-      addFrames(g, frames(tp), Object.assign({}, p, { width: Math.min(620, aisle), usefulWidth: Math.min(500, aisle - 100), frameH: 120 }));
-      // numéro de tour
+      // deux élévateurs de pré-zone (entrée et sortie) dans l'axe des convoyeurs
+      const X = C.Types.defs.osr.lanesX(p, i);
+      for (const [lx, kind] of [[X.xin, 'in'], [X.xout, 'out']]) {
+        for (const dx of [-p.width / 2 - 60, p.width / 2 + 60]) posts.push({ x: lx + dx, y: liftY + 350, z: zf + H / 2, l: 90, w: 90, h: H });
+        lifts.push({ i: i * 2 + (kind === 'in' ? 0 : 1), x: lx, y: liftY, zMin: -40, zMax: zf + 300 + (nl - 1) * p.levelH, w: p.width - 40 });
+      }
       const lab = C.textSprite && C.textSprite('Tour ' + (i + 1), { height: 0.32, color: '#ffffff', bg: 'rgba(30,40,55,0.85)' });
       if (lab) { lab.center.set(0.5, 0); lab.position.set(xc * M, (y0 - 60) * M, (zf + H + 80) * M); tag(lab, 'body'); g.add(lab); }
     }
     boxInstances(g, posts, frame, 'body');
     boxInstances(g, shelves, MAT.plate(), 'body');
     boxInstances(g, totes, C.cartonMaterial ? C.cartonMaterial(fmt.color) : MAT.color(fmt.color), 'body');
-    // navettes animées
-    const shIm = boxInstances(g, shuttles.map(s => Object.assign({}, s, { y: (y0 + y1) / 2 })), MAT.glow(0xf39c12), 'body');
-    // nacelles d'élévateur animées
-    const liftIm = boxInstances(g, lifts.map(l => ({ x: l.x, y: l.y, z: 0, l: aisle - 140, w: 650, h: 80 })), MAT.glow(0x2ecc71), 'body');
+    const shIm = boxInstances(g, shuttles.map(s2 => Object.assign({}, s2, { y: (y0 + y1) / 2 })), MAT.glow(0xf39c12), 'body');
+    const liftIm = boxInstances(g, lifts.map(l => ({ x: l.x, y: l.y, z: 0, l: l.w, w: 650, h: 80 })), MAT.glow(0x2ecc71), 'body');
     g.userData.osr = { shuttles, shIm, lifts, liftIm, y0, y1, aisle };
     // habillage : bardage latéral translucide, toiture, bandeau de façade
-    const W = n * tw;
-    for (const x of [0, W]) g.add(box(10, Ld, H, x, (y0 + y1) / 2, zf + H / 2, clad, 'structure'));
+    const W = n * tw, yb = p.laneLength;
+    for (const x of [0, W]) g.add(box(10, y1 - yb, H, x, (yb + y1) / 2, zf + H / 2, clad, 'structure'));
     g.add(box(W, 10, H, W / 2, y1, zf + H / 2, clad, 'structure'));
-    g.add(box(W + 40, Ld + 40, 30, W / 2, (y0 + y1) / 2, zf + H + 15, MAT.color(p.color || '#5b6d82'), 'structure'));
-    g.add(box(W + 40, 40, 500, W / 2, y0 - 20, zf + H - 250, MAT.color(p.color || '#5b6d82'), 'structure'));
+    g.add(box(W + 40, y1 - yb + 40, 30, W / 2, (yb + y1) / 2, zf + H + 15, MAT.color(p.color || '#5b6d82'), 'structure'));
+    g.add(box(W + 40, 40, 500, W / 2, yb - 20, zf + H - 250, MAT.color(p.color || '#5b6d82'), 'structure'));
   };
   /** Animation des navettes et élévateurs (appelée pendant la simulation). */
   C.animateOSR = function (g, t) {
@@ -997,7 +1003,7 @@
     o.shIm.instanceMatrix.needsUpdate = true;
     o.lifts.forEach((l, idx) => {
       const u = 0.5 - 0.5 * Math.cos(t * 0.9 + l.i * 1.3);
-      _m4.makeScale((o.aisle - 140) * M, 650 * M, 80 * M); _m4.setPosition(l.x * M, l.y * M, (l.zMin + (l.zMax - l.zMin) * u) * M);
+      _m4.makeScale((l.w || o.aisle - 140) * M, 650 * M, 80 * M); _m4.setPosition(l.x * M, l.y * M, (l.zMin + (l.zMax - l.zMin) * u) * M);
       o.liftIm.setMatrixAt(idx, _m4);
     });
     o.liftIm.instanceMatrix.needsUpdate = true;

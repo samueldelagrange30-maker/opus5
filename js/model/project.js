@@ -137,7 +137,7 @@
     /* --------------------------- sérialisation --------------------------- */
     toJSON(network) {
       return {
-        format: 'convoy3d-project', version: 2, app: 'Convoy3D ' + C.VERSION,
+        format: 'convoy3d-project', version: 3, app: 'Convoy3D ' + C.VERSION,
         id: this.id, name: this.name, created: this.created, saved: Date.now(),
         settings: this.settings, formats: this.formats, elements: this.elements,
         cartons: this.cartons, measures: this.measures, camera: this.camera,

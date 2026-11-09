@@ -65,7 +65,7 @@
         }
         if (e.type === 'osr') {
           const n = C.clamp(Math.round(p.towers), 1, 30);
-          rect(tf, n * p.towerWidth / 2, p.width / 2 + p.frontZone / 2 + p.rackLength / 2, n * p.towerWidth, p.frontZone + p.rackLength, INFLATE);
+          rect(tf, n * p.towerWidth / 2, p.laneLength + (p.frontZone + p.rackLength) / 2, n * p.towerWidth, p.frontZone + p.rackLength, INFLATE);
         }
         continue;
       }
