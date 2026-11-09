@@ -60,6 +60,16 @@
           node.tracks[id] = tr;
           this.tracks.push(tr);
         }
+        for (const id in model.tracks) {
+          const mt = model.tracks[id], tr = node.tracks[id];
+          tr.pocket = mt.pocket || null; tr.pocketIdx = mt.pocketIdx; tr.exitOf = mt.exitOf || null;
+          if (mt.endTo && node.tracks[mt.endTo.track]) {
+            const tg = node.tracks[mt.endTo.track];
+            tr.endLink = { track: tg, s0: mt.endTo.s };
+            tr.internalEnd = true;
+            if (mt.endTo.merge) { tr.mergeInto = true; tr.target = tg; tr.sJoin = mt.endTo.s; tg.bridges.push(tr); }
+          }
+        }
         for (const mp of model.ports) {
           const tr = node.tracks[mp.track];
           if (!tr) continue;

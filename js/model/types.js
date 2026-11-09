@@ -561,37 +561,66 @@
    */
   T.gtp = {
     label: 'Poste GTP (bac → carton)', cat: 'Équipements', conveyor: true,
-    defaults: Object.assign({}, CONV_DEF, { length: 6000, tableLength: 900, pickRate: 600, itemsPerTote: 2, itemsPerOrder: 6, articleSize: 'm', width: 560, usefulWidth: 500, speed: 0.4, guideH: 0, color: '#2b2f35' }),
+    defaults: Object.assign({}, CONV_DEF, { length: 6000, tableLength: 900, pickRate: 600, itemsPerTote: 2, itemsPerOrder: 1, articleSize: 'm', width: 560, usefulWidth: 500, speed: 0.4, guideH: 0, color: '#2b2f35' }),
     fields: ['name', 'x', 'y', 'z', 'rot', 'pickRate', 'itemsPerTote', 'itemsPerOrder', 'articleSize', 'length', 'tableLength', 'width', 'usefulWidth', 'speed', 'running', 'gap', 'rollerDiam', 'rollerPitch', 'color', 'note'],
     articleDims: s => s === 's' ? [120, 80, 60] : s === 'l' ? [250, 180, 120] : [180, 120, 90],
     /**
      * Implantation (repère local, X = longueur du poste, opérateur côté −Y) :
-     *   table d'entrée | aile gauche (2 alvéoles) | partie centrale (2 alvéoles + écrans) | aile droite (2 alvéoles) | table de sortie
-     * Convoyeur cartons : rangée avant (y = yC) sur toute la longueur, tables comprises.
-     * Convoyeur bacs : rangée arrière interne (y = yT), entre les deux tables.
+     *   table d'entrée | aile gauche (2 alvéoles cartons) | centre (2 alvéoles bacs) | aile droite (2 alvéoles cartons) | table de sortie
+     * - Bacs : convoyeur arrière (y = yB) ; chaque bac entre PAR L'ARRIÈRE dans une alvéole
+     *   centrale libre (1 bac maxi), puis repart en arrière sur le convoyeur après le prélèvement.
+     * - Cartons : convoyeur bas dans le meuble (z = zLow) ; un élévateur monte chaque carton
+     *   PAR LE BAS dans une alvéole latérale libre (1 carton maxi), puis le redescend une fois servi.
      */
     layout(p) {
-      const L = C.clamp(+p.length || 6000, 3600, 20000), tl = C.clamp(+p.tableLength || 900, 400, 3000);
-      const D = 1200, yC = -270, yT = 300, cw = 1600;
+      const L = C.clamp(+p.length || 6000, 4800, 20000), tl = C.clamp(+p.tableLength || 900, 600, 3000);
+      const D = 1200, yC = -270, yT = 300, yB = D / 2 + 350, yB2 = yB + 700, zLow = -650, cw = 1600;
       const xc0 = tl + (L - cw) / 2, xc1 = xc0 + cw, wl = (L - cw) / 2;
+      const a = tl - 450, run = 500, ramp = Math.hypot(run, -zLow), ang = Math.atan2(-zLow, run);
       return {
-        L, tl, D, yC, yT, cw, xc0, xc1, wl, total: L + 2 * tl,
-        xCtn: tl + wl * 0.73,            // alvéole carton présentée à l'opérateur (aile gauche, côté centre)
-        xTote: xc0 + cw * 0.3            // alvéole bac (partie centrale)
+        L, tl, D, yC, yT, yB, yB2, zLow, cw, xc0, xc1, wl, total: L + 2 * tl, a, run, ramp, ang,
+        totes: [xc0 + cw * 0.3, xc0 + cw * 0.7],
+        ctns: [tl + wl * 0.28, tl + wl * 0.72, xc1 + wl * 0.28, xc1 + wl * 0.72],
+        /** abscisse curviligne du convoyeur bas des cartons au droit de x (partie basse) */
+        sCtn(x) { return a + ramp + (x - (a + run)); }
       };
     },
-    stops(p) { const Y = T.gtp.layout(p); return { ctn: Y.xCtn, tote: Y.xTote - Y.tl }; },
     build: p => {
       const Y = T.gtp.layout(p);
-      const t1 = new C.Turtle(Y.tl, Y.yT, 0, 0); t1.line(Y.L);
-      const t2 = new C.Turtle(0, Y.yC, 0, 0); t2.line(Y.total);
-      return {
-        tracks: { tote: { segs: t1.segs }, ctn: { segs: t2.segs } },
-        ports: [
-          { id: 'ti', role: 'in', track: 'tote', at: 'start' }, { id: 'to', role: 'out', track: 'tote', at: 'end', out: 0 },
-          { id: 'ci', role: 'in', track: 'ctn', at: 'start' }, { id: 'co', role: 'out', track: 'ctn', at: 'end', out: 0 }
-        ], diverts: []
-      };
+      const m = { tracks: {}, ports: [], diverts: [] };
+      // convoyeurs arrière des bacs : arrivée (vers les alvéoles) et départ (bacs servis)
+      const tb = new C.Turtle(Y.tl, Y.yB, 0, 0); tb.line(Y.totes[1] + 60 - Y.tl);
+      m.tracks.back = { segs: tb.segs, endMode: 'flush' };
+      // départ des bacs servis : convoyeur bas interne (rangée arrière) qui remonte en bout de poste
+      const xs = Y.xc0 + 40, xe = Y.tl + Y.L;
+      const tb2 = new C.Turtle(xs, Y.yT, Y.zLow, 0); tb2.line(xe - Y.run - 150 - xs); tb2.line(Y.ramp, Y.ang); tb2.line(150);
+      m.tracks.back2 = { segs: tb2.segs };
+      // convoyeur bas des cartons : table d'entrée → descente dans le meuble → remontée → table de sortie
+      const tc = new C.Turtle(0, Y.yC, 0, 0);
+      tc.line(Y.a); tc.line(Y.ramp, -Y.ang); tc.line(Y.total - 2 * (Y.a + Y.run)); tc.line(Y.ramp, Y.ang); tc.line(Y.a);
+      m.tracks.ctn = { segs: tc.segs };
+      // alvéoles bacs : entrée par l'arrière, sortie en arrière vers le convoyeur
+      Y.totes.forEach((x, i) => {
+        const k = i + 1;
+        const tin = new C.Turtle(x, Y.yB, 0, -Math.PI / 2); tin.line(Y.yB - Y.yT);
+        m.tracks['p' + k] = { segs: tin.segs, yawMode: 'keep', endMode: 'center', pocket: 'tote', pocketIdx: i, endTo: { track: 'q' + k, s: 0 } };
+        m.tracks['q' + k] = {
+          segs: [{ type: 'line', a: [x, Y.yT, 0], b: [x + 300, Y.yT, Y.zLow] }],
+          yawMode: 'keep', exitOf: 'tote', pocketIdx: i, endTo: { track: 'back2', s: x + 300 - (Y.xc0 + 40), merge: true }
+        };
+        m.diverts.push({ track: 'back', s: x - Y.tl, to: 'p' + k, out: k });
+      });
+      // alvéoles cartons : montée par le bas, redescente puis retour sur le convoyeur bas
+      Y.ctns.forEach((x, i) => {
+        const k = i + 1;
+        const up = new C.Turtle(x, Y.yC, Y.zLow, 0); up.rise(-Y.zLow);
+        m.tracks['u' + k] = { segs: up.segs, yawMode: 'keep', endMode: 'center', pocket: 'ctn', pocketIdx: i, endTo: { track: 'd' + k, s: 0 } };
+        m.tracks['d' + k] = { segs: [{ type: 'line', a: [x, Y.yC, 0], b: [x + 300, Y.yC, Y.zLow] }], yawMode: 'keep', exitOf: 'ctn', pocketIdx: i, endTo: { track: 'ctn', s: Y.sCtn(x + 300), merge: true } };
+        m.diverts.push({ track: 'ctn', s: Y.sCtn(x), to: 'u' + k, out: k + 2 });
+      });
+      m.ports.push({ id: 'ti', role: 'in', track: 'back', at: 'start' }, { id: 'to', role: 'out', track: 'back2', at: 'end', out: 0 },
+        { id: 'ci', role: 'in', track: 'ctn', at: 'start' }, { id: 'co', role: 'out', track: 'ctn', at: 'end', out: 0 });
+      return m;
     }
   };
   fld('tableLength', 'Longueur des tables d\'extrémité', 'number', { group: 'Poste GTP', unit: 'mm', min: 400, max: 3000, step: 50 });

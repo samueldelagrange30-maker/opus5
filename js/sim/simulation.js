@@ -161,8 +161,6 @@
     return true;
   }
 
-  /** Abscisse d'arrêt (présentation à l'opérateur) sur une voie du poste GTP. */
-  const gtpStop = (el, tr) => C.Types.defs.gtp.stops(el.params)[tr.id] || tr.length * 0.5;
   /** Le carton doit-il s'arrêter au poste de cet élément ? */
   const isStation = (el, c) => el.type === 'workstation' || (el.type === 'labeler' && el.params.labelMode !== 'fly') || (el.type === 'closer' && (!c || c.open));
 
@@ -376,6 +374,7 @@
       rt.entered++;
       c.route = null;
       if (node.def.routing) c.route = this.chooseRoute(c, node);
+      if (node.el.type === 'gtp') c.route = this.gtpAssign(c, node);
       c.path.push(node.el.name);
       if (c.path.length > 60) c.path.shift();
     }
@@ -467,6 +466,20 @@
     /** Autorisation d'entrée dans l'élément suivant (capacité, fusion). */
     entryGate(c, cur, next) {
       const nt = next.track, nn = nt.node;
+      if (nt.pocket) {
+        // une alvéole n'accepte qu'un seul contenant (entrée + sortie de l'alvéole libres)
+        const pair = nt.endLink && nt.endLink.track;
+        return !nt.cartons.some(o => o !== c) && !(pair && pair.cartons.some(o => o !== c));
+      }
+      if (cur.mergeInto && next.track === cur.target) {
+        // retour d'une alvéole sur le convoyeur : fenêtre libre au point de jonction
+        const tg = cur.target, sj = cur.sJoin, gap = this.gapOf(tg);
+        const v = Math.max(0.05, +tg.el.params.speed || 0.3) * 1000;
+        // les cartons en amont cèdent le passage (réservation) : seule la zone de jonction doit être libre
+        for (const o of tg.cartons) if (o.s + o.half > sj - c.half - gap && o.s - o.half < sj + c.half + gap) return false;
+        void v;
+        return true;
+      }
       if (nn === cur.node && !nt.isBridge) return true;
       const rt = nn.rt;
       const cap = nn.def.capacity;
@@ -504,7 +517,10 @@
       if (ahead) { const l = ahead.s - ahead.half - half - gap; if (l < lim) { lim = l; c.reason = 'accumulation'; } }
       // cartons en cours de fusion (réservation du point de jonction)
       for (const b of tr.bridges) for (const o of b.cartons) {
-        if (b.sJoin >= c.s - 1) { const l = b.sJoin - o.half - half - gap; if (l < lim) { lim = l; c.reason = 'priorité jonction'; } }
+        // on cède le passage seulement si l'on peut encore s'arrêter avant la jonction ;
+        // un carton déjà engagé dans la zone de jonction la dégage
+        const l = b.sJoin - o.half - half - gap;
+        if (b.sJoin >= c.s - 1 && l >= c.s - 1 && l < lim) { lim = l; c.reason = 'priorité jonction'; }
       }
       // obstacles
       for (const bs of tr.blocks) if (bs > c.s + half - 30) { const l = bs - half - 10; if (l < lim) { lim = l; c.reason = 'obstacle'; } break; }
@@ -513,10 +529,10 @@
         const ss = tr.length * C.clamp(+p.stopPos || 0.5, 0.05, 0.95);
         if (c.s <= ss + 0.5 && ss < lim) { lim = ss; c.reason = el.type === 'labeler' ? 'étiquetage' : el.type === 'closer' ? 'fermeture' : 'poste'; }
       }
-      // poste GTP : bac et carton s'arrêtent face à l'opérateur jusqu'à la fin du transfert
-      if (el.type === 'gtp' && !c.done[el.id]) {
-        const ss = gtpStop(el, tr);
-        if (c.s <= ss + 0.5 && ss < lim) { lim = ss; c.reason = tr.id === 'tote' ? 'bac au poste GTP' : 'carton au poste GTP'; }
+      // poste GTP : bac / carton maintenu dans son alvéole jusqu'à la fin du prélèvement
+      if (tr.pocket && !c.served) {
+        const ss = tr.length;
+        if (ss < lim) { lim = ss; c.reason = tr.pocket === 'tote' ? 'bac en alvéole' : 'carton en alvéole'; }
       }
       // zones d'accumulation sans pression
       if (el.type === 'accumulation' && tr.id === 'main') {
@@ -693,31 +709,50 @@
       });
     }
 
+    /** Choix d'une alvéole libre (bac → alvéole centrale, carton → alvéole latérale). */
+    gtpAssign(c, node) {
+      const tr = c.track;
+      if (tr.id !== 'back' && tr.id !== 'ctn') return null;
+      const rt = node.rt; rt.res = rt.res || {};
+      let best = null, bestScore = Infinity;
+      for (const dv of tr.diverts) {
+        if (dv.s < c.s - 1) continue;
+        const pk = dv.to, pair = pk.endLink && pk.endLink.track;
+        const load = pk.cartons.length + (pair ? pair.cartons.length : 0) + (rt.res[pk.key] || 0);
+        const score = load * 100000 + dv.s;            // alvéole libre la plus proche
+        if (score < bestScore) { bestScore = score; best = dv; }
+      }
+      if (best) rt.res[best.to.key] = (rt.res[best.to.key] || 0) + 1;
+      return best;
+    }
     /**
-     * Poste GTP : quand un bac et un carton sont présentés, l'opérateur transfère
-     * min(articles par bac, articles restants) à la cadence réglée (articles/h).
+     * Poste GTP : l'opérateur prend un article dans un bac présent dans une alvéole
+     * centrale et le dépose dans un carton présent dans une alvéole latérale, à la
+     * cadence réglée (articles/h). Le bac repart après « articles par bac » prélevés,
+     * le carton repart après « articles par carton » reçus.
      */
     runGTP(node) {
-      const el = node.el, p = el.params, rt = node.rt, id = el.id;
-      const tt = node.tracks.tote, tc = node.tracks.ctn;
-      if (!tt || !tc) return;
-      const at = (tr, c) => !c.removed && !c.done[id] && c.track === tr && Math.abs(c.s - gtpStop(el, tr)) < 1;
+      const el = node.el, p = el.params, rt = node.rt;
+      const present = kind => Object.values(node.tracks).filter(t => t.pocket === kind)
+        .map(t => t.cartons.find(c => !c.removed && !c.served && Math.abs(c.s - t.length) < 1)).filter(Boolean);
       if (rt.busy) {
         const b = rt.busy;
         if (b.tote.removed || b.ctn.removed) { rt.busy = null; return; }
         if (this.t < b.until) return;
         C.addArticles(b.ctn, b.n, C.Types.defs.gtp.articleDims(p.articleSize));
+        b.tote.taken = (b.tote.taken || 0) + b.n;
         rt.picks = (rt.picks || 0) + b.n;
-        b.tote.done[id] = true; rt.totes = (rt.totes || 0) + 1;
-        if ((b.ctn.items || 0) >= Math.max(1, +p.itemsPerOrder || 1)) { b.ctn.done[id] = true; rt.orders = (rt.orders || 0) + 1; }
+        if (b.tote.taken >= Math.max(1, +p.itemsPerTote || 1)) { b.tote.served = true; b.tote.done[el.id] = true; rt.totes = (rt.totes || 0) + 1; }
+        if ((b.ctn.items || 0) >= Math.max(1, +p.itemsPerOrder || 1)) { b.ctn.served = true; b.ctn.done[el.id] = true; rt.orders = (rt.orders || 0) + 1; }
         rt.busy = null;
         return;
       }
       if (p.running === false) return;
-      const tote = tt.cartons.find(c => at(tt, c)), ctn = tc.cartons.find(c => at(tc, c));
-      if (!tote || !ctn) { rt.waitTote = !tote; rt.waitCtn = !ctn; return; }
-      const remaining = Math.max(1, (+p.itemsPerOrder || 1) - (ctn.items || 0));
-      const n = Math.min(Math.max(1, Math.round(+p.itemsPerTote || 1)), remaining);
+      const totes = present('tote'), ctns = present('ctn');
+      rt.waitTote = !totes.length; rt.waitCtn = !ctns.length;
+      if (!totes.length || !ctns.length) return;
+      const tote = totes[0], ctn = ctns[0];
+      const n = Math.max(1, Math.min(Math.max(1, Math.round(+p.itemsPerTote || 1)) - (tote.taken || 0), Math.max(1, +p.itemsPerOrder || 1) - (ctn.items || 0)));
       rt.busy = { tote, ctn, n, start: this.t, until: this.t + n * 3600 / Math.max(1, +p.pickRate || 600) };
     }
 
@@ -759,7 +794,7 @@
       else if (adv < want * 0.5) { c.state = 'blocked'; c.wait += dt; tr.node.rt.blockedNow++; if (p.surface === 'freerollers') c.v = 0; }
       else { c.state = 'moving'; c.reason = ''; }
       // début de préparation / d'étiquetage
-      if (el.type === 'gtp' && !c.done[el.id] && Math.abs(c.s - gtpStop(el, tr)) < 0.6) { c.state = 'process'; c.reason = tr.id === 'tote' ? 'prélèvement' : 'remplissage'; }
+      if (tr.pocket && !c.served && Math.abs(c.s - tr.length) < 0.6) { c.state = 'process'; c.reason = tr.pocket === 'tote' ? 'prélèvement dans le bac' : 'remplissage du carton'; }
       if (isStation(el, c) && tr.id === 'main' && !c.done[el.id] && !c.dwellUntil) {
         const ss = tr.length * C.clamp(+p.stopPos || 0.5, 0.05, 0.95);
         if (Math.abs(c.s - ss) < 0.6) {
@@ -786,6 +821,7 @@
           }
           this.removeCarton(c, true); return;
         }
+        if (tr.pocket && !c.served) return;
         const { exitS, next } = this.exitOf(c);
         if (!next || c.s < exitS - 1e-6) return;
         if (next.turn && !c.turnDone) {
@@ -798,6 +834,11 @@
         const extra = Math.max(0, c.s - exitS);
         const fromNode = tr.node;
         this.enterTrack(c, next.track, next.s0 + extra);
+        if (next.track.pocket) {
+          // arrivée dans l'alvéole : réservation consommée, l'aiguillage est terminé
+          const rt3 = next.track.node.rt; if (rt3.res && rt3.res[next.track.key] > 0) rt3.res[next.track.key]--;
+          c.route = null; c.served = false;
+        }
         if (next.track.node !== fromNode) { this.leaveNode(c, fromNode); this.enterNode(c, next.track.node); }
       }
     }

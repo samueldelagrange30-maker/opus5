@@ -796,6 +796,7 @@
         }
         // jonctions entrantes
         for (const k in node.tracks) for (const b of node.tracks[k].bridges) {
+          if (!b.fromPort) continue;
           const r = h('div', { class: 'link-row ok clickable', html: `<span class="pdot"></span><span>Jonction</span><b>← ${C.escape(b.fromPort.el.name)} à ${C.fmt(b.sJoin)} mm</b>` });
           r.addEventListener('click', () => a.select([b.fromPort.el.id]));
           links.appendChild(r);
