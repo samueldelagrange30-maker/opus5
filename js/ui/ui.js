@@ -267,7 +267,7 @@
       this.closeMenus();
       const cat = C.LIBRARY.find(c => c.cat === 'Équipements');
       const pop = h('div', { class: 'tb-pop dropdown' });
-      for (const it of cat.items.concat(C.LIBRARY.find(c => c.cat === 'Entrées / sorties').items)) {
+      for (const it of cat.items.concat(C.LIBRARY.find(c => c.cat === 'Entrées / sorties').items, C.LIBRARY.find(c => c.cat === 'Structures et divers').items)) {
         const b = h('button', { class: 'dd-item', html: `<span class="dd-ico">${C.libIcon(it.icon)}</span><span class="dd-label">${C.escape(it.label)}</span>` });
         b.addEventListener('click', () => { this.closeMenus(); this.app.addFromLibrary(it.id); });
         pop.appendChild(b);
@@ -570,6 +570,36 @@
       const a = this.app, net = a.network, def = C.Types.get(el.type), p = el.params;
       const sec = this.section(body, 'Informations calculées');
       const kv = (k, v) => sec.appendChild(h('div', { class: 'kv', html: `<span>${k}</span><b>${v}</b>` }));
+      const under = a.mezzanineUnder(el);
+      if (under) {
+        const top = under.z + under.params.deckH;
+        const r = h('div', { class: 'link-row ok clickable', html: `<span class="pdot"></span><span>Posé sur</span><b>${C.escape(under.name)} (plancher ${C.fmt(top)} mm, +${C.fmt(el.z - top)} mm)</b>` });
+        r.addEventListener('click', () => a.select([under.id]));
+        sec.appendChild(r);
+      }
+      if (el.type === 'mezzanine') {
+        const area = p.length * p.width / 1e6;
+        const sp = Math.max(1000, p.columnSpacing || 4000);
+        const nc = Math.max(2, Math.ceil(p.length / sp) + 1) * Math.max(2, Math.ceil(p.width / sp) + 1);
+        kv('Surface du plancher', C.fmt(area, 2) + ' m²');
+        kv('Dessus du plancher', C.fmt(el.z + p.deckH) + ' mm');
+        kv('Hauteur libre sous poutres', C.fmt(p.deckH - p.thickness - 220) + ' mm');
+        kv('Charge admissible totale', C.fmt(area * (p.load || 0)) + ' kg');
+        kv('Poteaux', nc);
+        const riders = Array.from(a.ridersOf(el)).map(id => a.project.getElement(id)).filter(Boolean);
+        kv('Objets posés dessus', riders.length);
+        if (riders.length) {
+          const links = h('div', { class: 'links' });
+          for (const r of riders) {
+            const row = h('div', { class: 'link-row ok clickable', html: `<span class="pdot"></span><span>${C.escape(C.Types.get(r.type).label)}</span><b>${C.escape(r.name)}</b>` });
+            row.addEventListener('click', () => a.select([r.id]));
+            links.appendChild(row);
+          }
+          sec.appendChild(links);
+        }
+        sec.appendChild(h('p', { class: 'muted small', text: 'Déplacer, tourner ou rehausser la mezzanine déplace aussi les objets posés dessus.' }));
+        return;
+      }
       if (!def.conveyor) {
         kv('Encombrement', `${C.fmt(p.length)} × ${C.fmt(p.width || p.thickness)} mm`);
         kv('Hauteur (haut)', `${C.fmt(el.z + (p.height || 0))} mm`);
@@ -1125,6 +1155,7 @@
             <li>Déplacez un élément en le faisant glisser : il s'<b>accroche magnétiquement</b> aux ports libres proches (alignement, cap et hauteur). Alt : désactiver le magnétisme.</li>
             <li>Ports : <span class="pill ok">vert</span> raccordé, <span class="pill err">rouge</span> libre ou défaut, <span class="pill warn">orange</span> écart de hauteur, <span class="pill opt">gris</span> sortie optionnelle.</li>
             <li>Une sortie qui débouche sur le côté d'un convoyeur crée une <b>jonction</b> (fusion de flux).</li>
+            <li><b>Mezzanine</b> : tout objet placé ou glissé au-dessus du plancher s'y pose automatiquement (Alt : garder la hauteur). Déplacer la mezzanine emporte les objets posés dessus.</li>
             <li>Modifiez toutes les cotes dans le panneau <b>Propriétés</b> (longueur, largeur, pente en ° ou %, hauteur de sortie, rayon, rouleaux…).</li>
           </ul></div>
           <div><h4>Simuler</h4><ul>

@@ -17,6 +17,72 @@
       this.pasteCount = 0;
       this.network = new C.Network(this.project);
       this.currentFormat = 'moyen';
+      C.supportAt = (x, y, maxZ, exclude) => this.supportAt(x, y, maxZ, exclude);
+    }
+
+    /* --------------------------- mezzanines / supports --------------------------- */
+    /** Mezzanine dont l'emprise contient le point (x,y). */
+    onMezzanine(m, x, y) {
+      const l = C.worldToLocal({ x: m.x, y: m.y, z: m.z, rot: m.rot }, x, y, 0);
+      return Math.abs(l[0]) <= m.params.length / 2 + 1 && Math.abs(l[1]) <= m.params.width / 2 + 1;
+    }
+    /**
+     * Altitude du support (0 = sol, sinon dessus du plancher de mezzanine le plus
+     * haut) sous le point (x,y), parmi les planchers situés sous maxZ.
+     * exclude : identifiant ou ensemble d'identifiants à ignorer.
+     */
+    supportAt(x, y, maxZ, exclude) {
+      let best = 0;
+      const ex = exclude instanceof Set ? exclude : new Set(exclude ? [exclude] : []);
+      for (const m of this.project.elements) {
+        if (m.type !== 'mezzanine' || ex.has(m.id)) continue;
+        const top = m.z + m.params.deckH;
+        if (top > (maxZ === undefined ? Infinity : maxZ) + 1 || top <= best) continue;
+        if (this.onMezzanine(m, x, y)) best = top;
+      }
+      return best;
+    }
+    mezzanineUnder(el) {
+      let best = null;
+      for (const m of this.project.elements) {
+        if (m.type !== 'mezzanine' || m.id === el.id) continue;
+        const top = m.z + m.params.deckH;
+        if (top <= el.z + 1 && this.onMezzanine(m, el.x, el.y) && (!best || top > best.z + best.params.deckH)) best = m;
+      }
+      return best;
+    }
+    /** Éléments posés sur une mezzanine (récursif pour les mezzanines empilées). */
+    ridersOf(mez, acc) {
+      acc = acc || new Set();
+      const top = mez.z + mez.params.deckH;
+      for (const e of this.project.elements) {
+        if (e === mez || acc.has(e.id)) continue;
+        if (e.z >= top - 5 && this.onMezzanine(mez, e.x, e.y) && this.mezzanineUnder(e) === mez) {
+          acc.add(e.id);
+          if (e.type === 'mezzanine') this.ridersOf(e, acc);
+        }
+      }
+      return acc;
+    }
+    /** Sélection + objets portés par les mezzanines sélectionnées. */
+    withRiders(ids) {
+      const out = new Set(ids);
+      for (const id of ids) { const e = this.project.getElement(id); if (e && e.type === 'mezzanine') this.ridersOf(e).forEach(r => out.add(r)); }
+      return Array.from(out);
+    }
+    /** Transporte les objets d'une mezzanine d'une ancienne pose vers la nouvelle. */
+    carryRiders(riders, before, mez) {
+      const tfB = { x: before.x, y: before.y, z: 0, rot: before.rot };
+      const tfA = { x: mez.x, y: mez.y, z: 0, rot: mez.rot };
+      const dTop = (mez.z + mez.params.deckH) - (before.z + before.deckH);
+      for (const id of riders) {
+        const r = this.project.getElement(id);
+        if (!r) continue;
+        const l = C.worldToLocal(tfB, r.x, r.y, 0);
+        const w = C.localToWorld(tfA, l[0], l[1], 0);
+        r.x = C.round(w[0], 1); r.y = C.round(w[1], 1); r.z = C.round(r.z + dTop, 1);
+        r.rot = C.round(C.normAngle((r.rot + mez.rot - before.rot) * D) / D, 3);
+      }
     }
 
     init() {
@@ -231,13 +297,13 @@
       return best;
     }
     /** Accrochage pendant un déplacement (un ou plusieurs éléments). */
-    findSnap(ids, dx, dy, orig) {
+    findSnap(ids, dx, dy, orig, dz0) {
       const moving = new Set(ids);
       if (ids.length === 1) {
         const el = this.project.getElement(ids[0]);
         if (!C.Types.get(el.type).conveyor) return null;
         const o = orig.get(el.id);
-        const sn = this.findSnapFor(el, { x: o.x + dx, y: o.y + dy, z: o.z, rot: o.rot }, moving);
+        const sn = this.findSnapFor(el, { x: o.x + dx, y: o.y + dy, z: o.z + (dz0 || 0), rot: o.rot }, moving);
         if (!sn) return null;
         return { dx: sn.x - o.x, dy: sn.y - o.y, dz: sn.z - o.z, rot: sn, label: sn.label };
       }
@@ -246,12 +312,12 @@
       for (const id of ids) {
         const el = this.project.getElement(id), o = orig.get(id);
         if (!C.Types.get(el.type).conveyor) continue;
-        for (const P of this.elementPorts(el, { x: o.x + dx, y: o.y + dy, z: o.z, rot: o.rot })) {
+        for (const P of this.elementPorts(el, { x: o.x + dx, y: o.y + dy, z: o.z + (dz0 || 0), rot: o.rot })) {
           for (const Q of this.network.ports) {
             if (moving.has(Q.el.id) || P.role === Q.role) continue;
             if (Math.abs(C.normAngle(P.h - Q.h)) > 3 * D) continue;
             const d = Math.hypot(P.pos[0] - Q.pos[0], P.pos[1] - Q.pos[1]);
-            if (d <= R && (!best || d < best.d)) best = { d, dx: dx + Q.pos[0] - P.pos[0], dy: dy + Q.pos[1] - P.pos[1], dz: Q.pos[2] - P.pos[2], rot: null, label: `Groupe → ${Q.el.name}` };
+            if (d <= R && (!best || d < best.d)) best = { d, dx: dx + Q.pos[0] - P.pos[0], dy: dy + Q.pos[1] - P.pos[1], dz: (dz0 || 0) + Q.pos[2] - P.pos[2], rot: null, label: `Groupe → ${Q.el.name}` };
           }
         }
       }
@@ -283,8 +349,9 @@
         const at = st.snapGrid ? opts.at.map(v => Math.round(v / g) * g) : opts.at;
         const el = this.project.createElement(item.type, item.params);
         el.x = at[0]; el.y = at[1];
+        el.z = this.supportAt(at[0], at[1]) + (def.conveyor ? st.defaultZ : 0);
         if (def.conveyor) {
-          const sn = st.snapPorts ? this.findSnapFor(el, { x: el.x, y: el.y, z: st.defaultZ, rot: 0 }) : null;
+          const sn = st.snapPorts ? this.findSnapFor(el, { x: el.x, y: el.y, z: el.z, rot: 0 }) : null;
           if (sn) { el.x = sn.x; el.y = sn.y; el.z = sn.z; el.rot = sn.rot; }
         }
         this.commitNew(el);
@@ -387,11 +454,13 @@
     }
     rotateSelection(deg) {
       if (!this.guardSim()) return;
-      const els = this.selectedElements();
-      if (!els.length) return;
+      const base = this.selectedElements();
+      if (!base.length) return;
+      const els = this.withRiders(base.map(e => e.id)).map(id => this.project.getElement(id));
       this.project.change('Rotation', () => {
         if (els.length === 1) { els[0].rot = C.round(C.normAngle((els[0].rot + deg) * D) / D, 3); return; }
-        const cx = els.reduce((a, e) => a + e.x, 0) / els.length, cy = els.reduce((a, e) => a + e.y, 0) / els.length;
+        const piv = base.length === 1 ? base : els;
+        const cx = piv.reduce((a, e) => a + e.x, 0) / piv.length, cy = piv.reduce((a, e) => a + e.y, 0) / piv.length;
         const c = Math.cos(deg * D), s = Math.sin(deg * D);
         for (const e of els) {
           const dx = e.x - cx, dy = e.y - cy;
@@ -402,8 +471,9 @@
     }
     nudge(dx, dy, dz) {
       if (!this.guardSim()) return;
-      const els = this.selectedElements();
-      if (!els.length) return;
+      const sel = this.selectedElements();
+      if (!sel.length) return;
+      const els = this.withRiders(sel.map(e => e.id)).map(id => this.project.getElement(id));
       this.project.change('Déplacer', () => { for (const e of els) { e.x += dx; e.y += dy; e.z = Math.max(0, e.z + dz); } }, 'nudge');
     }
     moveBy(dx, dy, dz) { this.nudge(dx, dy, dz); }
@@ -457,6 +527,13 @@
         for (const id of ids) {
           const el = this.project.getElement(id);
           if (!el) continue;
+          if (el.type === 'mezzanine' && ['x', 'y', 'z', 'rot', 'deckH'].includes(fid)) {
+            const riders = Array.from(this.ridersOf(el)).filter(r => !ids.includes(r));
+            const before = { x: el.x, y: el.y, z: el.z, rot: el.rot, deckH: el.params.deckH };
+            if (f.attr) el[f.k] = v; else el.params[f.k] = v;
+            this.carryRiders(riders, before, el);
+            continue;
+          }
           const def = C.Types.get(el.type);
           if (!def.fields.includes(fid) && !(fid === 'z' && def.fields.includes('zBase'))) continue;
           if (f.set) { f.set(el, v); continue; }
@@ -637,6 +714,12 @@
       // obstacle / table / guide pour illustration
       add('table', { name: 'TAB-01' }, { x: 26000, y: 3000, z: 0, rot: 0 });
       add('obstacle', { name: 'POTEAU-01', length: 300, width: 300, height: 4000 }, { x: 30000, y: 12000, z: 0 });
+      // mezzanine avec un poste de travail à l'étage
+      add('mezzanine', { name: 'MEZ-01', stairs: 'left' }, { x: 27500, y: 18500, z: 0, rot: 0 });
+      add('table', { name: 'TAB-02' }, { x: 27500, y: 19000, z: 3000, rot: 0 });
+      const in3 = add('source', { rate: 240, formats: ['colis'], name: 'IN-03' }, { x: 24500, y: 17200, z: 3800, rot: 0 });
+      e = after(in3, 'out', 'straight', { length: 4000 });
+      after(e, 'out', 'sink', { name: 'OUT-MEZ' });
       // cartons posés
       p.cartons.push({ id: C.uid('k'), elementId: in2.id, track: 'main', s: 400, formatId: 'europe', orientation: 0, name: 'Carton posé', speed: 0, overrides: {} });
       p.dirty = false;

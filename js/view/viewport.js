@@ -267,10 +267,12 @@
     sync(changedIds) {
       const els = this.app.project.elements;
       const ids = new Set(els.map(e => e.id));
+      // les pieds / poteaux dépendent des planchers de mezzanine : signature commune
+      const mz = JSON.stringify(els.filter(e => e.type === 'mezzanine').map(e => [e.x, e.y, e.z, e.rot, e.params.length, e.params.width, e.params.deckH]));
       for (const id of Array.from(this.meshes.keys())) if (!ids.has(id)) this.removeElementMesh(id);
       for (const el of els) {
         const g = this.meshes.get(el.id);
-        const sig = JSON.stringify([el.type, el.params, el.x, el.y, el.z, el.rot, el.name]);
+        const sig = JSON.stringify([el.type, el.params, el.x, el.y, el.z, el.rot, el.name]) + mz;
         if (!g || g.userData.sig !== sig || (changedIds && changedIds.has(el.id))) {
           const ng = this.rebuildElement(el);
           ng.userData.sig = sig;
@@ -404,7 +406,8 @@
             }
           }
         } else {
-          add([el.x, el.y, el.z + (el.params.height || 100) + 150], `<b>${C.escape(el.name)}</b> · ${C.fmt(el.params.length)}×${C.fmt(el.params.width || el.params.thickness)}×${C.fmt(el.params.height)}`, sel ? 'sel' : '');
+          const hh = el.type === 'mezzanine' ? el.params.deckH : el.params.height;
+          add([el.x, el.y, el.z + (hh || 100) + 150], `<b>${C.escape(el.name)}</b> · ${C.fmt(el.params.length)}×${C.fmt(el.params.width || el.params.thickness)}${el.type === 'mezzanine' ? ' · plancher Z ' + C.fmt(el.z + hh) : '×' + C.fmt(hh)}`, sel ? 'sel' : '');
         }
       }
       // mesures
@@ -669,9 +672,10 @@
     startMove(e) {
       const app = this.app;
       const prim = app.project.getElement(this.down.hit.element);
-      const ids = Array.from(app.selection);
+      const ids = app.withRiders(Array.from(app.selection));
       this.drag = {
-        prim, ids,
+        prim, ids, exclude: new Set(ids),
+        origSupport: app.supportAt(prim.x, prim.y, prim.z, new Set(ids)),
         orig: new Map(ids.map(id => { const el = app.project.getElement(id); return [id, { x: el.x, y: el.y, z: el.z, rot: el.rot }]; })),
         start: this.planePoint(e, prim.z), cur: null
       };
@@ -681,16 +685,25 @@
       const dr = this.drag;
       if (!dr) return;
       const app = this.app, st = app.project.settings;
-      const p = this.planePoint(e, dr.prim.z);
-      if (!p) return;
-      let dx = p[0] - dr.start[0], dy = p[1] - dr.start[1];
       const o = dr.orig.get(dr.prim.id);
+      let p = this.planePoint(e, o.z);
+      if (!p) return;
+      // changement de support (sol ↔ plancher de mezzanine) selon ce que vise la souris
+      let zShift = 0;
+      if (!e.altKey) {
+        const rel = o.z - dr.origSupport;
+        let sup = this.deckUnderCursor(e, dr.exclude);
+        if (sup === null) sup = app.supportAt(o.x + p[0] - dr.start[0], o.y + p[1] - dr.start[1], o.z, dr.exclude);
+        zShift = sup + rel - o.z;
+        if (Math.abs(zShift) > 0.5) { const p2 = this.planePoint(e, o.z + zShift); if (p2) p = p2; }
+      }
+      let dx = p[0] - dr.start[0], dy = p[1] - dr.start[1];
       let nx = o.x + dx, ny = o.y + dy;
       if (st.snapGrid && !e.altKey) { const g = st.snapStep || 50; nx = Math.round(nx / g) * g; ny = Math.round(ny / g) * g; }
       dx = nx - o.x; dy = ny - o.y;
-      let rotOverride = null, dz = 0, snapped = null;
+      let rotOverride = null, dz = zShift, snapped = null;
       if (st.snapPorts && !e.altKey) {
-        const sn = app.findSnap(dr.ids, dx, dy, dr.orig);
+        const sn = app.findSnap(dr.ids, dx, dy, dr.orig, zShift);
         if (sn) { dx = sn.dx; dy = sn.dy; dz = sn.dz; rotOverride = sn.rot; snapped = sn; }
       }
       dr.cur = { dx, dy, dz, rot: rotOverride };
@@ -707,6 +720,20 @@
       }
       this.gSelection.children.forEach(c => { if (c.isBoxHelper || c.type === 'BoxHelper') c.update(); });
       this.showSnap(snapped, e);
+    }
+    /** Dessus du plancher de mezzanine visé par la souris (hors éléments déplacés), sinon null. */
+    deckUnderCursor(e, exclude) {
+      this.raycaster.setFromCamera(this.ndc(e), this.camera);
+      const hits = this.raycaster.intersectObjects([this.gElements], true);
+      for (const h of hits) {
+        const id = h.object.userData.elementId;
+        if (id === undefined || (exclude && exclude.has(id))) continue;
+        if (h.object.userData.deck) {
+          const m = this.app.project.getElement(id);
+          return m ? m.z + m.params.deckH : null;
+        }
+      }
+      return null;
     }
     showSnap(sn, e) {
       if (!sn) { this.snapInfo.style.display = 'none'; return; }
@@ -761,13 +788,19 @@
       this._lastGhostEvt = { clientX: e.clientX, clientY: e.clientY, altKey: e.altKey };
       const app = this.app, st = app.project.settings, el = this.ghost.el;
       const centered = C.Types.get(el.type).centered;
-      const zPlane = centered ? 0 : st.defaultZ;
-      const p = this.planePoint(e, zPlane);
+      const zOff = centered ? 0 : st.defaultZ;
+      let p = this.planePoint(e, zOff);
       if (!p) return;
+      // pose sur le plancher de mezzanine visé (Alt : rester au sol)
+      let base = 0;
+      if (!e.altKey) {
+        const deck = this.deckUnderCursor(e, null);
+        if (deck !== null) { base = deck; const p2 = this.planePoint(e, base + zOff); if (p2) p = p2; }
+      }
       const g = st.snapStep || 50;
       let x = p[0], y = p[1];
       if (st.snapGrid && !e.altKey) { x = Math.round(x / g) * g; y = Math.round(y / g) * g; }
-      el.x = x; el.y = y; el.z = centered ? 0 : st.defaultZ; el.rot = this.ghost.rot;
+      el.x = x; el.y = y; el.z = base + zOff; el.rot = this.ghost.rot;
       let sn = null;
       if (st.snapPorts && !e.altKey && !centered) {
         sn = app.findSnapFor(el, el);

@@ -124,11 +124,26 @@
       // hauteur
       const node = net.node(el.id);
       if (node) {
-        let zmin = Infinity;
-        for (const k in node.tracks) for (const sm of node.tracks[k].path.sample(10, 300)) zmin = Math.min(zmin, sm.p[2]);
+        let zmin = Infinity, clear = Infinity;
+        for (const k in node.tracks) for (const sm of node.tracks[k].path.sample(10, 300)) {
+          zmin = Math.min(zmin, sm.p[2]);
+          clear = Math.min(clear, sm.p[2] - (C.supportAt ? C.supportAt(sm.p[0], sm.p[1], sm.p[2], el.id) : 0));
+        }
         if (zmin < 0) add('error', el, `${el.name} : passe sous le niveau du sol (Z mini ${C.fmt(zmin)} mm).`);
-        else if (zmin < (p.frameH || 160) + 20 && el.type !== 'elevator') add('warn', el, `${el.name} : hauteur insuffisante pour la structure (Z mini ${C.fmt(zmin)} mm).`);
+        else if (clear < (p.frameH || 160) + 20 && el.type !== 'elevator') add('warn', el, `${el.name} : hauteur insuffisante pour la structure au-dessus du support (${C.fmt(clear)} mm).`);
       }
+    }
+    // --- trajets obstrués (obstacles, poteaux et planchers de mezzanine)
+    net.computeBlocks(ref.maxH);
+    for (const tr of net.tracks) {
+      if (tr.isBridge || !tr.blocks.length) continue;
+      add('error', tr.el, `${tr.el.name} : trajet des cartons obstrué par ${tr.blockBy[0]} à ${C.fmt(tr.blocks[0])} mm du début (hauteur de carton ${C.fmt(ref.maxH)} mm).`);
+    }
+    // --- mezzanines
+    for (const m of project.elements.filter(e => e.type === 'mezzanine')) {
+      const area = m.params.length * m.params.width / 1e6;
+      const riders = app.ridersOf ? app.ridersOf(m).size : 0;
+      add('info', m, `${m.name} : plancher à ${C.fmt(m.z + m.params.deckH)} mm, ${C.fmt(area, 1)} m², charge admissible ${C.fmt(area * (m.params.load || 0))} kg, ${riders} objet(s) posé(s).`);
     }
     // --- interférences entre convoyeurs non raccordés (même niveau)
     const items = [];

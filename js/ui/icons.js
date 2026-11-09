@@ -95,7 +95,8 @@
     sorter: '<rect x="2" y="2" width="36" height="12"/><path d="M10 14v12M20 14v12M30 14v12"/><path d="M8 23l2 3 2-3M18 23l2 3 2-3M28 23l2 3 2-3"/>',
     source: '<rect x="10" y="7" width="28" height="14"/><path d="M2 14h8M6 10l4 4-4 4"/><path d="M14 4v20" stroke-width="2.5"/>',
     sink: '<rect x="2" y="7" width="28" height="14"/><path d="M30 14h8M34 10l4 4-4 4"/><path d="M26 4v20" stroke-width="2.5"/>',
-    obstacle: '<path d="M20 3l14 22H6z"/><path d="M20 11v7M20 21v.5"/>'
+    obstacle: '<path d="M20 3l14 22H6z"/><path d="M20 11v7M20 21v.5"/>',
+    mezz: '<path d="M4 9h32"/><path d="M4 5h32M4 5v4M36 5v4"/><path d="M8 9v16M32 9v16M20 9v16"/><path d="M8 25h-6M12 13l8 12" stroke-dasharray="2 1.5"/>'
   };
   C.libIcon = function (name) {
     return `<svg class="lib-ico" width="40" height="28" viewBox="0 0 40 28" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">${L[name] || L.rollers}</svg>`;

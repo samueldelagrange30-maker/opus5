@@ -139,7 +139,9 @@
       const shapes = [];
       let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
       const ext = (x, y) => { x0 = Math.min(x0, x); y0 = Math.min(y0, y); x1 = Math.max(x1, x); y1 = Math.max(y1, y); };
-      for (const el of project.elements) {
+      // mezzanines dessinées en premier (sous les autres éléments)
+      const ordered = project.elements.filter(e => e.type === 'mezzanine').concat(project.elements.filter(e => e.type !== 'mezzanine'));
+      for (const el of ordered) {
         const def = C.Types.get(el.type), p = el.params;
         const tf = { x: el.x, y: el.y, z: el.z, rot: el.rot };
         if (def.conveyor) {
@@ -200,7 +202,8 @@
           s += `<circle cx="${X(sh.circle.c[0])}" cy="${Y(sh.circle.c[1])}" r="${(sh.circle.r * sc).toFixed(1)}" fill="${col}" fill-opacity="0.25" stroke="${col}" stroke-width="1.5"/>`;
         }
         for (const poly of sh.polys || []) {
-          s += `<polygon points="${poly.map(q => X(q[0]) + ',' + Y(q[1])).join(' ')}" fill="${col}" fill-opacity="${el.type === 'obstacle' ? 0.6 : 0.22}" stroke="${col}" stroke-width="1.4"/>`;
+          const mez = el.type === 'mezzanine';
+          s += `<polygon points="${poly.map(q => X(q[0]) + ',' + Y(q[1])).join(' ')}" fill="${col}" fill-opacity="${el.type === 'obstacle' ? 0.6 : mez ? 0.08 : 0.22}" stroke="${col}" stroke-width="${mez ? 2 : 1.4}"${mez ? ' stroke-dasharray="10 5"' : ''}/>`;
         }
         if (sh.flow) {
           const pts = sh.flow.path.sample(6, 0).map(o => X(o.p[0]) + ',' + Y(o.p[1])).join(' ');
@@ -215,7 +218,8 @@
         let lp = [el.x, el.y];
         if (node) { const t = net.mainTrack(el.id); lp = t.path.at(t.length / 2).p; }
         const L = C.Types.get(el.type).conveyor ? C.Types.devLength(el) : el.params.length;
-        s += `<text x="${X(lp[0])}" y="${+Y(lp[1]) - 4}" font-size="11" font-weight="600" fill="#1d2731" text-anchor="middle">${C.escape(el.name)}</text>`;
+        if (el.type === 'mezzanine') { const q = C.localToWorld({ x: el.x, y: el.y, z: 0, rot: el.rot }, -el.params.length / 2 + 300, el.params.width / 2 - 300, 0); lp = [q[0], q[1]]; }
+        s += `<text x="${X(lp[0])}" y="${+Y(lp[1]) - 4}" font-size="11" font-weight="600" fill="#1d2731" text-anchor="${el.type === 'mezzanine' ? 'start' : 'middle'}">${C.escape(el.name)}${el.type === 'mezzanine' ? ` — plancher Z${C.fmt(el.z + el.params.deckH)}` : ''}</text>`;
         s += `<text x="${X(lp[0])}" y="${+Y(lp[1]) + 9}" font-size="9" fill="#4b5a69" text-anchor="middle">${C.fmt(L)} mm</text>`;
         if (node && opts.heights !== false) for (const p of node.ports) {
           if (p.optional && p.status === 'free') continue;

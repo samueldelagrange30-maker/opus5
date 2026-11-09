@@ -132,6 +132,12 @@
   fld('maxCount', 'Nombre maxi (0 = illimité)', 'number', { group: 'Générateur', min: 0, step: 1, live: true });
   fld('startDelay', 'Délai de démarrage', 'number', { group: 'Générateur', unit: 's', min: 0, step: 1 });
   fld('orientation', 'Orientation des cartons', 'select', { group: 'Générateur', live: true, options: [[0, 'Longueur dans le sens de marche (0°)'], [90, 'Largeur dans le sens de marche (90°)']] });
+  fld('deckH', 'Hauteur du plancher (dessus)', 'number', { group: 'Mezzanine', unit: 'mm', min: 300, step: 10 });
+  fld('columnSpacing', 'Entraxe des poteaux', 'number', { group: 'Mezzanine', unit: 'mm', min: 1000, step: 100 });
+  fld('railH', 'Hauteur du garde-corps', 'number', { group: 'Mezzanine', unit: 'mm', min: 0, max: 2000, step: 10 });
+  fld('stairs', 'Escalier', 'select', { group: 'Mezzanine', options: [['none', 'Aucun'], ['front', 'Côté avant (−Y)'], ['back', 'Côté arrière (+Y)'], ['left', 'Côté gauche (−X)'], ['right', 'Côté droit (+X)']] });
+  fld('stairsWidth', 'Largeur de l\'escalier', 'number', { group: 'Mezzanine', unit: 'mm', min: 600, max: 3000, step: 50 });
+  fld('load', 'Charge admissible', 'number', { group: 'Mezzanine', unit: 'kg/m²', min: 0, step: 50 });
   fld('color', 'Couleur', 'color', { group: 'Apparence', live: true });
   fld('note', 'Commentaire', 'textarea', { group: 'Apparence' });
 
@@ -314,6 +320,12 @@
     fields: ['name', 'x', 'y', 'zBase', 'rot', 'length', 'width', 'height', 'color', 'note'],
     build: () => ({ tracks: {}, ports: [], diverts: [] })
   };
+  T.mezzanine = {
+    label: 'Mezzanine', cat: 'Structures', conveyor: false, centered: true,
+    defaults: { length: 8000, width: 5000, deckH: 3000, thickness: 120, columnSpacing: 4000, railH: 1100, stairs: 'front', stairsWidth: 1000, load: 500, color: '#3d6fa8', note: '' },
+    fields: ['name', 'x', 'y', 'zBase', 'rot', 'length', 'width', 'deckH', 'thickness', 'columnSpacing', 'railH', 'stairs', 'stairsWidth', 'load', 'color', 'note'],
+    build: () => ({ tracks: {}, ports: [], diverts: [] })
+  };
   T.guide = {
     label: 'Guide latéral', cat: 'Équipements', conveyor: false,
     defaults: { length: 2000, height: 100, thickness: 20, color: '#bdc3c7', note: '' },
@@ -442,7 +454,9 @@
       ]
     },
     {
-      cat: 'Divers', items: [
+      cat: 'Structures et divers', items: [
+        { id: 'misc-mezz', label: 'Mezzanine', icon: 'mezz', type: 'mezzanine', params: {} },
+        { id: 'misc-mezz-big', label: 'Mezzanine sans escalier', icon: 'mezz', type: 'mezzanine', params: { stairs: 'none', length: 12000, width: 6000 } },
         { id: 'misc-obstacle', label: 'Obstacle', icon: 'obstacle', type: 'obstacle', params: {} }
       ]
     }

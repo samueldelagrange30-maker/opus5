@@ -36,6 +36,11 @@
     } else if (kind === 'belt') {
       g.fillStyle = '#23292e'; g.fillRect(0, 0, 64, 64);
       for (let i = 0; i < 90; i++) { g.fillStyle = Math.random() < 0.5 ? '#1b2024' : '#2b3237'; g.fillRect(Math.random() * 64, Math.random() * 64, 2, 2); }
+    } else if (kind === 'grating') {
+      g.fillStyle = '#8d98a4'; g.fillRect(0, 0, 64, 64);
+      g.fillStyle = '#3f4954';
+      for (let i = 0; i < 64; i += 8) { g.fillRect(i + 2, 0, 4, 64); }
+      for (let j = 0; j < 64; j += 32) g.fillRect(0, j, 64, 3);
     } else if (kind === 'hazard') {
       g.fillStyle = '#f1c40f'; g.fillRect(0, 0, 64, 64);
       g.fillStyle = '#222'; for (let i = -64; i < 128; i += 22) { g.beginPath(); g.moveTo(i, 0); g.lineTo(i + 11, 0); g.lineTo(i + 75, 64); g.lineTo(i + 64, 64); g.fill(); }
@@ -217,8 +222,18 @@
     tag(im, 'guides'); g.add(im);
   }
 
-  /** Pieds de structure (du sol jusque sous le châssis). */
-  function addLegs(g, path, p, elZ, opts) {
+  /**
+   * Altitude LOCALE du support (sol ou plancher de mezzanine) sous le point
+   * local (lx, ly) d'un élément, en dessous de l'altitude locale `topLocal`.
+   */
+  function floorLocal(el, lx, ly, topLocal) {
+    if (!el || !C.supportAt) return el ? -el.z : 0;
+    const w = C.localToWorld({ x: el.x, y: el.y, z: el.z, rot: el.rot }, lx, ly, 0);
+    return C.supportAt(w[0], w[1], el.z + (topLocal === undefined ? 0 : topLocal) - 1, el.id) - el.z;
+  }
+
+  /** Pieds de structure (du sol ou du plancher jusque sous le châssis). */
+  function addLegs(g, path, p, el, opts) {
     opts = opts || {};
     const W = opts.width || p.width;
     const L = path.length;
@@ -229,7 +244,7 @@
       const s = C.clamp(L * i / (n - 1), Math.min(120, L / 2), Math.max(L - 120, L / 2));
       const f = localFrame(path, s);
       const zTop = f.p[2] - fh;            // local
-      const zFloor = -elZ;                 // local (sol)
+      const zFloor = floorLocal(el, f.p[0], f.p[1], zTop); // local (sol / plancher)
       const h = zTop - zFloor;
       if (h < 60) continue;
       items.push({ f, h, zTop });
@@ -353,10 +368,11 @@
       const seg = tr.segs.find(s => s.type === 'arc');
       if (seg) {
         const zMin = Math.min(seg.z0, seg.z1), zMax = Math.max(seg.z0, seg.z1);
-        const h = zMax + el.z + 300;
+        const zf = floorLocal(el, seg.c[0], seg.c[1], zMin - (p.frameH || 160));
+        const h = zMax - zf + 300;
         const col = cyl(120, h, MAT.leg(), 'structure');
         col.rotation.x = Math.PI / 2;
-        col.position.set(seg.c[0] * M, seg.c[1] * M, (-el.z + h / 2) * M);
+        col.position.set(seg.c[0] * M, seg.c[1] * M, (zf + h / 2) * M);
         g.add(col);
         const nArms = Math.ceil(Math.abs(seg.sweep) / (Math.PI / 2)) + 1;
         for (let i = 0; i < nArms; i++) {
@@ -372,9 +388,9 @@
       // pieds sous les parties droites
       const t0 = new C.Path(tr.segs.filter(s => s.type === 'line'), null, false);
       if (t0.length > 0) {
-        for (const sg of tr.segs.filter(s => s.type === 'line')) addLegs(g, new C.Path([sg], null, false), p, el.z);
+        for (const sg of tr.segs.filter(s => s.type === 'line')) addLegs(g, new C.Path([sg], null, false), p, el);
       }
-    } else addLegs(g, path, p, el.z);
+    } else addLegs(g, path, p, el);
     if (p.surface !== 'freerollers') addMotor(g, path, p);
     addArrows(g, flow, p, p.surface === 'mat' ? 22 : 8);
     return path;
@@ -463,9 +479,10 @@
     g.add(spin);
     g.userData.spin = spin;
     // pieds
-    const zFloor = -el.z, h = -fh - 30 - zFloor;
-    if (h > 50) for (let i = 0; i < 4; i++) {
+    for (let i = 0; i < 4; i++) {
       const a = Math.PI / 4 + i * Math.PI / 2;
+      const zFloor = floorLocal(el, R + Math.cos(a) * R * 0.6, Math.sin(a) * R * 0.6, -fh - 30), h = -fh - 30 - zFloor;
+      if (h <= 50) continue;
       const leg = box(50, 50, h, R + Math.cos(a) * R * 0.6, Math.sin(a) * R * 0.6, zFloor + h / 2, MAT.leg(), 'structure');
       g.add(leg);
     }
@@ -476,7 +493,7 @@
   builders.elevator = (el, m, g) => {
     const p = el.params, bed = p.bedLength, H = p.elevH, W = p.width;
     const zLow = Math.min(0, H), zHigh = Math.max(0, H);
-    const zFloor = -el.z;
+    const zFloor = floorLocal(el, bed, 0, zLow - (p.frameH || 160));
     // plateau d'entrée (bas) et de sortie (haut)
     const rp = Object.assign({}, p);
     const mk = (x0, x1, z) => {
@@ -551,7 +568,7 @@
     buildConveyor(el, m, g);
     const side = p.opSide === 'right' ? -1 : 1;
     const xs = p.length * p.stopPos;
-    const zFloor = -el.z;
+    const zFloor = floorLocal(el, xs, side * (p.width / 2 + 400), -(p.frameH || 160));
     // table opérateur
     const tz = zFloor + 900;
     g.add(box(1200, 700, 40, xs, side * (p.width / 2 + 400), tz, MAT.wood(), 'structure'));
@@ -603,13 +620,109 @@
     g.add(box(p.length - 120, 30, 30, 0, 0, 200, MAT.frame(p.color), 'body'));
   };
 
+  builders.mezzanine = (el, m, g) => {
+    const p = el.params, L = p.length, W = p.width, H = p.deckH, t = Math.max(20, p.thickness || 120);
+    const beamH = 220;
+    const frame = MAT.frame(p.color || '#3d6fa8');
+    // plancher en caillebotis (matériau propre à l'élément pour la répétition de texture)
+    const tex = stripeTex('grating').clone(); tex.needsUpdate = true;
+    tex.repeat.set(L / 400, W / 400);
+    const deckMat = new THREE.MeshStandardMaterial({ map: tex, roughness: 0.6, metalness: 0.5 });
+    deckMat.userData.owned = true;
+    const deck = box(L, W, t, 0, 0, H - t / 2, deckMat, 'body');
+    deck.userData.deck = true;
+    g.add(deck);
+    // poutres de rive
+    g.add(box(L, 80, beamH, 0, W / 2 - 40, H - t - beamH / 2, frame, 'body'));
+    g.add(box(L, 80, beamH, 0, -W / 2 + 40, H - t - beamH / 2, frame, 'body'));
+    g.add(box(80, W, beamH, L / 2 - 40, 0, H - t - beamH / 2, frame, 'body'));
+    g.add(box(80, W, beamH, -L / 2 + 40, 0, H - t - beamH / 2, frame, 'body'));
+    // trame de poteaux + poutres principales
+    const sp = Math.max(1000, p.columnSpacing || 4000);
+    const nx = Math.max(2, Math.ceil(L / sp) + 1), ny = Math.max(2, Math.ceil(W / sp) + 1);
+    const xs = [], ys = [];
+    for (let i = 0; i < nx; i++) xs.push(-L / 2 + 75 + (L - 150) * i / (nx - 1));
+    for (let j = 0; j < ny; j++) ys.push(-W / 2 + 75 + (W - 150) * j / (ny - 1));
+    for (const y of ys) g.add(box(L, 100, beamH, 0, y, H - t - beamH / 2, frame, 'body'));
+    for (const x of xs) for (const y of ys) {
+      const zf = floorLocal(el, x, y, H - t - beamH);
+      const ch = H - t - beamH - zf;
+      if (ch <= 10) continue;
+      g.add(box(120, 120, ch, x, y, zf + ch / 2, frame, 'body'));
+      g.add(box(260, 260, 15, x, y, zf + 7, MAT.leg(), 'structure'));
+    }
+    // escalier
+    const sw = C.clamp(p.stairsWidth || 1000, 600, Math.min(L, W));
+    let open = null; // ouverture du garde-corps : {edge, a0, a1}
+    if (p.stairs && p.stairs !== 'none') {
+      const along = p.stairs === 'front' || p.stairs === 'back' ? L : W;
+      const a0 = along / 2 - sw / 2 - 300;
+      const st = new THREE.Group();
+      const cfg = { front: [a0, -W / 2, -Math.PI / 2], back: [-a0, W / 2, Math.PI / 2], left: [-L / 2, -a0, Math.PI], right: [L / 2, a0, 0] }[p.stairs];
+      st.position.set(cfg[0] * M, cfg[1] * M, 0);
+      st.rotation.z = cfg[2];
+      const zf = floorLocal(el, cfg[0], cfg[1], H - 1);
+      const rise = H - zf;
+      const n = Math.max(2, Math.ceil(rise / 180)), r = rise / n, going = 270;
+      const run = (n - 1) * going;
+      for (let i = 1; i < n; i++) st.add(box(going + 20, sw - 60, 40, (i - 0.5) * going, 0, H - i * r - 20, deckMat, 'body'));
+      const ang = Math.atan2(rise, run), hyp = Math.hypot(rise, run);
+      for (const sgn of [1, -1]) {
+        const str = box(hyp + 200, 30, 220, run / 2, sgn * sw / 2, zf + rise / 2 - 60, frame, 'body');
+        str.rotation.y = ang; st.add(str);
+        const hr = box(hyp + 200, 40, 40, run / 2, sgn * sw / 2, zf + rise / 2 + 950, MAT.color('#f1c40f'), 'body');
+        hr.rotation.y = ang; st.add(hr);
+        for (const u of [0.1, 0.5, 0.9]) {
+          const x = run * u, z = H - rise * u;
+          st.add(box(30, 30, 950, x, sgn * sw / 2, z + 475 - 20, MAT.color('#f1c40f'), 'body'));
+        }
+      }
+      tag(st, 'body'); g.add(st);
+      open = { edge: p.stairs, a: p.stairs === 'front' ? a0 : p.stairs === 'back' ? -a0 : p.stairs === 'left' ? -a0 : a0 };
+    }
+    // garde-corps (lisse haute, sous-lisse, plinthe) avec ouverture d'escalier
+    const rh = p.railH || 0;
+    if (rh > 0) {
+      const yellow = MAT.color('#f1c40f');
+      const rail = (x0, y0, x1, y1) => {
+        const len = Math.hypot(x1 - x0, y1 - y0);
+        if (len < 50) return;
+        const cx = (x0 + x1) / 2, cy = (y0 + y1) / 2, a = Math.atan2(y1 - y0, x1 - x0);
+        for (const [z, hh, th] of [[H + rh - 20, 40, 40], [H + rh / 2, 30, 30], [H + 75, 150, 12]]) {
+          const b = box(len, th, hh, 0, 0, 0, z === H + 75 ? frame : yellow, 'body');
+          b.position.set(cx * M, cy * M, z * M); b.rotation.z = a; g.add(b);
+        }
+        const np = Math.max(2, Math.ceil(len / 1500) + 1);
+        for (let i = 0; i < np; i++) {
+          const u = i / (np - 1);
+          g.add(box(40, 40, rh, x0 + (x1 - x0) * u, y0 + (y1 - y0) * u, H + rh / 2, yellow, 'body'));
+        }
+      };
+      const ins = 30;
+      const edges = {
+        front: [[-L / 2 + ins, -W / 2 + ins], [L / 2 - ins, -W / 2 + ins], 'x'],
+        back: [[-L / 2 + ins, W / 2 - ins], [L / 2 - ins, W / 2 - ins], 'x'],
+        left: [[-L / 2 + ins, -W / 2 + ins], [-L / 2 + ins, W / 2 - ins], 'y'],
+        right: [[L / 2 - ins, -W / 2 + ins], [L / 2 - ins, W / 2 - ins], 'y']
+      };
+      for (const k in edges) {
+        const [a, b, ax] = edges[k];
+        if (open && open.edge === k) {
+          const i0 = open.a - sw / 2, i1 = open.a + sw / 2;
+          if (ax === 'x') { rail(a[0], a[1], i0, a[1]); rail(i1, a[1], b[0], b[1]); }
+          else { rail(a[0], a[1], a[0], i0); rail(a[0], i1, b[0], b[1]); }
+        } else rail(a[0], a[1], b[0], b[1]);
+      }
+    }
+  };
+
   builders.guide = (el, m, g) => {
     const p = el.params;
     g.add(box(p.length, p.thickness, p.height, p.length / 2, 0, p.height / 2, MAT.guide(), 'body'));
     const n = Math.max(2, Math.ceil(p.length / 1000) + 1);
     for (let i = 0; i < n; i++) {
       const x = C.clamp(p.length * i / (n - 1), 20, p.length - 20);
-      const h = el.z;
+      const h = -floorLocal(el, x, 0, 0);
       if (h > 20) g.add(box(30, 30, h, x, 0, -h / 2, MAT.leg(), 'structure'));
     }
   };

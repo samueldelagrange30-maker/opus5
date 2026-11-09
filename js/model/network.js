@@ -192,28 +192,52 @@
      * maxH : hauteur maxi des cartons (mm).
      */
     computeBlocks(maxH) {
-      const obs = this.project.elements.filter(e => e.type === 'obstacle');
+      const boxes = C.blockingBoxes(this.project);
       for (const tr of this.tracks) {
         tr.blocks = [];
-        if (!obs.length || tr.length <= 0) continue;
+        tr.blockBy = [];
+        if (!boxes.length || tr.length <= 0) continue;
         let inside = false;
         const step = 20;
         const r = { p: [0, 0, 0], t: [0, 0, 0] };
+        const rad = tr.width / 2;
         for (let s = 0; s <= tr.length; s += step) {
           tr.path.at(s, r);
-          let hit = false;
-          for (const o of obs) {
-            const L = C.worldToLocal({ x: o.x, y: o.y, z: o.z, rot: o.rot }, r.p[0], r.p[1], r.p[2]);
-            const rad = tr.width / 2;
-            if (Math.abs(L[0]) <= o.params.length / 2 + rad * 0.6 && Math.abs(L[1]) <= o.params.width / 2 + rad &&
-              L[2] + maxH >= 0 && L[2] <= o.params.height) { hit = true; break; }
+          let hit = null;
+          for (const b of boxes) {
+            const L = C.worldToLocal(b.tf, r.p[0], r.p[1], r.p[2]);
+            const lx = L[0] - b.cx, ly = L[1] - b.cy;
+            if (Math.abs(lx) <= b.L / 2 + rad * 0.6 && Math.abs(ly) <= b.W / 2 + rad &&
+              L[2] + maxH >= b.z0 && L[2] <= b.z1) { hit = b; break; }
           }
-          if (hit && !inside) tr.blocks.push(s);
-          inside = hit;
+          if (hit && !inside) { tr.blocks.push(s); tr.blockBy.push(hit.label); }
+          inside = !!hit;
         }
       }
     }
   }
+
+  /**
+   * Volumes qui arrêtent les cartons : obstacles, plancher et poteaux de mezzanine.
+   * Boîte : { tf, cx, cy (centre local), L, W, z0, z1 (altitudes locales), label }
+   */
+  C.blockingBoxes = function (project) {
+    const res = [];
+    for (const e of project.elements) {
+      const tf = { x: e.x, y: e.y, z: e.z, rot: e.rot }, p = e.params;
+      if (e.type === 'obstacle') res.push({ tf, cx: 0, cy: 0, L: p.length, W: p.width, z0: 0, z1: p.height, label: e.name });
+      if (e.type === 'mezzanine') {
+        const t = Math.max(20, p.thickness || 120);
+        res.push({ tf, cx: 0, cy: 0, L: p.length, W: p.width, z0: p.deckH - t - 220, z1: p.deckH, label: e.name + ' (plancher)' });
+        const sp = Math.max(1000, p.columnSpacing || 4000);
+        const nx = Math.max(2, Math.ceil(p.length / sp) + 1), ny = Math.max(2, Math.ceil(p.width / sp) + 1);
+        for (let i = 0; i < nx; i++) for (let j = 0; j < ny; j++) {
+          res.push({ tf, cx: -p.length / 2 + 75 + (p.length - 150) * i / (nx - 1), cy: -p.width / 2 + 75 + (p.width - 150) * j / (ny - 1), L: 120, W: 120, z0: -1e5, z1: p.deckH, label: e.name + ' (poteau)' });
+        }
+      }
+    }
+    return res;
+  };
 
   C.Network = Network;
 })(window.C3D);
