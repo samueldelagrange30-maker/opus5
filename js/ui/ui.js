@@ -180,12 +180,20 @@
         row.addEventListener('click', () => { if (dis) return; this.closeMenus(); it.action(); });
         dd.appendChild(row);
       }
-      root.appendChild(dd);
+      // le menu est attaché au document (la barre de menus défile horizontalement
+      // et masquerait un menu déroulant positionné à l'intérieur)
+      dd.classList.add('menu-dd');
+      document.body.appendChild(dd);
+      const r = root.getBoundingClientRect();
+      const w = dd.getBoundingClientRect().width;
+      dd.style.left = Math.max(4, Math.min(r.left, window.innerWidth - w - 4)) + 'px';
+      dd.style.top = r.bottom + 'px';
       root.classList.add('open');
       this.menuOpen = root;
     }
     closeMenus() {
-      document.querySelectorAll('.menu-root.open').forEach(r => { r.classList.remove('open'); const d = r.querySelector('.dropdown'); if (d) d.remove(); });
+      document.querySelectorAll('.menu-root.open').forEach(r => r.classList.remove('open'));
+      document.querySelectorAll('.menu-dd').forEach(d => d.remove());
       this.menuOpen = null;
       document.querySelectorAll('.popup-menu, .tb-pop').forEach(p => p.remove());
     }
