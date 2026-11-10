@@ -465,7 +465,7 @@
     label: 'Stockage à navettes (type OSR)', cat: 'Stockage', conveyor: true, osr: true,
     defaults: Object.assign({}, CONV_DEF, {
       towers: 1, levels: 16, levelH: 380, rackLength: 8000, towerWidth: 2200, frontZone: 1500, fill: 75,
-      towerRate: 400, formats: ['bac'], orientation: 0, maxCount: 0, startDelay: 0, jitter: 20,
+      towerRate: 400, formats: ['bac'], orientation: 90, maxCount: 0, startDelay: 0, jitter: 20,
       laneLength: 2500, inSide: 'left', width: 640, usefulWidth: 560, speed: 0.6, guideH: 60, color: '#5b6d82'
     }),
     fields: ['name', 'x', 'y', 'rot', 'towers', 'convH', 'laneLength', 'inSide', 'levels', 'levelH', 'rackLength', 'towerWidth', 'frontZone', 'fill', 'towerRate', 'formats', 'orientation',

@@ -13,7 +13,7 @@
     { id: 'plat', name: 'Plat', ref: 'CRT-F', L: 500, W: 350, H: 100, weight: 3, color: '#e0c08f', builtin: true },
     { id: 'bac', name: 'Bac plastique', ref: 'BAC-64', L: 600, W: 400, H: 320, weight: 8, color: '#9aa0a6', kind: 'tote', builtin: true },
     { id: 'colis', name: 'Colis e-commerce', ref: 'ECOM', L: 350, W: 250, H: 120, weight: 1.5, color: '#d9c39a', builtin: true },
-    // cartons ouverts (rabats relevés) : à remplir (poste GTP) puis fermer (fermeuse à coiffe)
+    // cartons ouverts (dessus ouvert, sans rabats) : à remplir (poste GTP) puis fermer (fermeuse à coiffe)
     { id: 'ouvert', name: 'Carton ouvert', ref: 'CRT-O', L: 400, W: 300, H: 250, weight: 0.4, color: '#c8a26b', kind: 'open', builtin: true },
     { id: 'ouvert-grand', name: 'Carton ouvert grand', ref: 'CRT-OL', L: 600, W: 400, H: 350, weight: 0.7, color: '#bf9a62', kind: 'open', builtin: true },
     // unités de charge palettisées (à convoyer sur convoyeur à chaîne / rouleaux larges)
@@ -23,7 +23,7 @@
     { id: 'pal-perdue-ctn', name: 'Palette perdue + cartons', ref: 'PAL-PP-C', L: 1200, W: 800, H: 1000, weight: 200, color: '#c49a62', kind: 'perdue-load', builtin: true }
   ];
   /** Types d'unités de charge. */
-  C.FORMAT_KINDS = [['box', 'Carton fermé'], ['tote', 'Bac plastique ajouré (tote)'], ['open', 'Carton ouvert (rabats relevés)'], ['euro', 'Palette Europe'], ['perdue', 'Palette perdue'], ['euro-load', 'Palette Europe + cartons'], ['perdue-load', 'Palette perdue + cartons']];
+  C.FORMAT_KINDS = [['box', 'Carton fermé'], ['tote', 'Bac plastique ajouré (tote)'], ['open', 'Carton ouvert (sans rabats)'], ['euro', 'Palette Europe'], ['perdue', 'Palette perdue'], ['euro-load', 'Palette Europe + cartons'], ['perdue-load', 'Palette perdue + cartons']];
 
   /** Normalise un format (valeurs numériques, bornes). */
   C.normalizeFormat = function (f) {

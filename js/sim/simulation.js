@@ -41,7 +41,7 @@
   };
   /* ----------------------- carton ouvert (rabats) ----------------------- */
   const flatGeo = new THREE.BoxGeometry(1, 1, 1);
-  /** Carton ouvert : fond, 4 parois, 4 rabats relevés ; groupe centré (mètres). */
+  /** Carton ouvert : fond et 4 parois, sans rabats ; groupe centré (mètres). */
   C.makeOpenCarton = function (spec) {
     const L = spec.L, W = spec.W, H = spec.H, t = 5;
     const mat = C.cartonMaterial(spec.color || '#c8a26b');
@@ -54,18 +54,6 @@
     add(L, W, t, 0, 0, -H / 2 + t / 2, inner);
     add(L, t, H, 0, W / 2 - t / 2, 0, mat); add(L, t, H, 0, -W / 2 + t / 2, 0, mat);
     add(t, W, H, L / 2 - t / 2, 0, 0, mat); add(t, W, H, -L / 2 + t / 2, 0, 0, mat);
-    // rabats relevés et légèrement ouverts vers l'extérieur
-    const flaps = new THREE.Group(); flaps.name = 'flaps';
-    const flap = (len, hgt, x, y, rotAxis, ang) => {
-      const pv = new THREE.Group(); pv.position.set(x * M, y * M, H / 2 * M);
-      const b = new THREE.Mesh(flatGeo, mat);
-      if (rotAxis === 'x') b.scale.set(len * M, t * M, hgt * M); else b.scale.set(t * M, len * M, hgt * M);
-      b.position.z = hgt / 2 * M; b.castShadow = true; b.userData.loadPart = true;
-      pv.add(b); pv.rotation[rotAxis] = ang; flaps.add(pv);
-    };
-    flap(L, W / 2, 0, W / 2, 'x', -0.45); flap(L, W / 2, 0, -W / 2, 'x', 0.45);
-    flap(W, W / 2 * 0.9, L / 2, 0, 'y', 0.5); flap(W, W / 2 * 0.9, -L / 2, 0, 'y', -0.5);
-    grp.add(flaps);
     const items = new THREE.Group(); items.name = 'items'; grp.add(items);
     grp.userData.isOpenCarton = true;
     return grp;
@@ -94,7 +82,6 @@
     c.open = false; c.closedBy = mode;
     const g = c.mesh;
     if (!g || !g.isGroup) return;
-    const fl = g.getObjectByName('flaps'); if (fl) fl.visible = false;
     const sp = c.spec;
     if (mode === 'tape') {
       const top = new THREE.Mesh(flatGeo, C.cartonMaterial(sp.color)); top.scale.set(sp.L * M, sp.W * M, 6 * M); top.position.z = (sp.H / 2 - 3) * M; g.add(top);

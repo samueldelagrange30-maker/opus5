@@ -141,7 +141,7 @@
     /* --------------------------- sérialisation --------------------------- */
     toJSON(network) {
       return {
-        format: 'convoy3d-project', version: 6, app: 'Convoy3D ' + C.VERSION,
+        format: 'convoy3d-project', version: 7, app: 'Convoy3D ' + C.VERSION,
         id: this.id, name: this.name, created: this.created, saved: Date.now(),
         settings: this.settings, formats: this.formats, elements: this.elements,
         cartons: this.cartons, measures: this.measures, camera: this.camera,
@@ -174,6 +174,8 @@
       // v3 → v4 : l'étiqueteuse pose l'étiquette sur le côté du carton
       if ((+data.version || 1) < 4) for (const e of this.elements) if (e.type === 'labeler' && e.params.labelSide === 'top') e.params.labelSide = 'left';
       // v4 → v5 : nouveau poste GTP (meuble long avec alvéoles)
+      // v7 : les bacs sortent de l'OSR dans le sens du rayonnage (longueur en travers du convoyeur)
+      if ((+data.version || 1) < 7) for (const e of this.elements) if (e.type === 'osr' && !+e.params.orientation) e.params.orientation = 90;
       // v6 : le bac intégré devient un bac gris ajouré (600 × 400 × 320)
       if ((+data.version || 1) < 6) {
         const bac = this.formats.find(f => f.id === 'bac');
