@@ -332,7 +332,7 @@
     const map = {
       ref: sp.ref, reference: sp.ref, format: sp.formatName, nom: sp.name, name: sp.name,
       poids: sp.weight, weight: sp.weight, masse: sp.weight, couleur: sp.color, color: sp.color,
-      source: c.source, entree: c.source, etiquette: c.label || '', etiquete: c.label ? 1 : 0, label: c.label || '', articles: c.items || 0, ouvert: c.open ? 1 : 0, ferme: c.open ? 0 : 1, l: sp.L, longueur: sp.L, w: sp.W, largeur: sp.W, h: sp.H, hauteur: sp.H
+      source: c.source, entree: c.source, etiquette: c.label || '', etiquete: c.label ? 1 : 0, label: c.label || '', articles: c.items || 0, traite: Object.keys(c.done || {}).length, servi: Object.keys(c.done || {}).length, ouvert: c.open ? 1 : 0, ferme: c.open ? 0 : 1, l: sp.L, longueur: sp.L, w: sp.W, largeur: sp.W, h: sp.H, hauteur: sp.H
     };
     const v = map[cd.key];
     if (v === undefined) return false;
@@ -527,6 +527,24 @@
       }
       let pick = null;
       const mode = p.mode || 'cyclic';
+      if (mode === 'free') {
+        // équilibrage : sortie latérale (autorisée par les règles, s'il y en a) la moins chargée
+        // en aval ; tout droit si aucune n'a de place pour ce contenant
+        const rules = node.rules || [];
+        const ok = o => !rules.length || rules.some(r => r.out === o.k && r.conds.every(cd => matchCond(cd, c)));
+        let best = null, bestRoom = -Infinity;
+        const qMax = Math.max(0, Math.round(+p.queueMax || 0));
+        for (const o of outs) {
+          if (o.k === 0 || !ok(o)) continue;
+          if (qMax && this.queueAfter(o.dv.to, c) >= qMax) continue;      // file du poste pleine
+          const room = this.roomAfter(o.dv.to, c);
+          if (room > bestRoom) { bestRoom = room; best = o; }
+        }
+        const need = c.half * 2 + this.gapOf(c.track) + 50;
+        const straight = outs.find(o => o.k === 0);
+        pick = best && (bestRoom >= need || !straight) ? best : (straight || best || outs[0]);
+        return pick.dv;
+      }
       if (mode === 'cyclic') { pick = outs[rt.rr % outs.length]; rt.rr++; }
       else if (mode === 'random') pick = outs[Math.floor(this.rng.next() * outs.length)];
       else if (mode === 'rules') {
@@ -538,6 +556,30 @@
       return pick.dv;
     }
 
+    /** Nombre de contenants en aval d'une sortie (jusqu'à 4 éléments, alvéoles et dérivations comprises). */
+    queueAfter(tr, c) {
+      let n = 0, t = tr, hops = 0;
+      const seen = new Set();
+      while (t && hops < 5 && !seen.has(t)) {
+        seen.add(t);
+        n += t.cartons.filter(o => o !== c).length;
+        for (const dv of t.diverts) if (!seen.has(dv.to)) { seen.add(dv.to); n += dv.to.cartons.length; const pr = dv.to.endLink && dv.to.endLink.track; if (pr && pr.node === dv.to.node && !seen.has(pr)) { seen.add(pr); n += pr.cartons.length; } }
+        t = t.endLink && t.endLink.track; hops++;
+      }
+      return n;
+    }
+    /** Place libre (mm) sur les trajectoires en aval d'une sortie (jusqu'à ~4 m). */
+    roomAfter(tr, c) {
+      let room = 0, len = 0, t = tr, hops = 0;
+      while (t && hops < 4 && len < 4000) {
+        let used = 0;
+        for (const o of t.cartons) if (o !== c) used += o.half * 2 + this.gapOf(t);
+        room += Math.max(0, t.length - used); len += t.length;
+        if (t.cartons.length && t.cartons.some(o => o !== c && o.state === 'blocked')) break;   // file d'attente : on s'arrête là
+        t = t.endLink && t.endLink.track; hops++;
+      }
+      return room;
+    }
     /** Sortie de la trajectoire courante : abscisse et liaison suivante. */
     exitOf(c) {
       const tr = c.track;
@@ -833,8 +875,13 @@
       const el = node.el, p = el.params, rt = node.rt;
       if (this.t < (+p.startDelay || 0)) return;
       const ids = Array.isArray(p.formats) && p.formats.length ? p.formats : ['bac'];
+      // limite d'encours : bacs sortis de cet OSR et pas encore revenus
+      const wip = +p.wipLimit > 0 ? this.cartons.reduce((n, c) => n + (c.fromOsr === el.id ? 1 : 0), 0) : 0;
+      rt.wip = wip;
+      let room = +p.wipLimit > 0 ? +p.wipLimit - wip : Infinity;
       rt.towerNext.forEach((next, i) => {
         if (this.t < next) return;
+        if (room <= 0) return;
         if (+p.maxCount > 0 && rt.spawned >= +p.maxCount) return;
         if (p.running === false) return;
         const tr = node.tracks['out' + (i + 1)];
@@ -847,7 +894,7 @@
         const first = this.firstFrom(tr, 0);
         if (first && first.s - first.half < s + half + this.gapOf(tr)) { this.stats.spawnBlocked++; return; }
         const c = this.spawn(tr, s, spec, ori, el.name + ' · tour ' + (i + 1));
-        c.v = +p.speed || 0;
+        c.v = +p.speed || 0; c.fromOsr = el.id; room--;
         rt.spawned++;
         rt.towerOut = rt.towerOut || []; rt.towerOut[i] = (rt.towerOut[i] || 0) + 1;
         const base = 3600 / Math.max(1, +p.towerRate || 300);

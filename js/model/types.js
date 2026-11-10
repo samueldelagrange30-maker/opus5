@@ -101,11 +101,12 @@
   fld('divertAngle', 'Angle de déviation', 'select', { group: 'Trieur', options: [[90, '90°'], [60, '60°'], [45, '45°'], [30, '30°']] });
   fld('mode', 'Règle d\'aiguillage', 'select', {
     group: 'Aiguillage', live: true,
-    options: [['cyclic', 'Cyclique (alternance)'], ['rules', 'Règles (critères)'], ['random', 'Aléatoire'], ['straight', 'Tout droit / 1re sortie']]
+    options: [['cyclic', 'Cyclique (alternance)'], ['rules', 'Règles (critères)'], ['free', 'Équilibrage (sortie la moins chargée)'], ['random', 'Aléatoire'], ['straight', 'Tout droit / 1re sortie']]
   });
+  fld('queueMax', 'File maxi en aval (équilibrage, 0 = selon la place)', 'number', { group: 'Aiguillage', live: true, min: 0, max: 200, step: 1, help: 'En mode Équilibrage : une sortie n\'est choisie que si moins de N contenants l\'attendent en aval (convoyeur, poste et alvéoles compris). Évite que les premiers postes accaparent tous les bacs.' });
   fld('rules', 'Règles (une par ligne)', 'textarea', {
     group: 'Aiguillage', live: true,
-    help: 'Syntaxe « sortie : critère ». Sortie 0 = tout droit. Critères : ref=ABC, format=Moyen, poids>5, poids<2, couleur=#ff0000, source=Entrée 1, L>500, * (tous). Exemple :\n1 : format=Petit\n2 : poids>10'
+    help: 'Syntaxe « sortie : critère ». Sortie 0 = tout droit. Critères : ref=ABC, format=Moyen, poids>5, poids<2, couleur=#ff0000, source=Entrée 1, L>500, traite>=1 (déjà passé par un poste), articles>2, * (tous). Plusieurs critères : « & ». En mode Équilibrage, les règles limitent les sorties autorisées. Exemple :\n1 : format=Petit\n2 : poids>10 & source=IN-01'
   });
   fld('outAngles', 'Angles des sorties (°)', 'text', { group: 'Table tournante', help: 'Liste séparée par des virgules, 0 = tout droit, 90 = gauche, -90 = droite.' });
   fld('diameter', 'Diamètre du plateau', 'number', { group: 'Table tournante', unit: 'mm', min: 300, step: 10 });
@@ -162,6 +163,7 @@
   fld('towerWidth', 'Largeur d\'une tour', 'number', { group: 'Stockage à navettes', unit: 'mm', min: 1400, step: 50 });
   fld('frontZone', 'Profondeur de la pré-zone (élévateurs)', 'number', { group: 'Stockage à navettes', unit: 'mm', min: 600, step: 50 });
   fld('towerRate', 'Débit de sortie par tour', 'number', { group: 'Stockage à navettes', unit: 'caisses/h', min: 1, step: 10, live: true });
+  fld('wipLimit', 'Bacs en circulation maxi (0 = illimité)', 'number', { group: 'Stockage à navettes', unit: 'bacs', min: 0, step: 5, live: true, help: 'Limite le nombre de bacs sortis de l\'OSR et pas encore revenus : évite de saturer une boucle de distribution (les bacs servis doivent toujours pouvoir y rentrer).' });
   fld('returnLane', 'Ligne de retour en stock (convoyeur avant)', 'bool', { group: 'Stockage à navettes' });
   fld('laneLength', 'Longueur des convoyeurs d\'entrée / sortie', 'number', { group: 'Stockage à navettes', unit: 'mm', min: 600, step: 50 });
   fld('inSide', 'Position de l\'entrée (vue de face)', 'select', { group: 'Stockage à navettes', options: [['left', 'Entrée à gauche, sortie à droite'], ['right', 'Entrée à droite, sortie à gauche']] });
@@ -270,8 +272,8 @@
   /* ---------------- Transfert à 90° ------------------------------------ */
   T.transfer = {
     label: 'Transfert à 90°', cat: 'Équipements', conveyor: true, routing: true,
-    defaults: Object.assign({}, CONV_DEF, { length: 800, sides: 'both', mode: 'cyclic', rules: '', guideH: 0, color: '#d08a2f' }),
-    fields: [...CONV_FIELDS_HEAD, 'length', 'sides', 'mode', 'rules', ...CONV_FIELDS_TAIL.filter(k => k !== 'guideH')],
+    defaults: Object.assign({}, CONV_DEF, { length: 800, sides: 'both', mode: 'cyclic', rules: '', queueMax: 0, guideH: 0, color: '#d08a2f' }),
+    fields: [...CONV_FIELDS_HEAD, 'length', 'sides', 'mode', 'rules', 'queueMax', ...CONV_FIELDS_TAIL.filter(k => k !== 'guideH')],
     outLabels: ['Tout droit', 'Gauche', 'Droite'],
     build: p => {
       const m = straightModel(Object.assign({}, p, { reverse: false }), 0);
@@ -296,8 +298,8 @@
   /* ---------------- Trieur (sorties latérales multiples) --------------- */
   T.sorter = {
     label: 'Trieur', cat: 'Équipements', conveyor: true, routing: true,
-    defaults: Object.assign({}, CONV_DEF, { length: 3600, outputs: 3, sortSide: 'right', divertAngle: 90, mode: 'cyclic', rules: '', speed: 0.8, guideH: 0, color: '#c0392b' }),
-    fields: [...CONV_FIELDS_HEAD, 'length', 'outputs', 'sortSide', 'divertAngle', 'mode', 'rules', ...CONV_FIELDS_TAIL.filter(k => k !== 'guideH')],
+    defaults: Object.assign({}, CONV_DEF, { length: 3600, outputs: 3, sortSide: 'right', divertAngle: 90, mode: 'cyclic', rules: '', queueMax: 0, speed: 0.8, guideH: 0, color: '#c0392b' }),
+    fields: [...CONV_FIELDS_HEAD, 'length', 'outputs', 'sortSide', 'divertAngle', 'mode', 'rules', 'queueMax', ...CONV_FIELDS_TAIL.filter(k => k !== 'guideH')],
     build: p => {
       const m = straightModel(Object.assign({}, p, { reverse: false }), 0);
       const n = C.clamp(Math.round(p.outputs), 1, 12);
@@ -465,10 +467,10 @@
     label: 'Stockage à navettes (type OSR)', cat: 'Stockage', conveyor: true, osr: true,
     defaults: Object.assign({}, CONV_DEF, {
       towers: 1, levels: 16, levelH: 380, rackLength: 8000, towerWidth: 2200, frontZone: 1500, fill: 75,
-      towerRate: 400, formats: ['bac'], orientation: 90, maxCount: 0, startDelay: 0, jitter: 20,
+      towerRate: 400, wipLimit: 0, formats: ['bac'], orientation: 90, maxCount: 0, startDelay: 0, jitter: 20,
       laneLength: 2500, inSide: 'left', width: 640, usefulWidth: 560, speed: 0.6, guideH: 60, color: '#5b6d82'
     }),
-    fields: ['name', 'x', 'y', 'rot', 'towers', 'convH', 'laneLength', 'inSide', 'levels', 'levelH', 'rackLength', 'towerWidth', 'frontZone', 'fill', 'towerRate', 'formats', 'orientation',
+    fields: ['name', 'x', 'y', 'rot', 'towers', 'convH', 'laneLength', 'inSide', 'levels', 'levelH', 'rackLength', 'towerWidth', 'frontZone', 'fill', 'towerRate', 'wipLimit', 'formats', 'orientation',
       'maxCount', 'startDelay', 'jitter', 'width', 'usefulWidth', 'speed', 'running', 'gap', 'rollerDiam', 'rollerPitch', 'guideH', 'color', 'note'],
     /** Abscisses locales des convoyeurs d'entrée et de sortie de la tour i. */
     lanesX(p, i) {

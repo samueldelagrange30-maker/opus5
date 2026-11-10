@@ -56,6 +56,7 @@
             { label: 'Exporter le projet en JSON', icon: 'export', key: 'Ctrl+E', action: () => C.IO.exportJSON(a) },
             null,
             { label: 'Charger le projet d\'exemple', action: () => this.confirm('Remplacer le projet courant par le projet d\'exemple ?', () => a.loadDemo()) },
+            { label: 'Charger le projet « OSR + 5 postes GTP »', action: () => this.confirm('Remplacer le projet courant par l\'automatisation OSR + 5 postes GTP ?', () => C.Samples.osrGtp(a)) },
             { label: 'Réinitialiser l\'installation', icon: 'delete', action: () => a.resetInstallation() }
           ]
         },
