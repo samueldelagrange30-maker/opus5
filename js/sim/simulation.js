@@ -111,8 +111,139 @@
     }
   };
 
+  /* ------------------- bac plastique ajouré (tote Euro) ------------------- */
+  const toteGeos = new Map(), toteMats = new Map();
+  let perfTex = null, toteLabelTex = null;
+  /** Motif de perforations (trous ronds en quinconce) : trous transparents. Dalle = 22 × 44 mm. */
+  function perforationTexture() {
+    if (perfTex) return perfTex;
+    const cv = document.createElement('canvas'); cv.width = 64; cv.height = 128;
+    const g = cv.getContext('2d');
+    g.fillStyle = '#ffffff'; g.fillRect(0, 0, 64, 128);
+    g.globalCompositeOperation = 'destination-out';
+    for (const [x, y] of [[32, 32], [0, 96], [64, 96]]) { g.beginPath(); g.arc(x, y, 21, 0, Math.PI * 2); g.fill(); }
+    perfTex = new THREE.CanvasTexture(cv);
+    perfTex.wrapS = perfTex.wrapT = THREE.RepeatWrapping;
+    perfTex.colorSpace = THREE.SRGBColorSpace;
+    perfTex.anisotropy = 4;
+    return perfTex;
+  }
+  /** Étiquette blanche du petit côté : numéro du bac et codes à barres. */
+  function toteLabelTexture() {
+    if (toteLabelTex) return toteLabelTex;
+    const cv = document.createElement('canvas'); cv.width = 128; cv.height = 192;
+    const g = cv.getContext('2d');
+    g.fillStyle = '#f4f1e8'; g.fillRect(0, 0, 128, 192);
+    g.fillStyle = '#16181b'; g.font = 'bold 21px monospace'; g.textAlign = 'center';
+    g.fillText('10013497', 64, 34);
+    const bars = (x0, y0, w, h, n) => { let x = x0; for (let i = 0; i < n && x < x0 + w; i++) { const bw = 1 + ((i * 7 + 3) % 3); g.fillRect(x, y0, bw, h); x += bw + 1 + ((i * 5) % 2); } };
+    bars(40, 58, 48, 26, 40);
+    bars(34, 132, 60, 44, 40);
+    toteLabelTex = new THREE.CanvasTexture(cv);
+    toteLabelTex.colorSpace = THREE.SRGBColorSpace;
+    return toteLabelTex;
+  }
+  function toteMaterials(color) {
+    if (toteMats.has(color)) return toteMats.get(color);
+    const body = new THREE.MeshStandardMaterial({ color, roughness: 0.62, metalness: 0.04 });
+    const perf = new THREE.MeshStandardMaterial({ color, roughness: 0.62, metalness: 0.04, map: perforationTexture(), alphaTest: 0.5, side: THREE.DoubleSide });
+    const label = new THREE.MeshStandardMaterial({ color: 0xffffff, map: toteLabelTexture(), roughness: 0.9, polygonOffset: true, polygonOffsetFactor: -2 });
+    const m = { body, perf, label };
+    toteMats.set(color, m);
+    return m;
+  }
+  /** Fusionne des pavés [lx, ly, lz, x, y, z] (mm) en une seule géométrie (m). */
+  function mergeBoxes(list) {
+    const pos = [], nor = [], uv = [];
+    for (const [lx, ly, lz, x, y, z] of list) {
+      const g = new THREE.BoxGeometry(lx * M, ly * M, lz * M).toNonIndexed();
+      g.translate(x * M, y * M, z * M);
+      pos.push(...g.attributes.position.array); nor.push(...g.attributes.normal.array); uv.push(...g.attributes.uv.array);
+      g.dispose();
+    }
+    const out = new THREE.BufferGeometry();
+    out.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+    out.setAttribute('normal', new THREE.Float32BufferAttribute(nor, 3));
+    out.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2));
+    return out;
+  }
+  /** Fusionne des rectangles verticaux { a:[x,y], b:[x,y], z0, z1, uv:[u0,v0,u1,v1] } (mm). */
+  function mergeQuads(list) {
+    const pos = [], nor = [], uv = [];
+    for (const q of list) {
+      const [ax, ay] = q.a, [bx, by] = q.b, dx = bx - ax, dy = by - ay, len = Math.hypot(dx, dy) || 1;
+      const n = [dy / len, -dx / len, 0], [u0, v0, u1, v1] = q.uv;
+      const P = [[ax, ay, q.z0, u0, v0], [bx, by, q.z0, u1, v0], [bx, by, q.z1, u1, v1], [ax, ay, q.z1, u0, v1]];
+      for (const i of [0, 1, 2, 0, 2, 3]) { pos.push(P[i][0] * M, P[i][1] * M, P[i][2] * M); nor.push(n[0], n[1], n[2]); uv.push(P[i][3], P[i][4]); }
+    }
+    const out = new THREE.BufferGeometry();
+    out.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+    out.setAttribute('normal', new THREE.Float32BufferAttribute(nor, 3));
+    out.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2));
+    return out;
+  }
+  /**
+   * Bac Euro gris ajouré : fond plein, grands côtés perforés en 3 panneaux entre nervures,
+   * petits côtés pleins avec étiquette, ceinture haute renforcée. Groupe centré (mètres).
+   */
+  function toteGeometry(L, W, H) {
+    const key = L + '|' + W + '|' + H;
+    if (toteGeos.has(key)) return toteGeos.get(key);
+    const t = 8, hx = L / 2, hy = W / 2, hz = H / 2;
+    const rimH = Math.min(70, H * 0.28), baseH = Math.min(46, H * 0.18);       // bandeaux pleins haut / bas des grands côtés
+    const zP0 = -hz + baseH, zP1 = hz - rimH;                                   // zone perforée
+    const B = [];
+    B.push([L, W, t, 0, 0, -hz + t / 2]);                                       // fond
+    for (const sx of [1, -1]) B.push([t, W, H, sx * (hx - t / 2), 0, 0]);         // petits côtés pleins
+    const nP = 3, ribW = 16, xs = [];
+    for (let i = 0; i <= nP; i++) xs.push(-hx + i * L / nP);
+    for (const sy of [1, -1]) {
+      const y = sy * (hy - t / 2);
+      B.push([L, t, baseH, 0, y, -hz + baseH / 2]);                             // bandeau bas
+      B.push([L, t, rimH, 0, y, hz - rimH / 2]);                                // bandeau haut
+      for (const x of xs) B.push([ribW, t + 8, H - 6, C.clamp(x, -hx + ribW / 2, hx - ribW / 2), sy * (hy - t / 2 + 4), -3]);   // nervures verticales
+    }
+    // nervures des petits côtés (3 panneaux) + montants d'angle
+    for (const sx of [1, -1]) for (const y of [-W / 6, W / 6]) B.push([t + 8, 14, H - 6, sx * (hx - t / 2 + 4), y, -3]);
+    for (const sx of [1, -1]) for (const sy of [1, -1]) B.push([26, 26, H - 4, sx * (hx - 9), sy * (hy - 9), -2]);
+    // ceinture haute : deux bourrelets débordants
+    for (const [zc, hh, e] of [[hz - 9, 18, 9], [hz - rimH + 8, 12, 7]]) {
+      for (const sy of [1, -1]) B.push([L + 2 * e, e + 2, hh, 0, sy * (hy + e / 2 - 1), zc]);
+      for (const sx of [1, -1]) B.push([e + 2, W + 2 * e, hh, sx * (hx + e / 2 - 1), 0, zc]);
+    }
+    const body = mergeBoxes(B);
+    // panneaux perforés (une dalle de motif = 22 × 44 mm)
+    const Q = [], tw = 22, th = 44;
+    for (const sy of [1, -1]) for (let i = 0; i < nP; i++) {
+      const x0 = xs[i] + ribW / 2, x1 = xs[i + 1] - ribW / 2, y = sy * (hy - t / 2);
+      Q.push({ a: sy > 0 ? [x1, y] : [x0, y], b: sy > 0 ? [x0, y] : [x1, y], z0: zP0, z1: zP1, uv: [0, 0, (x1 - x0) / tw, (zP1 - zP0) / th] });
+    }
+    const perf = mergeQuads(Q);
+    // étiquettes : grande sur chaque petit côté, petit code à barres en bas des grands côtés
+    const Lb = [], lw = Math.min(120, W * 0.3), lh = Math.min(180, H * 0.55), lz0 = -hz + Math.max(12, H * 0.06);
+    for (const sx of [1, -1]) Lb.push({ a: [sx * (hx + 0.8), -sx * lw / 2], b: [sx * (hx + 0.8), sx * lw / 2], z0: lz0, z1: lz0 + lh, uv: [0, 0, 1, 1] });
+    for (const sy of [1, -1]) {
+      const x0 = -sy * (hx - 40), x1 = -sy * (hx - 40 - 44);
+      Lb.push({ a: [x1, sy * (hy + 0.8)], b: [x0, sy * (hy + 0.8)], z0: -hz + 8, z1: -hz + baseH - 4, uv: [0.22, 0.06, 0.78, 0.32] });
+    }
+    const label = mergeQuads(Lb);
+    const g = { body, perf, label };
+    toteGeos.set(key, g);
+    return g;
+  }
+  C.makeTote = function (spec) {
+    const geo = toteGeometry(Math.round(spec.L), Math.round(spec.W), Math.round(spec.H)), mats = toteMaterials(spec.color || '#9aa0a6');
+    const grp = new THREE.Group();
+    const body = new THREE.Mesh(geo.body, mats.body); body.castShadow = true; body.receiveShadow = true; body.userData.loadPart = true; grp.add(body);
+    const perf = new THREE.Mesh(geo.perf, mats.perf); perf.castShadow = true; grp.add(perf);
+    grp.add(new THREE.Mesh(geo.label, mats.label));
+    grp.userData.isTote = true;
+    return grp;
+  };
+
   C.makeCartonMesh = function (spec) {
     if (spec.kind === 'open') return C.makeOpenCarton(spec);
+    if (spec.kind === 'tote' || (C.isTote && C.isTote(spec) && (!spec.kind || spec.kind === 'box'))) return C.makeTote(spec);
     if (spec.kind && spec.kind !== 'box' && C.buildPallet) {
       // palette (vide ou chargée) : groupe centré (origine au centre de l'unité de charge)
       const outer = new THREE.Group();

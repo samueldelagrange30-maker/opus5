@@ -13,7 +13,7 @@
   const V3 = (x, y, z) => new THREE.Vector3(x, y, z);
 
   /** Bac / tote (caisse plastique) plutôt que carton ? */
-  C.isTote = spec => !!spec && (spec.formatId === 'bac' || /\b(bac|tote|caisse)/i.test(spec.formatName || spec.name || ''));
+  C.isTote = spec => !!spec && (spec.kind === 'tote' || spec.formatId === 'bac' || /\b(bac|tote|caisse)/i.test(spec.formatName || spec.name || ''));
 
   C.CAMERA_VIEWS = [
     ['chase', 'Poursuite'], ['side', 'Travelling latéral'], ['top', 'Vue de dessus'], ['front', 'Face (arrivée)'],

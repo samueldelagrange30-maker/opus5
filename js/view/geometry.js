@@ -1017,7 +1017,7 @@
     const frame = MAT.color('#c3cad3'), clad = new THREE.MeshStandardMaterial({ color: new THREE.Color(p.color || '#5b6d82'), transparent: true, opacity: 0.28, side: THREE.DoubleSide, depthWrite: false });
     clad.userData.owned = true;
     const posts = [], shelves = [], totes = [], lifts = [];
-    const fmt = (C.app && C.app.project && C.app.project.format((p.formats || ['bac'])[0])) || { L: 600, W: 400, H: 220, color: '#3d7fd6' };
+    const fmt = (C.app && C.app.project && C.app.project.format((p.formats || ['bac'])[0])) || { L: 600, W: 400, H: 320, color: '#9aa0a6' };
     const rng = seeded(el.id + ':' + n + ':' + nl);
     const nSlots = Math.max(1, Math.floor((Ld - 100) / (Math.min(fmt.L, fmt.W) + 60)));
     const shuttles = [];

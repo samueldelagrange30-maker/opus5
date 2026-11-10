@@ -141,7 +141,7 @@
     /* --------------------------- sérialisation --------------------------- */
     toJSON(network) {
       return {
-        format: 'convoy3d-project', version: 5, app: 'Convoy3D ' + C.VERSION,
+        format: 'convoy3d-project', version: 6, app: 'Convoy3D ' + C.VERSION,
         id: this.id, name: this.name, created: this.created, saved: Date.now(),
         settings: this.settings, formats: this.formats, elements: this.elements,
         cartons: this.cartons, measures: this.measures, camera: this.camera,
@@ -174,6 +174,11 @@
       // v3 → v4 : l'étiqueteuse pose l'étiquette sur le côté du carton
       if ((+data.version || 1) < 4) for (const e of this.elements) if (e.type === 'labeler' && e.params.labelSide === 'top') e.params.labelSide = 'left';
       // v4 → v5 : nouveau poste GTP (meuble long avec alvéoles)
+      // v6 : le bac intégré devient un bac gris ajouré (600 × 400 × 320)
+      if ((+data.version || 1) < 6) {
+        const bac = this.formats.find(f => f.id === 'bac');
+        if (bac) { bac.kind = 'tote'; if (/^#3d7fd6$/i.test(bac.color)) bac.color = '#9aa0a6'; if (bac.H === 220) bac.H = 320; }
+      }
       if ((+data.version || 1) < 5) for (const e of this.elements) if (e.type === 'gtp') { e.params.length = Math.max(6000, e.params.length || 0); e.params.width = 560; e.params.usefulWidth = 500; }
       this.cartons = (data.cartons || []).filter(c => this.getElement(c.elementId));
       this.measures = data.measures || [];
