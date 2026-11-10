@@ -561,8 +561,8 @@
    */
   T.gtp = {
     label: 'Poste GTP (bac → carton)', cat: 'Équipements', conveyor: true,
-    defaults: Object.assign({}, CONV_DEF, { length: 6000, tableLength: 900, pickRate: 600, itemsPerTote: 2, itemsPerOrder: 1, articleSize: 'm', width: 560, usefulWidth: 500, speed: 0.4, guideH: 0, color: '#2b2f35' }),
-    fields: ['name', 'x', 'y', 'z', 'rot', 'pickRate', 'itemsPerTote', 'itemsPerOrder', 'articleSize', 'length', 'tableLength', 'width', 'usefulWidth', 'speed', 'running', 'gap', 'rollerDiam', 'rollerPitch', 'color', 'note'],
+    defaults: Object.assign({}, CONV_DEF, { length: 6000, tableLength: 900, ctnDrop: 650, pickRate: 600, itemsPerTote: 2, itemsPerOrder: 1, articleSize: 'm', width: 560, usefulWidth: 500, speed: 0.4, guideH: 0, color: '#2b2f35' }),
+    fields: ['name', 'x', 'y', 'z', 'rot', 'pickRate', 'itemsPerTote', 'itemsPerOrder', 'articleSize', 'length', 'tableLength', 'ctnDrop', 'width', 'usefulWidth', 'speed', 'running', 'gap', 'rollerDiam', 'rollerPitch', 'color', 'note'],
     articleDims: s => s === 's' ? [120, 80, 60] : s === 'l' ? [250, 180, 120] : [180, 120, 90],
     /**
      * Implantation (repère local, X = longueur du poste, opérateur côté −Y) :
@@ -570,20 +570,21 @@
      * - Bacs : convoyeur arrière (y = yB) ; chaque bac entre PAR L'ARRIÈRE dans une alvéole
      *   centrale libre (1 bac maxi), ressort par l'arrière au même endroit après le prélèvement
      *   et repart sur le convoyeur arrière jusqu'à la sortie « to » (bout du poste).
-     * - Cartons : convoyeur bas dans le meuble (z = zLow) ; un élévateur monte chaque carton
-     *   PAR LE BAS dans une alvéole latérale libre (1 carton maxi), puis le redescend une fois servi.
+     * - Cartons : convoyeur BAS qui traverse le meuble de part en part, à plat (z = zLow, sans
+     *   descente ni remontée) ; un élévateur monte chaque carton PAR LE BAS dans une alvéole
+     *   latérale libre (1 carton maxi), puis le redescend sur le convoyeur bas une fois servi.
      */
     layout(p) {
       const L = C.clamp(+p.length || 6000, 4800, 20000), tl = C.clamp(+p.tableLength || 900, 600, 3000);
-      const D = 1200, yC = -270, yT = 300, yB = D / 2 + 350, yB2 = yB + 700, zLow = -650, cw = 1600;
+      const D = 1200, yC = -270, yT = 300, yB = D / 2 + 350, yB2 = yB + 700, cw = 1600;
+      const zLow = -C.clamp(+p.ctnDrop || 650, 500, 900);
       const xc0 = tl + (L - cw) / 2, xc1 = xc0 + cw, wl = (L - cw) / 2;
-      const a = tl - 450, run = 500, ramp = Math.hypot(run, -zLow), ang = Math.atan2(-zLow, run);
       return {
-        L, tl, D, yC, yT, yB, yB2, zLow, cw, xc0, xc1, wl, total: L + 2 * tl, a, run, ramp, ang,
+        L, tl, D, yC, yT, yB, yB2, zLow, cw, xc0, xc1, wl, total: L + 2 * tl,
         totes: [xc0 + cw * 0.3, xc0 + cw * 0.7],
         ctns: [tl + wl * 0.28, tl + wl * 0.72, xc1 + wl * 0.28, xc1 + wl * 0.72],
-        /** abscisse curviligne du convoyeur bas des cartons au droit de x (partie basse) */
-        sCtn(x) { return a + ramp + (x - (a + run)); }
+        /** abscisse curviligne du convoyeur bas des cartons au droit de x (convoyeur plat) */
+        sCtn(x) { return x; }
       };
     },
     build: p => {
@@ -592,9 +593,9 @@
       // convoyeur arrière des bacs : arrivée, entrée / sortie des alvéoles par l'arrière, puis départ
       const tb = new C.Turtle(Y.tl, Y.yB, 0, 0); tb.line(Y.L);
       m.tracks.back = { segs: tb.segs };
-      // convoyeur bas des cartons : table d'entrée → descente dans le meuble → remontée → table de sortie
-      const tc = new C.Turtle(0, Y.yC, 0, 0);
-      tc.line(Y.a); tc.line(Y.ramp, -Y.ang); tc.line(Y.total - 2 * (Y.a + Y.run)); tc.line(Y.ramp, Y.ang); tc.line(Y.a);
+      // convoyeur bas des cartons : traverse le meuble à plat, de l'entrée à la sortie
+      const tc = new C.Turtle(0, Y.yC, Y.zLow, 0);
+      tc.line(Y.total);
       m.tracks.ctn = { segs: tc.segs };
       // alvéoles bacs : entrée par l'arrière, sortie en arrière vers le convoyeur
       Y.totes.forEach((x, i) => {
@@ -613,7 +614,9 @@
         const k = i + 1;
         const up = new C.Turtle(x, Y.yC, Y.zLow, 0); up.rise(-Y.zLow);
         m.tracks['u' + k] = { segs: up.segs, yawMode: 'keep', endMode: 'center', pocket: 'ctn', pocketIdx: i, endTo: { track: 'd' + k, s: 0 } };
-        m.tracks['d' + k] = { segs: [{ type: 'line', a: [x, Y.yC, 0], b: [x + 300, Y.yC, Y.zLow] }], yawMode: 'keep', exitOf: 'ctn', pocketIdx: i, endTo: { track: 'ctn', s: Y.sCtn(x + 300), merge: true } };
+        // redescente verticale par le même élévateur, puis reprise par le convoyeur bas
+        const dn = new C.Turtle(x, Y.yC, 0, 0); dn.rise(Y.zLow);
+        m.tracks['d' + k] = { segs: dn.segs, yawMode: 'keep', exitOf: 'ctn', pocketIdx: i, endTo: { track: 'ctn', s: Y.sCtn(x), merge: true } };
         m.diverts.push({ track: 'ctn', s: Y.sCtn(x), to: 'u' + k, out: k + 2 });
       });
       m.ports.push({ id: 'ti', role: 'in', track: 'back', at: 'start' }, { id: 'to', role: 'out', track: 'back', at: 'end', out: 0 },
@@ -621,7 +624,8 @@
       return m;
     }
   };
-  fld('tableLength', 'Longueur des tables d\'extrémité', 'number', { group: 'Poste GTP', unit: 'mm', min: 400, max: 3000, step: 50 });
+  fld('tableLength', 'Longueur des convoyeurs d\'extrémité (cartons)', 'number', { group: 'Poste GTP', unit: 'mm', min: 400, max: 3000, step: 50 });
+  fld('ctnDrop', 'Convoyeur des cartons : niveau sous les bacs', 'number', { group: 'Poste GTP', unit: 'mm', min: 500, max: 900, step: 10 });
 
   /* ---------------- Escalier de trémie (dans une mezzanine) ----------------
    * Origine : nez de la marche haute, au bord de la trémie ; descend suivant +X.

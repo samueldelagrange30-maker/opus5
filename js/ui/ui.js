@@ -67,6 +67,7 @@
             { label: 'Copier', icon: 'copy', key: 'Ctrl+C', action: () => a.copy() },
             { label: 'Coller', icon: 'paste', key: 'Ctrl+V', action: () => a.paste(), disabled: () => !a.clipboard },
             { label: 'Dupliquer', icon: 'duplicate', key: 'Ctrl+D', action: () => a.duplicate() },
+            { label: 'Dupliquer au-dessus (convoyeurs superposés)', icon: 'stack', key: 'Ctrl+Maj+D', action: () => a.stackAbove() },
             { label: 'Supprimer', icon: 'delete', key: 'Suppr', action: () => a.deleteSelection() },
             null,
             { label: 'Tout sélectionner', key: 'Ctrl+A', action: () => a.selectAll() },
@@ -123,6 +124,8 @@
             { label: 'Magnétisme de grille', check: () => a.project.settings.snapGrid, action: () => this.toggleSetting('snapGrid') },
             { label: 'Accrochage magnétique des ports', check: () => a.project.settings.snapPorts, action: () => this.toggleSetting('snapPorts') },
             { label: 'Ajout chaîné à la sortie sélectionnée', check: () => a.project.settings.chainAdd, action: () => this.toggleSetting('chainAdd') },
+            { label: 'Guides d\'alignement sur les objets voisins', check: () => a.project.settings.snapAlign !== false, action: () => { if (a.project.settings.snapAlign === undefined) a.project.settings.snapAlign = true; this.toggleSetting('snapAlign'); } },
+            { label: 'Poser plusieurs objets à la suite', check: () => a.project.settings.multiPlace, action: () => this.toggleSetting('multiPlace') },
             null,
             { label: 'Analyser l\'installation', icon: 'analysis', action: () => { this.setRightTab('analysis'); this.runAnalysis(); } }
           ]
@@ -230,7 +233,7 @@
       st[k] = !st[k];
       this.app.autosave();
       this.refreshToolbar();
-      C.toast((st[k] ? 'Activé : ' : 'Désactivé : ') + ({ snapGrid: 'magnétisme de grille', snapPorts: 'accrochage des ports', chainAdd: 'ajout chaîné', collisions: 'détection des collisions' }[k] || k), 'info');
+      C.toast((st[k] ? 'Activé : ' : 'Désactivé : ') + ({ snapGrid: 'magnétisme de grille', snapPorts: 'accrochage des ports', chainAdd: 'ajout chaîné', collisions: 'détection des collisions', snapAlign: 'guides d\'alignement', multiPlace: 'pose en série' }[k] || k), 'info');
     }
 
     /* ============================== BARRE D'OUTILS ============================== */
@@ -312,7 +315,7 @@
         const txt = {
           mission: mc && mc.step === 2 ? 'Mission cariste — 2/2 : cliquez où déposer la palette (sol, mezzanine ou emplacement de rack libre) · Échap annuler'
             : 'Mission cariste — 1/2 : cliquez la palette à prendre (au sol ou dans un rack) · Échap annuler',
-          select: '', place: 'Placement : cliquez pour poser · R tourner · Maj multiple · Échap annuler', measure: 'Mesure : cliquez deux points (accroche aux ports) · Échap pour quitter', carton: 'Pose de cartons : cliquez sur un convoyeur · Échap pour quitter' }[mode];
+          select: '', place: '', measure: 'Mesure : cliquez deux points (accroche aux ports) · Échap pour quitter', carton: 'Pose de cartons : cliquez sur un convoyeur · Échap pour quitter' }[mode];
         mi.textContent = txt || ''; mi.style.display = txt ? '' : 'none';
       }
       const wbtn = $('vbWalls');
@@ -352,9 +355,72 @@
       vb.appendChild(fit);
       vp.on('projection', () => this.refreshToolbar());
       $('center').appendChild(h('div', { id: 'modeInfo', class: 'mode-info', style: { display: 'none' } }));
+      this.buildPlaceBar();
       const hint = h('div', { class: 'vp-hint', html: 'Clic gauche : sélectionner / déplacer / tourner la vue · Clic droit : déplacer la vue / menu · Molette : zoom · Maj+glisser : sélection rectangle · Double-clic : cadrer' });
       $('center').appendChild(hint);
       setTimeout(() => hint.classList.add('fade'), 9000);
+    }
+
+    /* ------------------------------ barre de pose ------------------------------ */
+    /** Barre affichée pendant la pose d'un objet : rotation, hauteur, « au-dessus », pose en série. */
+    buildPlaceBar() {
+      const a = this.app, vp = a.viewport;
+      const bar = this.placeBar = h('div', { id: 'placeBar', class: 'place-bar', style: { display: 'none' } });
+      bar.innerHTML = `
+        <div class="pb-row">
+          <span class="pb-title">${C.icon('plus', 14)} <b id="pbName"></b><em id="pbCount"></em></span>
+          <span class="pb-grp" title="Orientation de l'objet (R : 90° · Maj+R : pas fin)">
+            <button class="btn small" data-a="rl" title="Tourner de −90°">⟲</button><span class="pb-val" id="pbRot">0°</span><button class="btn small" data-a="rr" title="Tourner de +90° (R)">⟳</button>
+          </span>
+          <span class="pb-grp" id="pbZGrp" title="Hauteur de pose au-dessus du sol ou du plancher (PgPréc / PgSuiv, ou Maj + molette)">
+            <span class="pb-lbl">Hauteur</span>
+            <button class="btn small" data-a="zd" title="Descendre de 100 mm (PgSuiv)">▼</button>
+            <input type="number" id="pbZ" step="50" min="0"><span class="unit">mm</span>
+            <button class="btn small" data-a="zu" title="Monter de 100 mm (PgPréc)">▲</button>
+            <button class="btn small" data-a="auto" id="pbAuto" title="Hauteur automatique : hauteur par défaut, ou celle du port sur lequel l'objet s'accroche">Auto</button>
+          </span>
+          <button class="btn small" data-a="stack" id="pbStack" title="Pose un niveau au-dessus du convoyeur visé par la souris (U)">⤒ Au-dessus</button>
+          <label class="chk" title="Rester en pose après chaque clic pour poser plusieurs objets à la suite (ou maintenir Maj)"><input type="checkbox" id="pbMulti"> Poser plusieurs</label>
+          <button class="btn small primary" data-a="end" title="Terminer la pose (Échap ou clic droit)">Terminer</button>
+        </div>
+        <div class="pb-hint">Clic : poser · R : tourner · PgPréc / PgSuiv ou Maj + molette : hauteur · U : au-dessus d'un convoyeur · Alt : sans aimant · Clic droit ou Échap : terminer</div>`;
+      $('center').appendChild(bar);
+      const st = () => a.project.settings;
+      bar.addEventListener('click', e => {
+        const b = e.target.closest('[data-a]');
+        if (!b) return;
+        const k = b.dataset.a;
+        if (k === 'rl') vp.rotateGhost(-90);
+        else if (k === 'rr') vp.rotateGhost(90);
+        else if (k === 'zu') vp.ghostHeight(100);
+        else if (k === 'zd') vp.ghostHeight(-100);
+        else if (k === 'auto') vp.setGhostHeight(null);
+        else if (k === 'stack') vp.toggleStack();
+        else if (k === 'end') vp.cancelPlace();
+      });
+      const zi = bar.querySelector('#pbZ');
+      zi.addEventListener('change', () => vp.setGhostHeight(parseFloat(zi.value)));
+      zi.addEventListener('keydown', e => { if (e.key === 'Enter') zi.blur(); });
+      bar.querySelector('#pbMulti').addEventListener('change', e => { st().multiPlace = e.target.checked; a.autosave(); });
+      vp.on('ghost', s2 => this.refreshPlaceBar(s2));
+      vp.on('mode', m => { if (m !== 'place') bar.style.display = 'none'; });
+    }
+    refreshPlaceBar(s2) {
+      const bar = this.placeBar;
+      if (!bar) return;
+      if (!s2 || s2.drag) { bar.style.display = 'none'; return; }
+      bar.style.display = '';
+      const q = id => bar.querySelector(id);
+      q('#pbName').textContent = s2.label;
+      q('#pbCount').textContent = s2.count ? ` · ${s2.count} posé${s2.count > 1 ? 's' : ''}` : '';
+      q('#pbRot').textContent = C.fmt(s2.rot) + '°';
+      q('#pbZGrp').style.display = s2.canZ ? '' : 'none';
+      q('#pbStack').style.display = s2.canZ ? '' : 'none';
+      const zi = q('#pbZ');
+      if (document.activeElement !== zi) zi.value = Math.round(s2.z);
+      q('#pbAuto').classList.toggle('active', s2.auto && !s2.stack);
+      q('#pbStack').classList.toggle('active', !!s2.stack);
+      q('#pbMulti').checked = !!this.app.project.settings.multiPlace;
     }
 
     /* ============================== PANNEAU GAUCHE ============================== */
@@ -396,7 +462,8 @@
           for (const it of items) {
             const b = h('div', { class: 'lib-item', draggable: 'true', title: it.label + ' — cliquer pour ajouter, ou glisser dans la vue 3D', html: C.libIcon(it.icon) + `<span>${C.escape(it.label)}</span>` });
             b.addEventListener('click', () => this.app.addFromLibrary(it.id));
-            b.addEventListener('dragstart', e => { e.dataTransfer.setData('text/plain', it.id); e.dataTransfer.effectAllowed = 'copy'; });
+            b.addEventListener('dragstart', e => { e.dataTransfer.setData('text/plain', it.id); e.dataTransfer.effectAllowed = 'copy'; this.app.dragItem = it.id; });
+            b.addEventListener('dragend', () => { this.app.dragItem = null; const v = this.app.viewport; if (v.ghost && v.ghost.drag) v.cancelPlace(); });
             grid.appendChild(b);
           }
           list.appendChild(grid);
@@ -558,6 +625,7 @@
       if (def.fields.includes('reverse')) act('reverse', 'Inverser le sens', () => a.reverseSelection());
       if (def.conveyor) act('plus', 'Ajouter le même module à la suite (N)', () => a.appendSame());
       if (def.conveyor) act('magnet', 'Accrocher au port libre le plus proche', () => a.snapSelectionNow());
+      if (def.conveyor) act('stack', `Dupliquer au-dessus (+${C.fmt(a.project.settings.stackGap || 600)} mm) — Ctrl+Maj+D`, () => a.stackAbove());
       act('fit', 'Cadrer', () => a.viewport.focus(el.id));
       act(el.locked ? 'unlock' : 'lock', el.locked ? 'Déverrouiller (L)' : 'Verrouiller (L) : empêche déplacement, rotation, suppression et modification', () => a.toggleLock());
       act('delete', 'Supprimer', () => a.deleteSelection());
@@ -1182,6 +1250,8 @@
         ${c('sSP', 'Accrochage magnétique des ports', st.snapPorts)}${f('sSR', 'Rayon d\'accrochage', st.snapRadius, 'mm', 10)}
         ${f('sA', 'Pas de rotation', st.angleStep, '°', 1)}${f('sZ', 'Hauteur de convoyage par défaut', st.defaultZ, 'mm', 10)}
         ${c('sCA', 'Ajout chaîné à la sortie de l\'élément sélectionné', st.chainAdd)}
+        ${c('sAl', 'Guides d\'alignement sur les objets voisins', st.snapAlign !== false)}${c('sMP', 'Poser plusieurs objets à la suite', st.multiPlace)}
+        ${f('sSG', 'Écart entre niveaux de convoyeurs superposés', st.stackGap || 600, 'mm', 50)}${f('sSZ', 'Écart de hauteur maxi pour accrocher deux ports', st.snapZ || 300, 'mm', 10)}
         <h4 class="span2">Simulation</h4>
         ${c('sCo', 'Détection des collisions entre cartons', st.collisions)}
       </div>`, [{ label: 'Annuler' }, {
@@ -1189,7 +1259,7 @@
           const v = id => +b.querySelector('#' + id).value, ck = id => b.querySelector('#' + id).checked;
           a.project.change('Réglages', () => Object.assign(st, {
             workW: Math.max(2000, v('sW')), workD: Math.max(2000, v('sD')), gridStep: Math.max(100, v('sG')), snapGrid: ck('sSG'), snapStep: Math.max(1, v('sSS')),
-            snapPorts: ck('sSP'), snapRadius: Math.max(10, v('sSR')), angleStep: C.clamp(v('sA'), 1, 180), defaultZ: Math.max(0, v('sZ')), chainAdd: ck('sCA'), collisions: ck('sCo')
+            snapPorts: ck('sSP'), snapRadius: Math.max(10, v('sSR')), angleStep: C.clamp(v('sA'), 1, 180), defaultZ: Math.max(0, v('sZ')), chainAdd: ck('sCA'), snapAlign: ck('sAl'), multiPlace: ck('sMP'), stackGap: C.clamp(v('sSG') || 600, 200, 5000), snapZ: C.clamp(v('sSZ') || 300, 20, 2000), collisions: ck('sCo')
           }));
           this.buildMenus();
         }
@@ -1404,7 +1474,9 @@
       this.modal('Prise en main', `
         <div class="help-grid">
           <div><h4>Concevoir</h4><ul>
-            <li>Cliquez un module de la <b>bibliothèque</b> : s'il y a un convoyeur sélectionné avec une sortie libre, le module s'y <b>accroche automatiquement</b> ; sinon cliquez dans la vue pour le placer (ou glissez-déposez).</li>
+            <li>Cliquez un module de la <b>bibliothèque</b> : s'il y a un convoyeur sélectionné avec une sortie libre, le module s'y <b>accroche automatiquement</b> ; sinon l'objet suit la souris et un clic le pose. Vous pouvez aussi le <b>glisser</b> depuis la bibliothèque : il apparaît en transparence et s'accroche avant d'être lâché.</li>
+            <li><b>Barre de pose</b> (en bas de la vue) : rotation (R : 90°, Maj+R : pas fin), <b>hauteur</b> (PgPréc / PgSuiv ou Maj + molette), « Poser plusieurs » pour enchaîner les poses, clic droit ou Échap pour terminer. Des <b>guides d'alignement</b> jaunes alignent l'objet sur ses voisins.</li>
+            <li><b>Convoyeurs superposés</b> : bouton « Au-dessus » (U) puis visez un convoyeur — le nouveau se pose un niveau plus haut, exactement au-dessus si vous visez son extrémité. Ou sélectionnez une ligne et « Dupliquer au-dessus » (Ctrl+Maj+D). Un convoyeur en hauteur ne s'accroche plus aux ports du niveau inférieur, et ses pieds évitent la bande du dessous. Pendant un déplacement, la molette règle la hauteur.</li>
             <li>Déplacez un élément en le faisant glisser : il s'<b>accroche magnétiquement</b> aux ports libres proches (alignement, cap et hauteur). Alt : désactiver le magnétisme.</li>
             <li>Ports : <span class="pill ok">vert</span> raccordé, <span class="pill err">rouge</span> libre ou défaut, <span class="pill warn">orange</span> écart de hauteur, <span class="pill opt">gris</span> sortie optionnelle.</li>
             <li>Une sortie qui débouche sur le côté d'un convoyeur crée une <b>jonction</b> (fusion de flux).</li>
@@ -1412,7 +1484,7 @@
             <li><b>Fléchage au sol</b> : allées droites ou en virage qui s'accrochent bout à bout (sélectionnez une allée puis cliquez une autre allée de la bibliothèque pour la prolonger). Itinéraire prévu : pointillés verts (sur les allées) ou bleus (trajet libre).</li>
             <li><b>Murs d'entrepôt</b> : un convoyeur (ou un objet) qui traverse un mur y perce automatiquement une ouverture. Portes : champ « Portes / ouvertures manuelles ». Bouton « Murs » en haut à droite : visibles / translucides / masqués.</li>
             <li><b>Escalier de trémie</b> : posez-le sur le plancher d'une mezzanine, il découpe une trémie avec garde-corps et descend jusqu'au sol ; nombre de marches réglable (0 = automatique).</li>
-            <li><b>Carton ouvert → poste GTP → fermeuse</b> : les cartons ouverts se remplissent d'articles au poste GTP (cadence en articles/h), puis la fermeuse pose une coiffe ajustée au format.</li>
+            <li><b>Carton ouvert → poste GTP → fermeuse</b> : les cartons ouverts se remplissent d'articles au poste GTP (cadence en articles/h), puis la fermeuse pose une coiffe ajustée au format. Au poste GTP, les bacs arrivent par l'arrière (niveau haut) et les cartons traversent le <b>bas de la machine</b> à plat : leurs convoyeurs d'entrée et de sortie se raccordent au niveau bas.</li>
             <li><b>Mezzanine modulaire</b> : accolez des modules bord à bord (accrochage magnétique ou boutons « Étendre ») pour obtenir la surface voulue ; les garde-corps disparaissent sur les jonctions.</li>
             <li><b>Mezzanine</b> : tout objet placé ou glissé au-dessus du plancher s'y pose automatiquement (Alt : garder la hauteur). Déplacer la mezzanine emporte les objets posés dessus.</li>
             <li>Modifiez toutes les cotes dans le panneau <b>Propriétés</b> (longueur, largeur, pente en ° ou %, hauteur de sortie, rayon, rouleaux…).</li>
@@ -1434,7 +1506,7 @@
           <div><h4>Clavier</h4><table class="keys">
             <tr><td>Suppr</td><td>Supprimer</td></tr><tr><td>Ctrl+Z / Ctrl+Y</td><td>Annuler / Rétablir</td></tr>
             <tr><td>Ctrl+C / V / D</td><td>Copier / Coller / Dupliquer</td></tr><tr><td>Ctrl+G / Ctrl+Maj+G</td><td>Grouper / Dégrouper</td></tr>
-            <tr><td>R / Maj+R</td><td>Rotation ± pas</td></tr><tr><td>Flèches, PgPréc/PgSuiv</td><td>Déplacer en X/Y, Z (Maj ×10)</td></tr>
+            <tr><td>R / Maj+R</td><td>Rotation ± pas</td></tr><tr><td>Flèches</td><td>Déplacer en X/Y (Maj ×10)</td></tr><tr><td>PgPréc / PgSuiv</td><td>Hauteur ±100 mm (Maj : ±500), aussi pendant la pose</td></tr><tr><td>Ctrl+Maj+D</td><td>Dupliquer au-dessus</td></tr><tr><td>U (pendant la pose)</td><td>Poser au-dessus d'un convoyeur</td></tr>
             <tr><td>N</td><td>Même module à la suite</td></tr><tr><td>I</td><td>Inverser le sens</td></tr>
             <tr><td>L</td><td>Verrouiller / déverrouiller</td></tr>
             <tr><td>1 2 3 4 5</td><td>Dessus, face, côté, iso, 3D</td></tr><tr><td>P</td><td>Perspective / ortho</td></tr>

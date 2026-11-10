@@ -122,6 +122,7 @@
       this.gPorts = new THREE.Group(); this.gOverlay.add(this.gPorts);
       this.gSelection = new THREE.Group(); this.gOverlay.add(this.gSelection);
       this.gMeasures = new THREE.Group(); this.gOverlay.add(this.gMeasures);
+      this.gAlign = new THREE.Group(); this.gOverlay.add(this.gAlign);
 
       // lumières
       const hemi = new THREE.HemisphereLight(0xe6eeff, 0x3a3f46, 1.1);
@@ -238,6 +239,7 @@
 
     /* ------------------------------ éléments ----------------------------- */
     rebuildAll() {
+      this.app._legCache = null;
       for (const g of this.meshes.values()) this.disposeGroup(g);
       this.meshes.clear();
       this.gElements.clear();
@@ -272,9 +274,20 @@
       // les ouvertures des murs dépendent de tous les autres objets
       const wallSig = els.some(e => e.type === 'wall') ? JSON.stringify(els.map(e => [e.id, e.type, e.x, e.y, e.z, e.rot, e.params])) : '';
       for (const id of Array.from(this.meshes.keys())) if (!ids.has(id)) this.removeElementMesh(id);
+      // les pieds d'un convoyeur évitent la bande des convoyeurs situés dessous : dépendance aux voisins
+      this.app._legCache = null;
+      const convs = els.filter(e => C.Types.get(e.type).conveyor).map(e => ({ e, R: (e.params.length || 2000) + 2 * (e.params.radius || 0) + (e.params.diameter || 0) + 1500 }));
+      const multiLevel = convs.some(c => Math.abs(c.e.z - convs[0].e.z) > 200);
+      const near = el => {
+        if (!multiLevel || !C.Types.get(el.type).conveyor) return '';
+        const R = (el.params.length || 2000) + 2 * (el.params.radius || 0) + (el.params.diameter || 0) + 1500;
+        let out = '';
+        for (const c of convs) if (c.e !== el && Math.abs(c.e.x - el.x) < R + c.R && Math.abs(c.e.y - el.y) < R + c.R) out += [c.e.id, c.e.x, c.e.y, c.e.z, c.e.rot, c.e.params.length, c.e.params.width, c.e.params.radius, c.e.params.angle, c.e.params.slope].join() + ';';
+        return out;
+      };
       for (const el of els) {
         const g = this.meshes.get(el.id);
-        const sig = JSON.stringify([el.type, el.params, el.x, el.y, el.z, el.rot, el.name]) + mz + (el.type === 'wall' ? wallSig : '');
+        const sig = JSON.stringify([el.type, el.params, el.x, el.y, el.z, el.rot, el.name]) + mz + (el.type === 'wall' ? wallSig : '') + near(el);
         if (!g || g.userData.sig !== sig || (changedIds && changedIds.has(el.id))) {
           const ng = this.rebuildElement(el);
           ng.userData.sig = sig;
@@ -546,6 +559,10 @@
       window.addEventListener('pointerup', e => this.onUp(e));
       dom.addEventListener('wheel', e => {
         e.preventDefault();
+        // pose / déplacement en cours : Maj + molette (ou molette pendant un glisser) règle la hauteur
+        const dw = e.deltaY || e.deltaX;
+        if (this.mode === 'place' && e.shiftKey && this.ghost) { this.ghostHeight(dw < 0 ? 100 : -100); return; }
+        if (this.drag) { this.dragHeight(dw < 0 ? 100 : -100); return; }
         const f = Math.pow(1.0015, e.deltaY);
         if (this.app.director && this.app.director.active) { this.app.director.zoom = C.clamp(this.app.director.zoom * f, 0.2, 8); return; }
         const p = this.planePoint(e, 0);
@@ -556,9 +573,18 @@
         if (h && h.element) this.focus(h.element);
       });
       // glisser-déposer depuis la bibliothèque
-      dom.addEventListener('dragover', e => { e.preventDefault(); e.dataTransfer.dropEffect = 'copy'; });
+      // (aperçu fantôme en direct : l'objet suit la souris et s'accroche avant d'être lâché)
+      dom.addEventListener('dragover', e => {
+        e.preventDefault(); e.dataTransfer.dropEffect = 'copy';
+        const id = this.app.dragItem, item = id && C.libraryItem(id);
+        if (!item || item.action || this.app.sim.active) return;
+        if (!this.ghost || this.ghost.item !== item) this.startPlace(item, null, { drag: true });
+        this.updateGhost(e);
+      });
+      dom.addEventListener('dragleave', () => { if (this.ghost && this.ghost.drag) this.cancelPlace(); });
       dom.addEventListener('drop', e => {
         e.preventDefault();
+        if (this.ghost && this.ghost.drag) { this.confirmPlace(e, true); return; }
         const id = e.dataTransfer.getData('text/plain');
         const p = this.planePoint(e, this.app.project.settings.defaultZ);
         if (id && p) this.app.addFromLibrary(id, { at: p });
@@ -624,7 +650,9 @@
       const app = this.app;
       switch (d.kind) {
         case 'orbit': if (!d.moved) app.select([]); break;
-        case 'pan': if (!d.moved && d.button === 2) app.contextMenu(e, this.pick(e)); break;
+        case 'pan':
+          if (!d.moved && d.button === 2) { if (this.mode === 'place') this.cancelPlace(); else app.contextMenu(e, this.pick(e)); }
+          break;
         case 'box': this.rubber.style.display = 'none'; if (d.moved) this.finishRubber(d, e); else app.select([]); break;
         case 'maybeMove':
           // clic simple sur un élément d'un groupe → sélection du groupe déjà faite
@@ -697,6 +725,7 @@
     doMove(e) {
       const dr = this.drag;
       if (!dr) return;
+      this._lastMoveEvt = { clientX: e.clientX, clientY: e.clientY, altKey: e.altKey };
       const app = this.app, st = app.project.settings;
       const o = dr.orig.get(dr.prim.id);
       let p = this.planePoint(e, o.z);
@@ -708,8 +737,10 @@
         let sup = this.deckUnderCursor(e, dr.exclude);
         if (sup === null) sup = app.supportAt(o.x + p[0] - dr.start[0], o.y + p[1] - dr.start[1], o.z, dr.exclude);
         zShift = sup + rel - o.z;
-        if (Math.abs(zShift) > 0.5) { const p2 = this.planePoint(e, o.z + zShift); if (p2) p = p2; }
       }
+      // hauteur réglée pendant le glisser (molette ou PgPréc / PgSuiv)
+      if (dr.zAdj) zShift = Math.max(-o.z, zShift + dr.zAdj);
+      if (Math.abs(zShift) > 0.5) { const p2 = this.planePoint(e, o.z + zShift); if (p2) p = p2; }
       let dx = p[0] - dr.start[0], dy = p[1] - dr.start[1];
       let nx = o.x + dx, ny = o.y + dy;
       if (st.snapGrid && !e.altKey) { const g = st.snapStep || 50; nx = Math.round(nx / g) * g; ny = Math.round(ny / g) * g; }
@@ -719,6 +750,13 @@
         const sn = app.findSnap(dr.ids, dx, dy, dr.orig, zShift, dr.prim.id);
         if (sn) { dx = sn.dx; dy = sn.dy; dz = sn.dz; rotOverride = sn.rot; snapped = sn; }
       }
+      // guides d'alignement (un seul élément, sans accrochage de port)
+      let lines = null;
+      if (!snapped && st.snapAlign !== false && !e.altKey && dr.ids.length === 1 && dr.prim.type !== 'wall' && dr.prim.type !== 'mezzanine') {
+        const al = app.findAlign(dr.prim, { x: o.x + dx, y: o.y + dy, z: o.z + dz, rot: o.rot }, dr.exclude);
+        if (al) { dx += al.dx; dy += al.dy; lines = al.lines; }
+      }
+      this.setAlignLines(lines);
       dr.cur = { dx, dy, dz, rot: rotOverride };
       for (const id of dr.ids) {
         const g = this.meshes.get(id), o2 = dr.orig.get(id);
@@ -732,7 +770,69 @@
         }
       }
       this.gSelection.children.forEach(c => { if (c.isBoxHelper || c.type === 'BoxHelper') c.update(); });
-      this.showSnap(snapped, e);
+      const fin = rotOverride !== null && dr.ids.length === 1 ? rotOverride : { x: o.x + dx, y: o.y + dy, z: o.z + dz };
+      this.showSnap(snapped, e, this.levelInfo(dr.prim, fin, dr.exclude, !!dr.zAdj || !!lines, lines));
+    }
+    /**
+     * Convoyeur visé par la souris (le plus haut sous le rayon) : { el, z, x, y } ou null.
+     * Calcul géométrique (insensible aux vides entre rouleaux, contrairement au pointage 3D).
+     */
+    conveyorUnderCursor(e) {
+      let best = null;
+      for (const tr of this.app.network.tracks) {
+        if (tr.isBridge || !tr.length || !C.Types.get(tr.el.type).conveyor) continue;
+        let z = tr.path.at(tr.length / 2).p[2], p = null, n = null;
+        for (let it = 0; it < 2; it++) {
+          p = this.planePoint(e, z);
+          if (!p) break;
+          n = tr.path.nearest(p[0], p[1]); z = n.p[2];
+        }
+        if (!p || !n || n.d > (tr.outerWidth || tr.width || 600) / 2 + 30) continue;
+        if (!best || z > best.z) best = { el: tr.el, z, x: p[0], y: p[1] };
+      }
+      return best;
+    }
+    /** Règle la hauteur de l'élément en cours de déplacement. */
+    dragHeight(d) {
+      if (!this.drag) return;
+      this.drag.zAdj = (this.drag.zAdj || 0) + d;
+      if (this._lastMoveEvt) this.doMove(this._lastMoveEvt);
+    }
+    /** Lignes pointillées des guides d'alignement. */
+    setAlignLines(lines) {
+      const g = this.gAlign;
+      while (g.children.length) { const c = g.children.pop(); c.geometry.dispose(); }
+      if (!lines || !lines.length) return;
+      this._alignMat = this._alignMat || new THREE.LineDashedMaterial({ color: 0xffd23f, dashSize: 0.12, gapSize: 0.08, depthTest: false, transparent: true });
+      for (const l of lines) {
+        const geo = new THREE.BufferGeometry().setFromPoints([V3(l.a[0] * M, l.a[1] * M, l.a[2] * M + 0.02), V3(l.b[0] * M, l.b[1] * M, l.b[2] * M + 0.02)]);
+        const ln = new THREE.Line(geo, this._alignMat); ln.computeLineDistances(); ln.renderOrder = 999;
+        g.add(ln);
+      }
+    }
+    /** Texte d'aide à la pose : hauteur, convoyeur situé dessous et passage libre. */
+    levelInfo(el, pose, exclude, always, lines) {
+      const out = [], z0 = pose.z;
+      if (lines && lines.length) out.push('┼ aligné');
+      if (!C.Types.get(el.type).conveyor) { if (always && pose.z > 1) out.push('Z ' + C.fmt(pose.z) + ' mm'); return out; }
+      // convoyeur le plus haut situé sous la trajectoire de l'élément (échantillonnée)
+      let below = null;
+      const m = C.Types.model(el), tk = m.tracks.main || m.tracks.in || Object.values(m.tracks)[0];
+      if (tk) {
+        const path = new C.Path(tk.segs, { x: pose.x, y: pose.y, z: pose.z, rot: pose.rot !== undefined ? pose.rot : el.rot }, false);
+        const nS = C.clamp(Math.ceil(path.length / 400), 1, 24);
+        for (let i = 0; i <= nS; i++) {
+          const q = path.at(path.length * i / nS).p;
+          const b = this.app.conveyorBelow(q[0], q[1], q[2] - 60, exclude);
+          if (b && (!below || q[2] - b.z < below.gap)) below = { el: b.el, z: b.z, gap: q[2] - b.z };
+        }
+      }
+      if (below) {
+        const free = below.gap - (el.params.frameH || 160);
+        out.push(`▲ au-dessus de ${below.el.name} · passage libre ${C.fmt(free)} mm${free < 300 ? ' ⚠' : ''}`);
+      }
+      if (always || below) out.push('Z ' + C.fmt(z0) + ' mm');
+      return out;
     }
     /** Dessus du plancher de mezzanine visé par la souris (hors éléments déplacés), sinon null. */
     deckUnderCursor(e, exclude) {
@@ -748,28 +848,33 @@
       }
       return null;
     }
-    showSnap(sn, e) {
-      if (!sn) { this.snapInfo.style.display = 'none'; return; }
+    showSnap(sn, e, extra) {
+      const parts = (sn ? ['🧲 ' + sn.label] : []).concat(extra || []);
+      if (!parts.length) { this.snapInfo.style.display = 'none'; return; }
       const r = this.renderer.domElement.getBoundingClientRect();
-      this.snapInfo.textContent = '🧲 ' + sn.label;
+      this.snapInfo.textContent = parts.join('  ·  ');
+      this.snapInfo.classList.toggle('plain', !sn);
       Object.assign(this.snapInfo.style, { display: 'block', left: (e.clientX - r.left + 16) + 'px', top: (e.clientY - r.top + 16) + 'px' });
     }
     endMove() {
       const dr = this.drag;
       this.drag = null;
       this.snapInfo.style.display = 'none';
+      this.setAlignLines(null);
       if (!dr || !dr.cur) return;
       this.app.commitMove(dr);
     }
 
     /* ------------------------------ placement ----------------------------- */
-    startPlace(item, params) {
-      this.cancelPlace();
+    startPlace(item, params, opts) {
+      const keep = this.ghost && this.ghost.item === item ? this.ghost : null;
+      this.cancelPlace(true);
       this.mode = 'place';
       const app = this.app;
       const el = app.project.createElement(item.type, Object.assign({}, item.params, params || {}));
       el.name = '(nouveau)';
-      this.ghost = { item, el, rot: 0 };
+      // zUser : hauteur choisie à la main (null = automatique) ; stack : pose au-dessus du convoyeur visé
+      this.ghost = { item, el, rot: keep ? keep.rot : 0, zUser: keep ? keep.zUser : null, stack: keep ? keep.stack : false, drag: !!(opts && opts.drag), count: keep ? keep.count : 0 };
       const g = C.buildElementMesh(el);
       g.traverse(o => {
         if (o.material) {
@@ -784,39 +889,91 @@
       g.visible = false;
       this.gOverlay.add(g);
       this.emit('mode', this.mode);
+      this.emit('ghost', this.ghostState());
     }
-    cancelPlace() {
+    cancelPlace(silent) {
       if (this.ghostMesh) { this.gOverlay.remove(this.ghostMesh); this.disposeGroup(this.ghostMesh); this.ghostMesh = null; }
       this.ghost = null;
       this.snapInfo.style.display = 'none';
-      if (this.mode === 'place') { this.mode = 'select'; this.emit('mode', this.mode); }
+      this.setAlignLines(null);
+      if (this.mode === 'place' && !silent) { this.mode = 'select'; this.emit('mode', this.mode); }
     }
+    /** État de la pose en cours (pour la barre de pose). */
+    ghostState() {
+      const gh = this.ghost;
+      if (!gh) return null;
+      const def = C.Types.get(gh.el.type);
+      return { label: gh.item.label || def.label, rot: gh.rot, z: gh.el.z, auto: gh.zUser === null, stack: gh.stack, canZ: this.ghostCanZ(), conveyor: !!def.conveyor, count: gh.count, drag: gh.drag };
+    }
+    ghostCanZ() { const def = this.ghost && C.Types.get(this.ghost.el.type); return !!def && !def.floor && this.ghost.el.type !== 'mezzanine' && (def.fields.includes('z') || def.fields.includes('zBase')); }
+    ghostDefaultZ() {
+      const def = C.Types.get(this.ghost.el.type);
+      return def.centered || def.floor || def.onDeck || !def.conveyor ? 0 : this.app.project.settings.defaultZ;
+    }
+    refreshGhost() { if (this._lastGhostEvt) this.updateGhost(this._lastGhostEvt); this.emit('ghost', this.ghostState()); }
     rotateGhost(deg) {
       if (!this.ghost) return;
-      this.ghost.rot = (this.ghost.rot + deg) % 360;
-      if (this._lastGhostEvt) this.updateGhost(this._lastGhostEvt);
+      this.ghost.rot = ((this.ghost.rot + deg) % 360 + 360) % 360;
+      this.refreshGhost();
+    }
+    /** Monte / descend l'objet en cours de pose (hauteur au-dessus du sol ou du plancher). */
+    ghostHeight(d) {
+      if (!this.ghost || !this.ghostCanZ()) return;
+      const cur = this.ghost.zUser !== null ? this.ghost.zUser : (this.ghost.zLast !== undefined ? this.ghost.zLast : this.ghostDefaultZ());
+      this.setGhostHeight(Math.round((cur + d) / 50) * 50);
+    }
+    /** Fixe la hauteur de pose (null = automatique). */
+    setGhostHeight(z) {
+      if (!this.ghost || !this.ghostCanZ()) return;
+      this.ghost.zUser = z === null || !isFinite(z) ? null : Math.max(0, z);
+      this.ghost.stack = false;
+      this.refreshGhost();
+    }
+    /** Mode « au-dessus » : l'objet se pose un niveau au-dessus du convoyeur visé. */
+    toggleStack(on) {
+      if (!this.ghost || !this.ghostCanZ()) return;
+      this.ghost.stack = on === undefined ? !this.ghost.stack : !!on;
+      this.ghost.stackZ = undefined;
+      if (this.ghost.stack) this.ghost.zUser = null;
+      this.refreshGhost();
     }
     updateGhost(e) {
       if (!this.ghost || !this.ghostMesh) return;
       this._lastGhostEvt = { clientX: e.clientX, clientY: e.clientY, altKey: e.altKey };
-      const app = this.app, st = app.project.settings, el = this.ghost.el;
-      const centered = C.Types.get(el.type).centered;
-      const zOff = centered || C.Types.get(el.type).floor || C.Types.get(el.type).onDeck ? 0 : st.defaultZ;
+      const gh = this.ghost, app = this.app, st = app.project.settings, el = gh.el;
+      const def = C.Types.get(el.type), centered = def.centered;
+      let zOff = gh.zUser !== null ? gh.zUser : this.ghostDefaultZ();
       let p = this.planePoint(e, zOff);
       if (!p) return;
       // pose sur le plancher de mezzanine visé (Alt : rester au sol)
       let base = 0;
-      if (!e.altKey && el.type !== 'mezzanine' && !C.Types.get(el.type).floor) {
+      if (!e.altKey && el.type !== 'mezzanine' && !def.floor) {
         const deck = this.deckUnderCursor(e, null);
         if (deck !== null) { base = deck; const p2 = this.planePoint(e, base + zOff); if (p2) p = p2; }
       }
+      // mode « au-dessus » : un niveau au-dessus du convoyeur que vise la souris
+      let stacked = false;
+      if (gh.stack && gh.zUser === null) {
+        const b = this.conveyorUnderCursor(e);
+        if (b) {
+          // juste au-dessus du point visé sur le convoyeur
+          gh.stackZ = b.z + (st.stackGap || 600); base = 0; zOff = gh.stackZ; stacked = true;
+          p = [b.x, b.y, zOff];
+        } else if (gh.stackZ !== undefined) {
+          // hors convoyeur : on reste au dernier niveau trouvé (pour démarrer à côté et passer au-dessus)
+          base = 0; zOff = gh.stackZ; stacked = true;
+          const p2 = this.planePoint(e, zOff); if (p2) p = p2;
+        }
+      }
+      gh.zLast = zOff;
       const g = st.snapStep || 50;
       let x = p[0], y = p[1];
       if (st.snapGrid && !e.altKey) { x = Math.round(x / g) * g; y = Math.round(y / g) * g; }
-      el.x = x; el.y = y; el.z = base + zOff; el.rot = this.ghost.rot;
+      el.x = x; el.y = y; el.z = base + zOff; el.rot = gh.rot;
       let sn = null;
       if (st.snapPorts && !e.altKey && !centered) {
-        sn = app.findSnapFor(el, el);
+        // hauteur choisie à la main ou pose « au-dessus » : on ne s'accroche qu'aux ports de ce niveau
+        sn = app.findSnapFor(el, el, null, null, null, { zTol: gh.zUser !== null || stacked ? 150 : null });
         if (sn) { el.x = sn.x; el.y = sn.y; el.z = sn.z; el.rot = sn.rot; }
       } else if (st.snapPorts && !e.altKey && el.type === 'mezzanine') {
         sn = app.findMezzSnap(el, el);
@@ -830,18 +987,28 @@
         sn = app.findWallSnap(el, el);
         if (sn) { el.x = sn.x; el.y = sn.y; }
       }
+      // guides d'alignement sur les objets voisins
+      let lines = null;
+      if (!sn && st.snapAlign !== false && !e.altKey && el.type !== 'wall' && el.type !== 'mezzanine') {
+        const al = app.findAlign(el, el, new Set());
+        if (al) { el.x += al.dx; el.y += al.dy; lines = al.lines; }
+      }
+      this.setAlignLines(lines);
       this.ghostMesh.visible = true;
       this.ghostMesh.position.set(el.x * M, el.y * M, el.z * M);
       this.ghostMesh.rotation.z = el.rot * C.DEG;
-      this.showSnap(sn, e);
+      this.showSnap(sn, e, this.levelInfo(el, el, null, gh.zUser !== null || stacked, lines));
+      if (gh.zShown !== el.z) { gh.zShown = el.z; this.emit('ghost', this.ghostState()); }
     }
-    confirmPlace(e) {
+    confirmPlace(e, single) {
       if (!this.ghost) return;
       this.updateGhost(e);
-      const el = this.ghost.el;
-      const item = this.ghost.item;
+      const gh = this.ghost, el = gh.el, item = gh.item;
       this.app.placeElement(item, { x: el.x, y: el.y, z: el.z, rot: el.rot });
-      if (!e.shiftKey) this.cancelPlace();
+      gh.count++;
+      // pose en série : on reste en pose (Maj, ou option « Poser plusieurs »)
+      if (single || !(e.shiftKey || this.app.project.settings.multiPlace)) this.cancelPlace();
+      else this.emit('ghost', this.ghostState());
     }
 
     /* ------------------------------- mesures ------------------------------ */

@@ -19,6 +19,7 @@
   const TOL_XY = 25;      // mm : tolérance de coïncidence de ports
   const TOL_ANG = 12;     // degrés : tolérance d'alignement
   const TOL_Z_LINK = 40;  // mm : écart de hauteur maxi pour raccorder
+  const TOL_Z_LEVEL = 300; // mm : au-delà, deux ports superposés appartiennent à des niveaux différents
   const TOL_Z_OK = 5;     // mm : écart de hauteur toléré sans avertissement
 
   class Network {
@@ -101,6 +102,8 @@
           if (B.el === A.el) continue;
           const d = Math.hypot(B.pos[0] - A.pos[0], B.pos[1] - A.pos[1]);
           if (d > 160) continue;
+          // autre niveau : convoyeurs superposés, sans rapport (ni raccord ni défaut)
+          if (Math.abs(B.pos[2] - A.pos[2]) > TOL_Z_LEVEL) continue;
           const da = Math.abs(C.normAngle(B.h - A.h)) * C.RAD;
           if (da > TOL_ANG) continue;
           if (d < bestD) { bestD = d; best = B; }

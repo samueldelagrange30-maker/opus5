@@ -18,6 +18,7 @@
       this.network = new C.Network(this.project);
       this.currentFormat = 'moyen';
       C.supportAt = (x, y, maxZ, exclude) => this.supportAt(x, y, maxZ, exclude);
+      C.legObstacle = (x, y, zLo, zHi, excludeId) => this.legObstacle(x, y, zLo, zHi, excludeId);
       C.mezzanineList = () => this.project.elements.filter(e => e.type === 'mezzanine');
     }
 
@@ -511,8 +512,11 @@
       return res;
     }
     /** Pose d'accrochage magnétique pour un élément à la transformation tf. */
-    findSnapFor(el, tf, movingIds, portList, radius) {
+    findSnapFor(el, tf, movingIds, portList, radius, opts) {
       const st = this.project.settings, R = radius || st.snapRadius || 300;
+      // zTol : écart de hauteur maxi pour s'accrocher (un convoyeur placé au-dessus d'un autre
+      // ne doit pas être « aspiré » par les ports du niveau inférieur)
+      const zTol = opts && opts.zTol !== undefined && opts.zTol !== null ? opts.zTol : Infinity;
       const moving = movingIds || new Set([el.id]);
       const mine = this.elementPorts(el, tf);
       const local = this.elementPorts(el, { x: 0, y: 0, z: 0, rot: 0 });
@@ -525,13 +529,15 @@
           if (Q.role === 'out' && Q.link && !moving.has(Q.link.track.el.id)) continue;
           const d = Math.hypot(P.pos[0] - Q.pos[0], P.pos[1] - Q.pos[1]);
           if (d > R) continue;
+          const dzq = Math.abs(Q.pos[2] - P.pos[2]);
+          if (dzq > zTol) continue;
           const rot = (Q.h - Li.h) / D;
           const c = Math.cos(rot * D), s = Math.sin(rot * D);
           const pose = {
             x: C.round(Q.pos[0] - (Li.pos[0] * c - Li.pos[1] * s), 1), y: C.round(Q.pos[1] - (Li.pos[0] * s + Li.pos[1] * c), 1),
             z: C.round(Q.pos[2] - Li.pos[2], 1), rot: C.round(C.normAngle(rot * D) / D, 3)
           };
-          const score = d + Math.abs(C.normAngle((pose.rot - tf.rot) * D)) / D * 3;
+          const score = d + Math.abs(C.normAngle((pose.rot - tf.rot) * D)) / D * 3 + dzq * 0.4;
           if (!best || score < best.score) best = Object.assign(pose, { score, label: `${P.role === 'in' ? 'Entrée' : 'Sortie'} → ${Q.el.name} (${Q.role === 'in' ? 'entrée' : 'sortie'})` });
         }
       }
@@ -562,7 +568,7 @@
         const el = this.project.getElement(ids[0]);
         if (!C.Types.get(el.type).conveyor) return null;
         const o = orig.get(el.id);
-        const sn = this.findSnapFor(el, { x: o.x + dx, y: o.y + dy, z: o.z + (dz0 || 0), rot: o.rot }, moving);
+        const sn = this.findSnapFor(el, { x: o.x + dx, y: o.y + dy, z: o.z + (dz0 || 0), rot: o.rot }, moving, null, null, { zTol: this.project.settings.snapZ || 300 });
         if (!sn) return null;
         return { dx: sn.x - o.x, dy: sn.y - o.y, dz: sn.z - o.z, rot: sn, label: sn.label };
       }
@@ -575,6 +581,7 @@
           for (const Q of this.network.ports) {
             if (moving.has(Q.el.id) || P.role === Q.role) continue;
             if (Math.abs(C.normAngle(P.h - Q.h)) > 3 * D) continue;
+            if (Math.abs(P.pos[2] - Q.pos[2]) > (this.project.settings.snapZ || 300)) continue;
             const d = Math.hypot(P.pos[0] - Q.pos[0], P.pos[1] - Q.pos[1]);
             if (d <= R && (!best || d < best.d)) best = { d, dx: dx + Q.pos[0] - P.pos[0], dy: dy + Q.pos[1] - P.pos[1], dz: (dz0 || 0) + Q.pos[2] - P.pos[2], rot: null, label: `Groupe → ${Q.el.name}` };
           }
@@ -582,6 +589,102 @@
       }
       return best;
     }
+    /**
+     * Guides d'alignement : aligne l'origine ou un port de l'élément (pose tf) sur l'origine
+     * ou un port d'un autre élément, en X et / ou en Y. Retour { dx, dy, lines } ou null.
+     */
+    findAlign(el, tf, moving, tol) {
+      tol = tol || 70;
+      const ex = moving || new Set([el.id]);
+      const mine = [[tf.x, tf.y, tf.z]];
+      if (C.Types.get(el.type).conveyor) for (const P of this.elementPorts(el, tf)) mine.push(P.pos);
+      const cands = [];
+      for (const o of this.project.elements) {
+        if (ex.has(o.id) || o.type === 'wall' || o.type === 'mezzanine') continue;
+        if (Math.abs(o.x - tf.x) > 40000 || Math.abs(o.y - tf.y) > 40000) continue;
+        cands.push([o.x, o.y, o.z]);
+        const node = this.network.node(o.id);
+        if (node) for (const Q of node.ports) cands.push(Q.pos);
+      }
+      let bx = null, by = null;
+      for (const a of mine) for (const b of cands) {
+        const ex2 = Math.abs(a[0] - b[0]), ey = Math.abs(a[1] - b[1]);
+        // points confondus au même niveau : ignorés (c'est l'accrochage des ports qui s'en charge) ;
+        // à un autre niveau ils servent à superposer exactement deux convoyeurs
+        const lvl = Math.abs(a[2] - b[2]) > 200;
+        if (ex2 <= tol && (ey > 150 || lvl) && (!bx || ex2 < bx.e || (ex2 === bx.e && ey < bx.far))) bx = { e: ex2, far: ey, d: b[0] - a[0], a, b };
+        if (ey <= tol && (ex2 > 150 || lvl) && (!by || ey < by.e || (ey === by.e && ex2 < by.far))) by = { e: ey, far: ex2, d: b[1] - a[1], a, b };
+      }
+      if (!bx && !by) return null;
+      const dx = bx ? bx.d : 0, dy = by ? by.d : 0, lines = [];
+      for (const g of [bx, by]) if (g) lines.push({ a: [g.a[0] + dx, g.a[1] + dy, g.a[2]], b: g.b.slice() });
+      return { dx, dy, lines };
+    }
+    /**
+     * Convoyeur situé sous le point (x, y), à une altitude inférieure à zMax.
+     * Retour { el, z } (z = niveau de convoyage à cet endroit) ou null.
+     */
+    conveyorBelow(x, y, zMax, exclude) {
+      let best = null;
+      const ex = exclude instanceof Set ? exclude : new Set(exclude ? [exclude] : []);
+      for (const tr of this.network.tracks) {
+        if (tr.isBridge || ex.has(tr.el.id) || !tr.length || !C.Types.get(tr.el.type).conveyor) continue;
+        const p0 = tr.path.at(0).p;
+        if (Math.hypot(p0[0] - x, p0[1] - y) > tr.length + 1500) continue;
+        const n = tr.path.nearest(x, y);
+        if (n.d > (tr.outerWidth || tr.width || 600) / 2 + 20) continue;
+        if (zMax !== undefined && zMax !== null && n.p[2] > zMax) continue;
+        if (!best || n.p[2] > best.z) best = { el: tr.el, z: n.p[2] };
+      }
+      return best;
+    }
+    /**
+     * Un pied planté en (x, y) entre les altitudes zLo et zHi traverserait-il la bande
+     * d'un convoyeur situé dessous ? (indépendant du réseau ; cache vidé à chaque synchronisation)
+     */
+    legObstacle(x, y, zLo, zHi, excludeId) {
+      if (!this.project.getElement(excludeId)) return false;      // fantôme de pose : pas encore dans le projet
+      const cache = this._legCache = this._legCache || new Map();
+      for (const o of this.project.elements) {
+        if (o.id === excludeId) continue;
+        const def = C.Types.get(o.type);
+        if (!def.conveyor) continue;
+        const p = o.params, R = (p.length || 2000) + 2 * (p.radius || 0) + (p.diameter || 0) + 1500;
+        if (Math.abs(o.x - x) > R || Math.abs(o.y - y) > R) continue;
+        let paths = cache.get(o.id);
+        if (!paths) {
+          const m = C.Types.model(o), tf = { x: o.x, y: o.y, z: o.z, rot: o.rot };
+          paths = Object.values(m.tracks).map(t => new C.Path(t.segs, tf, t.reversed));
+          cache.set(o.id, paths);
+        }
+        const half = (p.usefulWidth || p.width || 500) / 2 - 20;
+        for (const path of paths) {
+          if (!path.length) continue;
+          const n = path.nearest(x, y);
+          if (n.d < half && n.p[2] > zLo + 60 && n.p[2] < zHi - 20) return true;
+        }
+      }
+      return false;
+    }
+    /** Duplique la sélection à l'étage au-dessus (convoyeurs superposés). */
+    stackAbove(gap) {
+      if (!this.guardSim()) return;
+      const els = this.selectedElements().filter(e => !C.Types.get(e.type).floor && e.type !== 'mezzanine');
+      if (!els.length) { C.toast('Sélectionnez le ou les convoyeurs à superposer', 'warn'); return; }
+      const st = this.project.settings, dz = gap || st.stackGap || 600;
+      const made = [];
+      this.project.change('Dupliquer au-dessus', () => {
+        const gmap = new Map();
+        for (const e of els) {
+          const n = this.project.createElement(e.type, C.clone(e.params), { x: e.x, y: e.y, z: C.round(e.z + dz, 1), rot: e.rot });
+          if (e.groupId) { if (!gmap.has(e.groupId)) gmap.set(e.groupId, C.uid('g')); n.groupId = gmap.get(e.groupId); }
+          this.project.addElement(n); made.push(n.id);
+        }
+      });
+      this.select(made);
+      C.toast(`${made.length} élément(s) dupliqué(s) ${C.fmt(dz)} mm au-dessus — PgPréc / PgSuiv pour ajuster la hauteur`, 'ok');
+    }
+
     /* ---------------------------- verrouillage ---------------------------- */
     /** Éléments verrouillés parmi des identifiants. */
     lockedIn(ids) { return Array.from(ids).map(id => this.project.getElement(id)).filter(e => e && e.locked); }
@@ -667,7 +770,6 @@
         if (port) { this.appendAt(port, item); return; }
       }
       this.viewport.startPlace(item);
-      C.toast('Cliquez dans la vue pour placer « ' + item.label + ' » (R : tourner, Échap : annuler, Maj : placer plusieurs)', 'info');
     }
     /** Ajoute un module accroché à un port de sortie. */
     appendAt(port, item, params) {
@@ -904,7 +1006,7 @@
       if (hit && hit.element) {
         if (!this.selection.has(hit.element)) this.select([hit.element]);
         items.push(['Ajouter à la suite (même module)', () => this.appendSame()]);
-        items.push(['Dupliquer', () => this.duplicate()], ['Rotation +' + this.project.settings.angleStep + '°', () => this.rotateSelection(this.project.settings.angleStep)]);
+        items.push(['Dupliquer', () => this.duplicate()], ['Dupliquer au-dessus (+' + C.fmt(this.project.settings.stackGap || 600) + ' mm)', () => this.stackAbove()], ['Rotation +' + this.project.settings.angleStep + '°', () => this.rotateSelection(this.project.settings.angleStep)]);
         items.push(['Rotation +90°', () => this.rotateSelection(90)], ['Inverser le sens', () => this.reverseSelection()]);
         items.push(['Accrocher au port le plus proche', () => this.snapSelectionNow()], ['Cadrer la vue', () => this.viewport.focus(hit.element)]);
         const hel = this.project.getElement(hit.element);
@@ -937,6 +1039,7 @@
         else if (ctrl && (k === 'y' || (k === 'z' && e.shiftKey))) this.redo();
         else if (ctrl && k === 'c') this.copy();
         else if (ctrl && k === 'v') this.paste();
+        else if (ctrl && k === 'd' && e.shiftKey) this.stackAbove();
         else if (ctrl && k === 'd') this.duplicate();
         else if (ctrl && k === 'a') this.selectAll();
         else if (ctrl && k === 'g' && e.shiftKey) this.ungroup();
@@ -948,7 +1051,7 @@
         else if (k === 'delete' || k === 'backspace') this.deleteSelection();
         else if (k === 'escape' && this.director.active) this.director.stop();
         else if (k === 'escape') { if (this.viewport.mode !== 'select') this.viewport.setMode('select'); else this.select([]); }
-        else if (k === 'r') { if (this.viewport.mode === 'place') this.viewport.rotateGhost(e.shiftKey ? -st.angleStep : st.angleStep); else this.rotateSelection(e.shiftKey ? -st.angleStep : st.angleStep); }
+        else if (k === 'r') { if (this.viewport.mode === 'place') this.viewport.rotateGhost(e.shiftKey ? st.angleStep : 90); else this.rotateSelection(e.shiftKey ? -st.angleStep : st.angleStep); }
         else if (k === 'f') { if (this.selection.size) this.viewport.fit(true, Array.from(this.selection)); else this.viewport.fit(); }
         else if (k === '1') this.viewport.setView('top');
         else if (k === '2') this.viewport.setView('front');
@@ -966,8 +1069,9 @@
         else if (k === 'arrowright') this.nudge(step, 0, 0);
         else if (k === 'arrowup') this.nudge(0, step, 0);
         else if (k === 'arrowdown') this.nudge(0, -step, 0);
-        else if (k === 'pageup') this.nudge(0, 0, step);
-        else if (k === 'pagedown') this.nudge(0, 0, -step);
+        else if (k === 'pageup') { if (this.viewport.mode === 'place') this.viewport.ghostHeight(e.shiftKey ? 500 : 100); else if (this.viewport.drag) this.viewport.dragHeight(e.shiftKey ? 500 : 100); else this.nudge(0, 0, e.shiftKey ? 500 : 100); }
+        else if (k === 'pagedown') { if (this.viewport.mode === 'place') this.viewport.ghostHeight(e.shiftKey ? -500 : -100); else if (this.viewport.drag) this.viewport.dragHeight(e.shiftKey ? -500 : -100); else this.nudge(0, 0, e.shiftKey ? -500 : -100); }
+        else if (k === 'u' && this.viewport.mode === 'place') this.viewport.toggleStack();
         else handled = false;
         if (handled) { e.preventDefault(); this.ui.refreshToolbar(); }
       });

@@ -254,28 +254,37 @@
       const zFloor = floorLocal(el, f.p[0], f.p[1], zTop); // local (sol / plancher)
       const h = zTop - zFloor;
       if (h < 60) continue;
-      items.push({ f, h, zTop });
+      // un pied ne traverse pas la bande d'un convoyeur situé dessous (convoyeurs superposés ou croisés)
+      const sides = [1, -1].filter(side => {
+        if (!el || !el.id || !C.legObstacle) return true;
+        const w = C.localToWorld({ x: el.x, y: el.y, z: el.z, rot: el.rot }, f.p[0] + f.n[0] * side * (W / 2 - 25), f.p[1] + f.n[1] * side * (W / 2 - 25), 0);
+        return !C.legObstacle(w[0], w[1], el.z + zFloor, el.z + zTop, el.id);
+      });
+      if (!sides.length) continue;
+      items.push({ f, h, zTop, sides });
     }
     if (!items.length) return;
     const geo = new THREE.BoxGeometry(40 * M, 40 * M, 1);
     const im = new THREE.InstancedMesh(geo, MAT.leg(), items.length * 2);
     const brace = new THREE.InstancedMesh(new THREE.BoxGeometry(30 * M, 1, 30 * M), MAT.leg(), items.length);
-    let k = 0;
+    let k = 0, kb = 0;
     const yl = W / 2 - 25;
-    items.forEach((it, i) => {
-      for (const side of [1, -1]) {
+    items.forEach(it => {
+      for (const side of it.sides) {
         const x = it.f.p[0] + it.f.n[0] * side * yl, y = it.f.p[1] + it.f.n[1] * side * yl;
         _m4.makeScale(1, 1, it.h * M);
         _m4.setPosition(x * M, y * M, (it.zTop - it.h / 2) * M);
         im.setMatrixAt(k++, _m4);
       }
-      // traverse
+      // traverse (entre deux pieds)
+      if (it.sides.length < 2) return;
       const ang = Math.atan2(it.f.t[1], it.f.t[0]);
       _m4.makeRotationZ(ang);
       _m4.scale(new THREE.Vector3(1, W * 0.92 * M, 1));
       _m4.setPosition(it.f.p[0] * M, it.f.p[1] * M, (it.zTop - Math.min(it.h * 0.6, 250)) * M);
-      brace.setMatrixAt(i, _m4);
+      brace.setMatrixAt(kb++, _m4);
     });
+    im.count = k; brace.count = kb;
     im.castShadow = true; brace.castShadow = true;
     tag(im, 'structure'); tag(brace, 'structure');
     g.add(im); g.add(brace);
@@ -1362,23 +1371,42 @@
       addRollers(g, path, lp); addFrames(g, fr, lp); addGuides(g, fr, path, lp); addLegs(g, path, lp, el); addArrows(g, path, lp, 8); addMotor(g, path, lp);
     }
 
-    // convoyeur bas des cartons (dans le meuble, rouleaux visibles sur les tables d'extrémité)
-    addRollers(g, new C.Path(m.tracks.ctn.segs, null, false), p);
+    // convoyeur bas des cartons : traverse le meuble à plat (entrée et sortie au niveau bas)
+    {
+      const zL = Y.zLow, lp = Object.assign({}, p, { color: '#3a4047', guideH: 60 });
+      const path = new C.Path(m.tracks.ctn.segs, null, false);
+      addRollers(g, path, lp); addFrames(g, frames(path, 3), lp); addArrows(g, path, lp, 6);
+      // tronçons visibles aux deux extrémités : guides, pieds et motorisation
+      for (const [x0, x1] of [[0, tl], [tl + L, total]]) {
+        const sp = new C.Path([{ type: 'line', a: [x0, yC, zL], b: [x1, yC, zL] }], null, false);
+        addGuides(g, frames(sp, 3), sp, lp); addLegs(g, sp, lp, el);
+      }
+    }
     // fonds d'alvéoles bacs (rouleaux de transfert) et plateaux élévateurs des cartons
     for (const k of [1, 2]) addRollers(g, new C.Path(m.tracks['p' + k].segs, null, false), Object.assign({}, p, { rollerPitch: 90 }));
     Y.ctns.forEach(x => {
       g.add(box(560, 500, 20, x, yC, -12, steelM, 'structure'));
-      g.add(box(60, 60, -Y.zLow, x, yC + 290, Y.zLow / 2, MAT.color('#5d6670'), 'structure'));   // guide de l'élévateur
+      for (const dy of [-300, 300]) g.add(box(50, 50, -Y.zLow + 60, x, yC + dy, Y.zLow / 2 - 30, MAT.color('#5d6670'), 'structure'));   // colonnes de l'élévateur
     });
     // ---- meuble bas (caissons gris anthracite avec portes, poignées et vérins de pied)
     const cabTop = TOP - 45, cabBot = zf + 110;
     {
+      // meuble creux : le convoyeur bas des cartons le traverse de part en part
+      const H = cabTop - cabBot, zc = (cabTop + cabBot) / 2, yF = -D / 2 + 35, yBk = D / 2 - 35, t = 30;
       const yCut = yT - 320;                                       // la partie centrale est ouverte à l'arrière (entrée des bacs)
-      g.add(box(xc0 - tl, D - 40, cabTop - cabBot, (tl + xc0) / 2, 0, (cabTop + cabBot) / 2, dark, 'structure'));
-      g.add(box(tl + L - xc1, D - 40, cabTop - cabBot, (xc1 + tl + L) / 2, 0, (cabTop + cabBot) / 2, dark, 'structure'));
-      const dc = yCut + D / 2 - 20;
-      g.add(box(xc1 - xc0, dc, cabTop - cabBot, (xc0 + xc1) / 2, -D / 2 + 20 + dc / 2, (cabTop + cabBot) / 2, dark, 'structure'));
-      g.add(box(xc1 - xc0, D / 2 - yCut, -cabBot - 300, (xc0 + xc1) / 2, (yCut + D / 2) / 2, (cabBot - 300) / 2, dark, 'structure'));   // soubassement arrière
+      g.add(box(L, t, H, tl + L / 2, yF, zc, dark, 'structure'));                                   // façade (portes)
+      g.add(box(L, D - 40, 25, tl + L / 2, 0, cabBot + 12, darker, 'structure'));                    // fond
+      for (const [x0, x1] of [[tl, xc0], [xc1, tl + L]]) g.add(box(x1 - x0, t, H, (x0 + x1) / 2, yBk, zc, dark, 'structure'));   // dos des ailes
+      // joues d'extrémité avec passage du convoyeur bas
+      const oy1 = yC + 350, oz1 = Y.zLow + 520;
+      for (const x of [tl + t / 2, tl + L - t / 2]) {
+        if (yBk - oy1 > 1) g.add(box(t, yBk - oy1, H, x, (yBk + oy1) / 2, zc, dark, 'structure'));
+        if (cabTop - oz1 > 1) g.add(box(t, oy1 - yF, cabTop - oz1, x, (oy1 + yF) / 2, (cabTop + oz1) / 2, dark, 'structure'));
+      }
+      // partie centrale : cloison derrière le convoyeur bas, sous les alvéoles des bacs
+      const yW = yC + 360;
+      g.add(box(xc1 - xc0, D / 2 - yW, -300 - cabBot, (xc0 + xc1) / 2, (yW + D / 2) / 2, (cabBot - 300) / 2, dark, 'structure'));
+      void yCut;
     }
     const nDoor = Math.max(4, Math.round(L / 850));
     for (let i = 0; i <= nDoor; i++) g.add(box(12, 8, cabTop - cabBot - 60, tl + i * L / nDoor, -D / 2 + 16, (cabTop + cabBot) / 2, darker, 'structure'));
@@ -1445,18 +1473,6 @@
     mon.add(box(580, 6, 340, 0, -22, 0, MAT.glow(0x24507e), 'structure'));
     mon.position.set(cxm * M, (yP + 30) * M, (TOP + 1080) * M); mon.rotation.x = 0.12;
     g.add(mon);
-    // ---- tables d'extrémité (entrée / sortie des cartons de commande)
-    for (const x0 of [0, tl + L]) {
-      const tz = TOP - 40;
-      g.add(box(tl, 40, 90, x0 + tl / 2, yC - 330, tz - 45, dark, 'structure'));
-      g.add(box(tl, 40, 90, x0 + tl / 2, yC + 330, tz - 45, dark, 'structure'));
-      for (const dx of [70, tl - 70]) for (const dy of [yC - 330, yC + 330]) {
-        const h2 = tz - 90 - zf;
-        g.add(box(50, 50, h2, x0 + dx, dy, zf + h2 / 2, dark, 'structure'));
-        const f = cyl(40, 60, black, 'structure', 10); f.rotation.x = Math.PI / 2; f.position.set((x0 + dx) * M, dy * M, (zf + 30) * M); g.add(f);
-      }
-      g.add(box(tl - 80, 660, 20, x0 + tl / 2, yC, zf + 250, darker, 'structure'));            // tablette basse
-    }
     // ---- opérateur debout face à la partie centrale
     const op = new THREE.Group();
     const legs = cyl(140, 820, MAT.color('#2c3e50'), 'structure'); legs.rotation.x = Math.PI / 2; legs.position.z = 410 * M; op.add(legs);

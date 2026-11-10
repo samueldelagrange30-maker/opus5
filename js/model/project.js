@@ -25,7 +25,11 @@
     angleStep: 15,                   // pas de rotation (°)
     chainAdd: true,                  // ajout chaîné à la sortie de la sélection
     collisions: true,                // détection de collisions entre cartons
-    defaultZ: 800
+    defaultZ: 800,
+    snapAlign: true,                 // guides d'alignement sur les objets voisins
+    snapZ: 300,                      // écart de hauteur maxi pour accrocher deux ports (mm)
+    stackGap: 600,                   // écart entre deux niveaux de convoyeurs superposés (mm)
+    multiPlace: false                // pose en série (rester en pose après chaque clic)
   });
 
   class Project extends C.Emitter {
