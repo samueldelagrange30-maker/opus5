@@ -62,7 +62,7 @@ export class Billboards {
 export const glowTexture = () => radialTexture(128, [[0, 'rgba(255,255,255,1)'], [0.12, 'rgba(255,255,255,0.55)'], [0.35, 'rgba(255,255,255,0.14)'], [0.7, 'rgba(255,255,255,0.03)'], [1, 'rgba(255,255,255,0)']]);
 
 // ------------------------------------------------------------------ fumée (sans état : fonction pure du temps)
-const WHEEL_REAR_X = -1.3, WHEEL_Z = 0.8;
+const WHEEL_REAR_X = -1.326, WHEEL_Z = 0.815, WHEEL_FRONT_X = 1.346, WHEEL_FRONT_Z = 0.762; // essieux du modèle (voir car.js)
 export class Smoke {
   constructor() {
     this.rate = 150; this.life = 3.2;
@@ -124,14 +124,14 @@ export function buildTireMarks() {
   const HZ = 90, n = Math.floor(DURATION * HZ);
   const pos = [], aT = [], aA = [], idx = [];
   const st = {};
-  for (const [lx, lz, gain] of [[WHEEL_REAR_X, WHEEL_Z, 1], [WHEEL_REAR_X, -WHEEL_Z, 1], [1.35, WHEEL_Z, 0.45], [1.35, -WHEEL_Z, 0.45]]) {
+  for (const [lx, lz, gain] of [[WHEEL_REAR_X, WHEEL_Z, 1], [WHEEL_REAR_X, -WHEEL_Z, 1], [WHEEL_FRONT_X, WHEEL_FRONT_Z, 0.45], [WHEEL_FRONT_X, -WHEEL_FRONT_Z, 0.45]]) {
     const base = pos.length / 3;
     for (let i = 0; i < n; i++) {
       const t = i / HZ; state(t, st);
       const c = carPoint(st, lx, lz);
       // largeur perpendiculaire au déplacement du point de contact
       const nx = -Math.sin(st.yaw), nz = Math.cos(st.yaw);
-      const w = 0.15;
+      const w = lx < 0 ? 0.165 : 0.115; // pneus arrière plus larges
       pos.push(c.x - nx * w, 0.02, c.z - nz * w, c.x + nx * w, 0.02, c.z + nz * w);
       const moving = t > T_START - 0.1 ? 1 : 0;
       const a = Math.min(1, st.smoke * 1.3) * gain * moving * (0.75 + 0.25 * hash(i * 0.13 + lx));

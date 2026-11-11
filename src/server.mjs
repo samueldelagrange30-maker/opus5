@@ -1,5 +1,5 @@
 import http from 'http'; import fs from 'fs'; import path from 'path';
-const TYPES = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript', '.mjs': 'text/javascript', '.json': 'application/json' };
+const TYPES = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript', '.mjs': 'text/javascript', '.json': 'application/json', '.glb': 'model/gltf-binary' };
 // Petit serveur statique ; onFrame reçoit les images envoyées par la page (POST /frame?i=N)
 export function startServer(root, onFrame) {
   return new Promise((resolve) => {

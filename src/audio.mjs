@@ -1,4 +1,4 @@
-// Bande-son 100 % synthétisée : moteur 6 cylindres, crissements de pneus, retours de flamme
+// Bande-son 100 % synthétisée : moteur V12, crissements de pneus, retours de flamme
 // et instrumental original (kick / 808 / clap / charleys / cowbell) à 128 BPM, calé sur le montage.
 import fs from 'fs'; import path from 'path';
 import { state, DURATION, BAR, BPM, T_START, T_STOP, POPS, BURN_T0 } from './path.js';
@@ -56,8 +56,9 @@ const ctl = (arr, i) => { const f = i / CH, k = Math.floor(f); return arr[k] + (
 
 // ------------------------------------------------------------------ moteur
 {
-  const H = 30, amp = new Float32Array(H + 1);
-  for (let h = 1; h <= H; h++) amp[h] = (h % 6 === 0 ? 1.0 : h % 3 === 0 ? 0.42 : 0.16 + 0.14 * rnd()) / Math.pow(1 + h / 7, 1.15);
+  // V12 : l'harmonique d'allumage est le 12e demi-ordre
+  const H = 36, amp = new Float32Array(H + 1);
+  for (let h = 1; h <= H; h++) amp[h] = (h % 12 === 0 ? 1.0 : h % 6 === 0 ? 0.6 : h % 3 === 0 ? 0.3 : 0.12 + 0.1 * rnd()) / Math.pow(1 + h / 10, 1.15);
   const f1 = new Biquad(), f2 = new Biquad(), f3 = new Biquad(), lp = new Biquad(), nz = new Biquad();
   let ph = 0, env = 0;
   for (let i = 0; i < N; i++) {

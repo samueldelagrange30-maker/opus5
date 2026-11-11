@@ -75,7 +75,7 @@ export const shots = [
     const pos = V(24, 1.9, 104.2); const c = smoothPos(t, 0.15, 0.7);
     return { pos, tgt: c, fov: autoFov(pos, c, 0.66, 7, 40), shake: 0.006 };
   } },
-  { name: 'hood', blur: 0.1, liveEnv: true, b0: 16, b1: 18, fn: (t) => ({ pos: local(t, 2.36, 0.5, 0, 0.05), tgt: local(t, 14, 1.9, 0, 0.05), fov: 86, shake: 0.012, near: 0.05 }) },
+  { name: 'hood', blur: 0.1, liveEnv: true, b0: 16, b1: 18, fn: (t) => ({ pos: local(t, 2.42, 0.46, 0, 0.05), tgt: local(t, 14, 1.9, 0, 0.05), fov: 86, shake: 0.012, near: 0.05 }) },
   { name: 'chaseLowC4', blur: 0.06, b0: 18, b1: 20, fn: (t) => {
     const p = pathAt(t, 7.6); p.y = 1.9;
     const c = smoothPos(t, 0.15, 0.7);
@@ -115,7 +115,7 @@ export const shots = [
   } },
   { name: 'hero', b0: 34, b1: 36, fn: (t, u) => {
     const c = carPos(T_STOP + 1);
-    return { pos: V(c.x - 3.0 + 1.8 * u, 0.42 + 0.22 * u, c.z - 8.6 + 0.6 * u), tgt: V(c.x + 0.45, 0.85 + 0.6 * u, c.z), fov: 46, shake: 0.004 };
+    return { pos: V(c.x - 3.2 + 1.8 * u, 0.4 + 0.2 * u, c.z - 9.6 + 0.6 * u), tgt: V(c.x - 0.15, 0.8 + 0.55 * u, c.z), fov: 48, shake: 0.004 };
   } },
 ];
 for (const s of shots) { s.t0 = s.b0 * B; s.t1 = s.b1 * B; }

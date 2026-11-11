@@ -37,7 +37,7 @@ const fill = new THREE.DirectionalLight(0xff4fc0, 0.7); fill.position.set(0.7, 0
 const fill2 = new THREE.DirectionalLight(0x35c8ff, 0.6); fill2.position.set(-0.6, 0.25, 0.7); scene.add(fill2);
 
 const city = buildCity(scene);
-const car = buildCar(); car.pops = POPS; scene.add(car); scene.add(car.glows.mesh);
+const car = await buildCar(); car.pops = POPS; window.carInfo = car.info; scene.add(car); scene.add(car.glows.mesh);
 const smoke = new Smoke(); smoke.bb.setFog(FOG_COLOR, FOG_DENSITY); scene.add(smoke.mesh);
 const tire = buildTireMarks(); scene.add(tire);
 
@@ -133,6 +133,15 @@ function overlay(t, frame) {
     ctx.font = `bold ${50 * k}px ${JP}`; spaced(ctx, 'MIDNIGHT DRIFT', W / 2, y0 + 165 * k, (17 + 30 * e) * k);
     ctx.shadowBlur = 0; ctx.fillStyle = 'rgba(255,255,255,0.85)';
     ctx.font = `${30 * k}px ${JP}`; spaced(ctx, '真夜中 ・ 02:47', W / 2, y0 + 240 * k, 10 * k);
+    ctx.restore();
+  }
+  // crédit du modèle 3D (licence CC BY-NC-SA : attribution obligatoire)
+  const ca = smooth(63.9, 64.7, t) * (1 - smooth(DURATION - 1.6, DURATION - 0.9, t));
+  if (ca > 0.001) {
+    ctx.save(); ctx.globalAlpha = 0.78 * ca; ctx.textBaseline = 'middle'; ctx.textAlign = 'center';
+    ctx.shadowColor = 'rgba(0,0,0,0.9)'; ctx.shadowBlur = 8 * k; ctx.fillStyle = '#fff';
+    ctx.font = `${25 * k}px ${JP}`; ctx.fillText('Modèle 3D : « 1997 Lamborghini Diablo SV Coupe » — Ddiaz Design', W / 2, H * 0.772);
+    ctx.font = `${21 * k}px ${JP}`; ctx.fillText('sketchfab.com/ddiaz-design · CC BY-NC-SA 4.0', W / 2, H * 0.772 + 36 * k);
     ctx.restore();
   }
   // flash sur le « drop »
