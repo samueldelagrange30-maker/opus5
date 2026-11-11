@@ -1,0 +1,764 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Louis Librad Immobilier</title>
+<meta name="description" content="Louis Librad, conseiller immobilier CENTURY 21 : vente, location, gestion locative et estimation gratuite.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Jost:wght@400;500;600&family=Inter:wght@400;500;600&display=swap">
+<style>
+/* Layout : bandeau noir et or façon vitrine d'agence, puis grille d'annonces et sections de services sur fond clair. */
+:root {
+  --gold: #BEAF87;
+  --gold-strong: #8E7C4E;
+  --ink: #1D1D1F;
+  --bg: #FAF9F6;
+  --surface: #FFFFFF;
+  --fg: #1D1D1F;
+  --muted: #5E5B54;
+  --line: #E4E0D6;
+  --band: #1D1D1F;
+  --band-fg: #F5F3EE;
+  --band-muted: #B9B4A8;
+  --chip: #F1EDE3;
+  --ok: #2F7D4F;
+  --font-display: "Jost", "Futura", "Century Gothic", system-ui, sans-serif;
+  --font-body: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --radius: 6px;
+  --gutter-l: max(16px, env(safe-area-inset-left, 0px));
+  --gutter-r: max(16px, env(safe-area-inset-right, 0px));
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --gold-strong: #CDBF98; --bg: #141415; --surface: #1E1E20; --fg: #F2F0EA; --muted: #A7A398;
+    --line: #34332F; --band: #0D0D0E; --band-fg: #F5F3EE; --band-muted: #A7A398; --chip: #2A2925; --ok: #6CC291;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --gold-strong: #CDBF98; --bg: #141415; --surface: #1E1E20; --fg: #F2F0EA; --muted: #A7A398;
+  --line: #34332F; --band: #0D0D0E; --band-fg: #F5F3EE; --band-muted: #A7A398; --chip: #2A2925; --ok: #6CC291;
+  color-scheme: dark;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+html { scroll-behavior: smooth; padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } * { transition: none !important; animation: none !important; } }
+body { margin: 0; background: var(--bg); color: var(--fg); font: 400 16px/1.6 var(--font-body); -webkit-font-smoothing: antialiased; }
+img { max-width: 100%; display: block; }
+[hidden] { display: none !important; }
+h1, h2, h3, h4 { font-family: var(--font-display); font-weight: 500; line-height: 1.15; margin: 0; text-wrap: balance; }
+p { margin: 0; }
+a { color: inherit; }
+button, input, select, textarea { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+
+.wrap { max-width: 1200px; margin: 0 auto; padding-left: var(--gutter-l); padding-right: var(--gutter-r); }
+.eyebrow { font: 500 12px/1 var(--font-display); letter-spacing: .18em; text-transform: uppercase; color: var(--gold-strong); }
+.band .eyebrow { color: var(--gold); }
+.section { padding-block: 88px; }
+.section-head { display: grid; gap: 14px; max-width: 680px; margin-bottom: 40px; }
+.section-head h2 { font-size: clamp(30px, 4vw, 44px); }
+.section-head p { color: var(--muted); }
+
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; border: 1px solid transparent; border-radius: 2px; padding: 13px 22px; font: 500 14px/1 var(--font-display); letter-spacing: .1em; text-transform: uppercase; cursor: pointer; text-decoration: none; transition: background .2s, color .2s, border-color .2s; }
+.btn-gold { background: var(--gold); color: #1D1D1F; }
+.btn-gold:hover { background: #D2C59F; }
+.btn-line { border-color: currentColor; background: transparent; }
+.btn-line:hover { background: var(--gold); border-color: var(--gold); color: #1D1D1F; }
+
+/* En-tête */
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--band); }
+.topbar { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20; background: var(--band); color: var(--band-fg); border-bottom: 1px solid rgba(190,175,135,.25); }
+.topbar .wrap { display: flex; align-items: center; justify-content: space-between; gap: 20px; padding-block: 14px; }
+.brand { display: flex; align-items: center; gap: 14px; text-decoration: none; }
+.brand-mark { display: grid; line-height: 1; }
+.brand-mark b { font: 600 19px/1 var(--font-display); letter-spacing: .32em; color: var(--gold); }
+.brand-mark span { font: 400 10px/1 var(--font-display); letter-spacing: .3em; color: var(--band-muted); margin-top: 6px; text-transform: uppercase; }
+.brand-sep { width: 1px; align-self: stretch; background: rgba(190,175,135,.4); }
+.brand-name { font: 500 15px/1.2 var(--font-display); letter-spacing: .06em; }
+.nav { display: flex; gap: 28px; font: 500 13px/1 var(--font-display); letter-spacing: .12em; text-transform: uppercase; }
+.nav a { text-decoration: none; color: var(--band-muted); }
+.nav a:hover { color: var(--gold); }
+.topbar .btn { padding: 11px 16px; }
+@media (max-width: 960px) { .nav { display: none; } }
+@media (max-width: 520px) { .brand-sep, .brand-name { display: none; } .topbar .btn { font-size: 12px; } }
+
+/* Hero */
+.band { background: var(--band); color: var(--band-fg); }
+.hero .wrap { display: grid; grid-template-columns: 1.05fr .95fr; gap: 56px; align-items: center; padding-block: 64px 72px; }
+.hero h1 { font-size: clamp(38px, 5.6vw, 68px); font-weight: 400; letter-spacing: -.01em; margin-top: 18px; }
+.hero h1 em { font-style: normal; color: var(--gold); }
+.hero-lead { color: var(--band-muted); font-size: 18px; max-width: 34em; margin-top: 22px; }
+.hero-figure { position: relative; min-width: 0; }
+.hero-figure img { width: 100%; aspect-ratio: 4 / 5; object-fit: cover; border-radius: 2px; }
+.hero-tag { position: absolute; left: -24px; bottom: 28px; background: var(--gold); color: #1D1D1F; padding: 16px 20px; max-width: 260px; display: grid; gap: 4px; }
+.hero-tag small { font: 500 11px/1 var(--font-display); letter-spacing: .16em; text-transform: uppercase; }
+.hero-tag strong { font: 500 22px/1.2 var(--font-display); }
+.hero-tag span { font-size: 13px; }
+@media (max-width: 860px) {
+  .hero .wrap { grid-template-columns: 1fr; gap: 36px; }
+  .hero-figure img { aspect-ratio: 4 / 3; }
+  .hero-tag { left: 12px; bottom: 12px; }
+}
+
+.search { margin-top: 34px; background: var(--surface); color: var(--fg); border-radius: var(--radius); padding: 8px; display: grid; gap: 8px; max-width: 620px; }
+.search-tabs { display: flex; gap: 4px; }
+.search-tabs button { flex: 1; border: 0; background: transparent; padding: 10px; font: 500 13px/1 var(--font-display); letter-spacing: .12em; text-transform: uppercase; color: var(--muted); cursor: pointer; border-radius: 4px; }
+.search-tabs button[aria-pressed="true"] { background: var(--ink); color: var(--gold); }
+.search-row { display: grid; grid-template-columns: 1.3fr 1fr auto; gap: 8px; }
+.search-row label { display: grid; gap: 2px; padding: 8px 12px; border: 1px solid var(--line); border-radius: 4px; min-width: 0; }
+.search-row label span { font: 500 11px/1 var(--font-display); letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+.search-row input, .search-row select { border: 0; background: transparent; padding: 2px 0; outline: none; width: 100%; min-width: 0; }
+@media (max-width: 560px) { .search-row { grid-template-columns: 1fr; } }
+
+.hero-facts { display: flex; flex-wrap: wrap; gap: 28px 40px; margin-top: 34px; padding-top: 26px; border-top: 1px solid rgba(190,175,135,.25); }
+.hero-facts div { display: grid; gap: 4px; }
+.hero-facts b { font: 400 26px/1 var(--font-display); color: var(--gold); font-variant-numeric: tabular-nums; }
+.hero-facts span { font-size: 13px; color: var(--band-muted); }
+
+/* Bandeau d'avertissement */
+.demo-note { background: var(--chip); border-bottom: 1px solid var(--line); font-size: 13px; color: var(--muted); }
+.demo-note .wrap { padding-block: 10px; }
+
+/* Annonces */
+.filters { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between; margin-bottom: 28px; }
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 999px; padding: 4px; background: var(--surface); }
+.seg button { border: 0; background: transparent; padding: 9px 18px; border-radius: 999px; font: 500 13px/1 var(--font-display); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); cursor: pointer; }
+.seg button[aria-pressed="true"] { background: var(--ink); color: var(--gold); }
+.filter-sel { display: flex; flex-wrap: wrap; gap: 10px; }
+.filter-sel select { border: 1px solid var(--line); background: var(--surface); border-radius: 999px; padding: 9px 14px; font-size: 14px; }
+.count { color: var(--muted); font-size: 14px; margin-bottom: 18px; font-variant-numeric: tabular-nums; }
+
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 28px; }
+@media (max-width: 380px) { .grid { grid-template-columns: 1fr; } }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; display: flex; flex-direction: column; cursor: pointer; transition: transform .25s, box-shadow .25s; text-align: left; padding: 0; }
+.card:hover { transform: translateY(-3px); box-shadow: 0 18px 40px -24px rgba(0,0,0,.35); }
+.card-media { position: relative; aspect-ratio: 3 / 2; background: var(--chip); }
+.card-media img { width: 100%; height: 100%; object-fit: cover; }
+.badge { position: absolute; top: 12px; left: 12px; background: var(--ink); color: var(--gold); font: 500 11px/1 var(--font-display); letter-spacing: .14em; text-transform: uppercase; padding: 7px 10px; }
+.badge.rent { background: var(--gold); color: #1D1D1F; }
+.badge-ex { position: absolute; top: 12px; right: 12px; background: rgba(255,255,255,.9); color: #1D1D1F; font-size: 11px; padding: 4px 8px; border-radius: 2px; }
+.card-body { padding: 20px 20px 22px; display: grid; gap: 10px; flex: 1; align-content: start; }
+.card-price { font: 500 24px/1 var(--font-display); font-variant-numeric: tabular-nums; }
+.card-price small { font-size: 14px; color: var(--muted); font-weight: 400; }
+.card-title { font: 500 16px/1.35 var(--font-body); }
+.card-city { color: var(--muted); font-size: 14px; }
+.specs { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 13px; color: var(--muted); padding-top: 12px; border-top: 1px solid var(--line); margin-top: 4px; font-variant-numeric: tabular-nums; }
+.specs b { color: var(--fg); font-weight: 600; }
+.card-foot { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.ref { font-size: 12px; color: var(--muted); letter-spacing: .04em; }
+
+.dpe { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--muted); }
+.dpe i { font-style: normal; display: inline-grid; place-items: center; width: 24px; height: 20px; font: 600 12px/1 var(--font-body); color: #fff; clip-path: polygon(0 0, 78% 0, 100% 50%, 78% 100%, 0 100%); padding-right: 4px; }
+.dpe-A { background: #009036; } .dpe-B { background: #55AB26; } .dpe-C { background: #C8D200; color: #1D1D1F !important; }
+.dpe-D { background: #FFED00; color: #1D1D1F !important; } .dpe-E { background: #FBBA00; color: #1D1D1F !important; }
+.dpe-F { background: #EB6909; } .dpe-G { background: #E2001A; }
+.empty { padding: 48px; text-align: center; border: 1px dashed var(--line); border-radius: var(--radius); color: var(--muted); }
+
+/* Fiche bien */
+dialog { border: 0; padding: 0; max-width: min(920px, calc(100vw - 32px)); width: 100%; max-height: calc(100vh - 48px); background: var(--surface); color: var(--fg); border-radius: var(--radius); }
+dialog::backdrop { background: rgba(10,10,10,.65); }
+.sheet { display: grid; grid-template-columns: 1.1fr 1fr; }
+.sheet-media { min-width: 0; background: var(--chip); }
+.sheet-media img { width: 100%; height: 100%; object-fit: cover; min-height: 320px; }
+.sheet-body { padding: 32px; display: grid; gap: 18px; align-content: start; min-width: 0; }
+.sheet-body h3 { font-size: 26px; }
+.sheet-close { position: absolute; top: 12px; right: 12px; width: 40px; height: 40px; border-radius: 50%; border: 0; background: var(--ink); color: var(--gold); font-size: 20px; cursor: pointer; z-index: 2; }
+.kv { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 20px; font-size: 14px; font-variant-numeric: tabular-nums; }
+.kv div { display: flex; justify-content: space-between; gap: 8px; border-bottom: 1px solid var(--line); padding-bottom: 6px; }
+.kv span { color: var(--muted); }
+.feature-list { display: flex; flex-wrap: wrap; gap: 6px; }
+.feature-list li { list-style: none; background: var(--chip); padding: 5px 10px; border-radius: 999px; font-size: 13px; }
+.feature-list { padding: 0; margin: 0; }
+.calc { background: var(--chip); padding: 14px 16px; border-radius: 4px; font-size: 14px; display: grid; gap: 4px; }
+.calc b { font: 500 20px/1.2 var(--font-display); font-variant-numeric: tabular-nums; }
+.calc small { color: var(--muted); font-size: 12px; }
+@media (max-width: 760px) { .sheet { grid-template-columns: 1fr; } .sheet-media img { min-height: 0; aspect-ratio: 3/2; } .sheet-body { padding: 22px; } .kv { grid-template-columns: 1fr; } }
+
+/* Services */
+.services { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; background: var(--line); border: 1px solid var(--line); }
+.service { background: var(--surface); padding: 32px 28px; display: grid; gap: 14px; align-content: start; }
+.service svg { width: 36px; height: 36px; stroke: var(--gold-strong); fill: none; stroke-width: 1.5; }
+.service h3 { font-size: 22px; }
+.service p { color: var(--muted); font-size: 15px; }
+.service ul { margin: 0; padding: 0; list-style: none; display: grid; gap: 6px; font-size: 14px; }
+.service li { padding-left: 18px; position: relative; }
+.service li::before { content: ""; position: absolute; left: 0; top: .7em; width: 8px; height: 1px; background: var(--gold-strong); }
+@media (max-width: 900px) { .services { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 600px) { .services { grid-template-columns: 1fr; } }
+
+/* Étapes de vente */
+.steps { display: grid; grid-template-columns: repeat(6, 1fr); gap: 0; counter-reset: s; }
+.step { padding: 26px 20px 0 0; border-top: 1px solid rgba(190,175,135,.35); position: relative; display: grid; gap: 10px; align-content: start; }
+.step::before { counter-increment: s; content: counter(s, decimal-leading-zero); font: 400 34px/1 var(--font-display); color: var(--gold); }
+.step::after { content: ""; position: absolute; top: -5px; left: 0; width: 9px; height: 9px; border-radius: 50%; background: var(--gold); }
+.step h4 { font-size: 17px; }
+.step p { font-size: 14px; color: var(--band-muted); }
+@media (max-width: 1000px) { .steps { grid-template-columns: repeat(3, 1fr); row-gap: 36px; } }
+@media (max-width: 560px) { .steps { grid-template-columns: 1fr; } .step { padding-right: 0; } }
+
+/* Estimation */
+.estimate { display: grid; grid-template-columns: 1fr 1fr; gap: 0; border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; background: var(--surface); }
+.est-form { padding: 36px; display: grid; gap: 16px; align-content: start; }
+.field { display: grid; gap: 6px; min-width: 0; }
+.field label { font: 500 12px/1 var(--font-display); letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+.field input, .field select, .field textarea { border: 1px solid var(--line); background: var(--bg); border-radius: 4px; padding: 12px 14px; width: 100%; }
+.field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.est-out { background: var(--band); color: var(--band-fg); padding: 36px; display: grid; gap: 18px; align-content: center; }
+.est-range { font: 400 clamp(32px, 4.4vw, 48px)/1.1 var(--font-display); color: var(--gold); font-variant-numeric: tabular-nums; }
+.est-out p { color: var(--band-muted); font-size: 14px; }
+.est-bar { height: 6px; background: rgba(190,175,135,.2); border-radius: 3px; position: relative; }
+.est-bar i { position: absolute; top: 0; bottom: 0; background: var(--gold); border-radius: 3px; }
+.est-meta { display: flex; justify-content: space-between; font-size: 13px; color: var(--band-muted); font-variant-numeric: tabular-nums; }
+@media (max-width: 820px) { .estimate { grid-template-columns: 1fr; } .est-form, .est-out { padding: 24px; } }
+@media (max-width: 420px) { .field-row { grid-template-columns: 1fr; } }
+
+/* Agent */
+.agent { display: grid; grid-template-columns: 320px 1fr; gap: 56px; align-items: center; }
+.monogram { aspect-ratio: 1; max-width: 320px; width: 100%; background: var(--band); display: grid; place-items: center; position: relative; }
+.monogram::after { content: ""; position: absolute; inset: 18px; border: 1px solid rgba(190,175,135,.5); }
+.monogram span { font: 400 110px/1 var(--font-display); color: var(--gold); letter-spacing: .04em; }
+.agent-text { display: grid; gap: 18px; min-width: 0; }
+.agent-text h2 { font-size: clamp(30px, 4vw, 42px); }
+.agent-text p { color: var(--muted); max-width: 62ch; }
+.pledges { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-top: 10px; }
+.pledges div { border-left: 2px solid var(--gold); padding-left: 14px; display: grid; gap: 4px; }
+.pledges b { font: 500 16px/1.3 var(--font-display); }
+.pledges span { font-size: 14px; color: var(--muted); }
+@media (max-width: 860px) { .agent { grid-template-columns: 1fr; gap: 32px; } .monogram { max-width: 220px; } .monogram span { font-size: 76px; } .pledges { grid-template-columns: 1fr; } }
+
+/* Contact */
+.contact { display: grid; grid-template-columns: .9fr 1.1fr; gap: 56px; }
+.contact-info { display: grid; gap: 22px; align-content: start; }
+.contact-info h2 { font-size: clamp(30px, 4vw, 42px); }
+.contact-info p { color: var(--band-muted); }
+.info-line { display: grid; gap: 4px; padding-block: 14px; border-top: 1px solid rgba(190,175,135,.25); }
+.info-line span { font: 500 11px/1 var(--font-display); letter-spacing: .16em; text-transform: uppercase; color: var(--gold); }
+.info-line b { font-weight: 500; font-variant-numeric: tabular-nums; }
+.contact form { background: var(--surface); color: var(--fg); padding: 32px; border-radius: var(--radius); display: grid; gap: 16px; }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.chips label { cursor: pointer; position: relative; }
+.chips input { position: absolute; opacity: 0; pointer-events: none; }
+.chips span { display: inline-block; border: 1px solid var(--line); border-radius: 999px; padding: 8px 14px; font-size: 14px; }
+.chips input:checked + span { background: var(--ink); color: var(--gold); border-color: var(--ink); }
+.chips input:focus-visible + span { outline: 2px solid var(--gold); outline-offset: 2px; }
+.form-ok { background: var(--chip); border-left: 3px solid var(--ok); padding: 12px 14px; font-size: 14px; }
+@media (max-width: 860px) { .contact { grid-template-columns: 1fr; gap: 36px; } .contact form { padding: 22px; } }
+
+footer { background: var(--band); color: var(--band-muted); font-size: 13px; border-top: 1px solid rgba(190,175,135,.2); }
+footer .wrap { padding-block: 28px; display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px; }
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="wrap">
+    <a class="brand" href="#accueil" aria-label="Accueil">
+      <div class="brand-mark"><b>CENTURY 21</b><span>Conseiller immobilier</span></div>
+      <div class="brand-sep"></div>
+      <div class="brand-name">Louis Librad</div>
+    </a>
+    <nav class="nav" aria-label="Navigation principale">
+      <a href="#biens">Nos biens</a>
+      <a href="#services">Services</a>
+      <a href="#estimation">Estimation</a>
+      <a href="#conseiller">Votre conseiller</a>
+      <a href="#contact">Contact</a>
+    </nav>
+    <a class="btn btn-gold" href="#estimation">Estimer mon bien</a>
+  </div>
+</header>
+
+<section class="band hero" id="accueil">
+  <div class="wrap">
+    <div>
+      <p class="eyebrow">Vente · Achat · Location · Gestion locative</p>
+      <h1>Votre projet immobilier mérite un conseiller <em>qui s'engage</em>.</h1>
+      <p class="hero-lead">Louis Librad vous accompagne de l'estimation à la remise des clés, avec la force du réseau CENTURY 21 et une connaissance fine de votre secteur.</p>
+
+      <form class="search" id="heroSearch" autocomplete="off">
+        <div class="search-tabs" role="group" aria-label="Type de recherche">
+          <button type="button" data-mode="vente" aria-pressed="true">Acheter</button>
+          <button type="button" data-mode="location" aria-pressed="false">Louer</button>
+        </div>
+        <div class="search-row">
+          <label for="qCity"><span>Ville ou quartier</span><input id="qCity" placeholder="Ex. Écully, Lyon 6e"></label>
+          <label for="qBudget"><span>Budget max</span>
+            <select id="qBudget"></select>
+          </label>
+          <button class="btn btn-gold" type="submit">Rechercher</button>
+        </div>
+      </form>
+
+      <div class="hero-facts">
+        <div><b>Gratuit</b><span>Avis de valeur sous 48 h</span></div>
+        <div><b>100 %</b><span>Diffusion réseau et portails</span></div>
+        <div><b>1 seul</b><span>Interlocuteur du début à la fin</span></div>
+      </div>
+    </div>
+    <figure class="hero-figure" style="margin:0">
+      <img id="heroImg" alt="Villa contemporaine avec piscine" width="800" height="1000">
+      <div class="hero-tag">
+        <small>Coup de cœur</small>
+        <strong id="heroTagPrice"></strong>
+        <span id="heroTagText"></span>
+      </div>
+    </figure>
+  </div>
+</section>
+
+<div class="demo-note">
+  <div class="wrap">Maquette de démonstration : les annonces, prix et coordonnées ci‑dessous sont des exemples à remplacer par les vrais biens et contacts de Louis Librad.</div>
+</div>
+
+<main>
+<section class="section" id="biens">
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">Sélection du moment</p>
+      <h2>Les plus beaux biens à vendre et à louer</h2>
+      <p>Chaque bien est visité, photographié et estimé par Louis avant sa mise en ligne. Cliquez sur une annonce pour voir la fiche complète et demander une visite.</p>
+    </div>
+
+    <div class="filters">
+      <div class="seg" role="group" aria-label="Transaction">
+        <button type="button" data-tx="all" aria-pressed="true">Tous</button>
+        <button type="button" data-tx="vente" aria-pressed="false">À vendre</button>
+        <button type="button" data-tx="location" aria-pressed="false">À louer</button>
+      </div>
+      <div class="filter-sel">
+        <select id="fType" aria-label="Type de bien">
+          <option value="all">Tous types</option>
+          <option value="Maison">Maisons</option>
+          <option value="Appartement">Appartements</option>
+        </select>
+        <select id="fSort" aria-label="Trier">
+          <option value="featured">Coups de cœur</option>
+          <option value="asc">Prix croissant</option>
+          <option value="desc">Prix décroissant</option>
+          <option value="surface">Surface</option>
+        </select>
+      </div>
+    </div>
+    <p class="count" id="count" aria-live="polite"></p>
+    <div class="grid" id="grid"></div>
+  </div>
+</section>
+
+<section class="section" id="services" style="padding-top:0">
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">Ce que Louis fait pour vous</p>
+      <h2>Vendre, acheter, louer ou faire gérer : un accompagnement complet</h2>
+      <p>Les services du réseau CENTURY 21, portés par un conseiller unique qui suit votre dossier de bout en bout.</p>
+    </div>
+    <div class="services">
+      <article class="service">
+        <svg viewBox="0 0 36 36" aria-hidden="true"><path d="M4 17 18 5l14 12"/><path d="M8 14v17h20V14"/><path d="M15 31v-8h6v8"/></svg>
+        <h3>Vendre votre bien</h3>
+        <p>Une stratégie de prix juste et une mise en valeur soignée pour vendre au meilleur prix, dans les meilleurs délais.</p>
+        <ul><li>Avis de valeur gratuit et argumenté</li><li>Photos professionnelles et visite virtuelle</li><li>Diffusion sur le réseau et les grands portails</li><li>Visites qualifiées, acquéreurs vérifiés</li><li>Négociation et suivi jusqu'à l'acte notarié</li></ul>
+      </article>
+      <article class="service">
+        <svg viewBox="0 0 36 36" aria-hidden="true"><circle cx="15" cy="15" r="9"/><path d="m22 22 9 9"/><path d="M11 15h8M15 11v8"/></svg>
+        <h3>Acheter</h3>
+        <p>Louis cible les biens qui correspondent vraiment à votre projet, y compris ceux qui ne sont pas encore en ligne.</p>
+        <ul><li>Définition du projet et du budget</li><li>Alertes sur les nouveaux biens</li><li>Visites organisées et conseils objectifs</li><li>Mise en relation avec un courtier</li><li>Accompagnement offre, compromis, acte</li></ul>
+      </article>
+      <article class="service">
+        <svg viewBox="0 0 36 36" aria-hidden="true"><circle cx="12" cy="18" r="6"/><path d="M18 18h14M27 18v5M31 18v4"/></svg>
+        <h3>Mettre en location</h3>
+        <p>Trouvez un locataire fiable rapidement, avec un dossier conforme et un bail sécurisé.</p>
+        <ul><li>Estimation du loyer de marché</li><li>Diffusion et organisation des visites</li><li>Étude de solvabilité des candidats</li><li>Rédaction du bail et état des lieux</li><li>Diagnostics et conformité (DPE, décence)</li></ul>
+      </article>
+      <article class="service">
+        <svg viewBox="0 0 36 36" aria-hidden="true"><rect x="6" y="6" width="24" height="26" rx="1"/><path d="M11 13h14M11 19h14M11 25h8"/></svg>
+        <h3>Gestion locative</h3>
+        <p>Confiez la gestion au quotidien et percevez vos loyers l'esprit tranquille.</p>
+        <ul><li>Encaissement des loyers et charges</li><li>Garantie loyers impayés en option</li><li>Révision annuelle et régularisations</li><li>Suivi des travaux et des sinistres</li><li>Aide à la déclaration des revenus fonciers</li></ul>
+      </article>
+      <article class="service">
+        <svg viewBox="0 0 36 36" aria-hidden="true"><path d="M5 30h26"/><path d="M9 30V18M16 30V12M23 30V20M30 30V8"/></svg>
+        <h3>Investissement locatif</h3>
+        <p>Identifier un bien rentable, calculer le rendement et anticiper la fiscalité avant d'acheter.</p>
+        <ul><li>Étude de rendement brut et net</li><li>Choix du secteur et du type de bien</li><li>Location nue ou meublée</li><li>Mise en gestion dès l'achat</li></ul>
+      </article>
+      <article class="service">
+        <svg viewBox="0 0 36 36" aria-hidden="true"><path d="M18 4v4M18 28v4M4 18h4M28 18h4"/><circle cx="18" cy="18" r="9"/><path d="M18 13v5l3 3"/></svg>
+        <h3>Estimation gratuite</h3>
+        <p>Connaître la valeur réelle de votre bien, sans engagement, à partir des ventes récentes du quartier.</p>
+        <ul><li>Visite et analyse du bien sur place</li><li>Comparaison avec les ventes récentes</li><li>Avis de valeur écrit sous 48 h</li><li>Estimation du loyer pour un investisseur</li></ul>
+      </article>
+    </div>
+  </div>
+</section>
+
+<section class="band section" id="methode">
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">La méthode</p>
+      <h2>Vendre avec Louis, étape par étape</h2>
+      <p style="color:var(--band-muted)">Un calendrier clair et un point régulier sur les visites et les retours des acquéreurs.</p>
+    </div>
+    <div class="steps">
+      <div class="step"><h4>Estimation</h4><p>Visite du bien et avis de valeur écrit, fondé sur les ventes du secteur.</p></div>
+      <div class="step"><h4>Mandat</h4><p>Choix du mandat et du prix de présentation, ensemble.</p></div>
+      <div class="step"><h4>Mise en valeur</h4><p>Photos, visite virtuelle, conseils de présentation, diagnostics.</p></div>
+      <div class="step"><h4>Diffusion</h4><p>Réseau CENTURY 21, portails et fichier d'acquéreurs.</p></div>
+      <div class="step"><h4>Visites et offres</h4><p>Acquéreurs qualifiés, comptes rendus, négociation.</p></div>
+      <div class="step"><h4>Compromis et acte</h4><p>Suivi avec le notaire jusqu'à la remise des clés.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="section" id="estimation">
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">Estimation en ligne</p>
+      <h2>Combien vaut votre bien ?</h2>
+      <p>Une première fourchette indicative en quelques secondes. Pour un avis de valeur précis, Louis se déplace gratuitement.</p>
+    </div>
+    <div class="estimate">
+      <form class="est-form" id="estForm">
+        <div class="field-row">
+          <div class="field">
+            <label for="eGoal">Projet</label>
+            <select id="eGoal"><option value="vente">Vendre</option><option value="location">Louer</option></select>
+          </div>
+          <div class="field">
+            <label for="eType">Type de bien</label>
+            <select id="eType"><option value="maison">Maison</option><option value="appartement">Appartement</option></select>
+          </div>
+        </div>
+        <div class="field">
+          <label for="eCity">Secteur</label>
+          <select id="eCity"></select>
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <label for="eSurface">Surface habitable (m²)</label>
+            <input id="eSurface" type="number" min="10" max="1000" value="110" inputmode="numeric">
+          </div>
+          <div class="field">
+            <label for="eState">État général</label>
+            <select id="eState"><option value="1.08">Refait à neuf</option><option value="1" selected>Bon état</option><option value="0.9">Travaux à prévoir</option></select>
+          </div>
+        </div>
+        <div class="field">
+          <label for="eExtra">Atout principal</label>
+          <select id="eExtra"><option value="1">Aucun en particulier</option><option value="1.05">Extérieur (jardin, terrasse)</option><option value="1.08">Piscine ou vue dégagée</option><option value="1.03">Parking ou garage</option></select>
+        </div>
+      </form>
+      <div class="est-out" aria-live="polite">
+        <p class="eyebrow" id="estLabel">Valeur estimée</p>
+        <div class="est-range" id="estRange"></div>
+        <div>
+          <div class="est-bar"><i id="estBar"></i></div>
+          <div class="est-meta" style="margin-top:8px"><span id="estMin"></span><span id="estPm"></span><span id="estMax"></span></div>
+        </div>
+        <p>Fourchette indicative calculée à partir de prix moyens d'exemple par secteur. Elle ne remplace pas un avis de valeur réalisé sur place.</p>
+        <a class="btn btn-gold" href="#contact" id="estCta">Demander un avis de valeur</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section" id="conseiller" style="padding-top:0">
+  <div class="wrap agent">
+    <div class="monogram" aria-hidden="true"><span>LL</span></div>
+    <div class="agent-text">
+      <p class="eyebrow">Votre conseiller</p>
+      <h2>Louis Librad, conseiller immobilier CENTURY 21</h2>
+      <p>Vendre ou louer un bien, c'est souvent l'une des décisions les plus importantes d'une vie. Louis vous apporte une lecture précise du marché local, une communication régulière et la puissance d'un réseau reconnu pour trouver le bon acquéreur ou le bon locataire.</p>
+      <p>Que vous soyez propriétaire, primo-accédant ou investisseur, vous gardez le même interlocuteur, joignable et disponible, à chaque étape.</p>
+      <div class="pledges">
+        <div><b>Transparence</b><span>Un compte rendu après chaque visite.</span></div>
+        <div><b>Réactivité</b><span>Réponse à vos demandes dans la journée.</span></div>
+        <div><b>Proximité</b><span>Une connaissance terrain de votre quartier.</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="band section" id="contact">
+  <div class="wrap contact">
+    <div class="contact-info">
+      <p class="eyebrow">Contact</p>
+      <h2>Parlons de votre projet</h2>
+      <p>Indiquez votre projet et vos disponibilités : Louis vous rappelle pour fixer un rendez-vous ou une visite.</p>
+      <div>
+        <div class="info-line"><span>Téléphone</span><b>06 00 00 00 00 (à compléter)</b></div>
+        <div class="info-line"><span>E-mail</span><b>adresse e-mail à compléter</b></div>
+        <div class="info-line"><span>Agence</span><b>CENTURY 21, adresse de l'agence à compléter</b></div>
+        <div class="info-line"><span>Horaires</span><b>Du lundi au samedi, 9 h – 19 h</b></div>
+      </div>
+    </div>
+    <form id="contactForm" novalidate>
+      <div class="field">
+        <label>Votre projet</label>
+        <div class="chips" role="radiogroup" aria-label="Votre projet">
+          <label><input type="radio" name="proj" value="Vendre" checked><span>Vendre</span></label>
+          <label><input type="radio" name="proj" value="Acheter"><span>Acheter</span></label>
+          <label><input type="radio" name="proj" value="Louer"><span>Louer</span></label>
+          <label><input type="radio" name="proj" value="Mettre en location"><span>Mettre en location</span></label>
+          <label><input type="radio" name="proj" value="Gestion locative"><span>Gestion locative</span></label>
+        </div>
+      </div>
+      <div class="field-row">
+        <div class="field"><label for="cName">Nom</label><input id="cName" required autocomplete="name"></div>
+        <div class="field"><label for="cPhone">Téléphone</label><input id="cPhone" type="tel" required autocomplete="tel"></div>
+      </div>
+      <div class="field"><label for="cMail">E-mail</label><input id="cMail" type="email" autocomplete="email"></div>
+      <div class="field"><label for="cMsg">Message</label><textarea id="cMsg" rows="4" placeholder="Adresse du bien, surface, délai, disponibilités…"></textarea></div>
+      <button class="btn btn-gold" type="submit">Envoyer ma demande</button>
+      <p class="form-ok" id="formOk" hidden></p>
+    </form>
+  </div>
+</section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <span>Louis Librad · Conseiller immobilier CENTURY 21</span>
+    <span>Maquette de démonstration, contenus d'exemple</span>
+  </div>
+</footer>
+
+<dialog id="sheet" aria-labelledby="sheetTitle">
+  <button class="sheet-close" id="sheetClose" aria-label="Fermer">×</button>
+  <div class="sheet">
+    <div class="sheet-media"><img id="sheetImg" alt=""></div>
+    <div class="sheet-body" id="sheetBody"></div>
+  </div>
+</dialog>
+
+<script>
+const U = id => `https://images.unsplash.com/photo-${id}?auto=format&fit=crop&w=1200&q=75`;
+
+const LISTINGS = [
+  { ref:"LL-V101", tx:"vente", type:"Maison", title:"Villa contemporaine avec piscine", city:"Écully", price:895000, surface:185, rooms:6, beds:4, land:1200, dpe:"B", featured:1, art:"villa",
+    img:U("1613490493576-7fde63acd811"), features:["Piscine chauffée","Baie vitrée 8 m","Garage double","Domotique","Vue dégagée"],
+    desc:"Architecture contemporaine de 2019 sur un terrain arboré sans vis-à-vis. Grande pièce de vie de 70 m² ouverte sur la terrasse et la piscine, suite parentale avec dressing, trois chambres d'enfants." },
+  { ref:"LL-V102", tx:"vente", type:"Maison", title:"Maison bourgeoise et son parc", city:"Saint-Cyr-au-Mont-d'Or", price:1250000, surface:240, rooms:8, beds:5, land:2600, dpe:"C", featured:2, art:"manor",
+    img:U("1600596542815-ffad4c1539a9"), features:["Parc de 2 600 m²","Parquet d'époque","Cave voûtée","Dépendance"],
+    desc:"Demeure de caractère du début du XXe siècle rénovée avec soin. Réception en enfilade, cheminées en marbre, cuisine familiale, cinq chambres et une dépendance aménageable." },
+  { ref:"LL-V103", tx:"vente", type:"Appartement", title:"Appartement T4 avec terrasse", city:"Lyon 6e", price:615000, surface:102, rooms:4, beds:3, land:0, dpe:"B", featured:3, art:"flat",
+    img:U("1502672260266-1c1ef2d93688"), features:["Terrasse 25 m²","Dernier étage","Ascenseur","Cave et parking"],
+    desc:"Au dernier étage d'une résidence de standing, séjour traversant prolongé par une terrasse plein sud. Trois chambres, deux salles d'eau, parking en sous-sol." },
+  { ref:"LL-V104", tx:"vente", type:"Maison", title:"Longère en pierre rénovée", city:"Pays beaujolais", price:690000, surface:210, rooms:7, beds:4, land:4500, dpe:"D", featured:5, art:"longere",
+    img:U("1449844908441-8829872d2607"), features:["Pierres apparentes","Grange attenante","Verger","Vue sur les vignes"],
+    desc:"Ancienne ferme du XIXe entièrement restaurée, alliant poutres et matériaux d'origine au confort moderne. Grange de 120 m² à aménager, verger et vue sur les vignes." },
+  { ref:"LL-V105", tx:"vente", type:"Maison", title:"Maison de ville rénovée avec jardin", city:"Villeurbanne", price:549000, surface:128, rooms:5, beds:3, land:180, dpe:"C", featured:6, art:"town",
+    img:U("1570129477492-45c003edd2be"), features:["Jardin de ville","Rénovation 2023","Bureau","Proche métro"],
+    desc:"Maison sur trois niveaux rénovée par un architecte, à deux pas des commerces et du métro. Cuisine ouverte sur le jardin, trois chambres et un bureau sous les toits." },
+  { ref:"LL-V106", tx:"vente", type:"Maison", title:"Maison familiale de plain-pied", city:"Meyzieu", price:459000, surface:150, rooms:6, beds:4, land:720, dpe:"D", featured:8, art:"family",
+    img:U("1568605114967-8130f3a36994"), features:["Plain-pied","Jardin clos","Garage","Écoles à pied"],
+    desc:"Idéale pour une famille : vie de plain-pied, quatre chambres, grand séjour lumineux et jardin clos sans vis-à-vis, dans un quartier calme proche des écoles." },
+  { ref:"LL-L201", tx:"location", type:"Maison", title:"Maison avec jardin, 4 chambres", city:"Caluire-et-Cuire", price:2150, surface:120, rooms:5, beds:4, land:400, dpe:"C", featured:4, art:"family",
+    img:U("1580587771525-78b9dba3b914"), features:["Jardin 400 m²","Garage","Disponible de suite"], charges:"charges comprises",
+    desc:"Maison lumineuse dans une rue résidentielle, séjour ouvert sur le jardin, quatre chambres et garage. Proche des écoles et des transports." },
+  { ref:"LL-L202", tx:"location", type:"Appartement", title:"T3 meublé, balcon", city:"Lyon 3e", price:1290, surface:68, rooms:3, beds:2, land:0, dpe:"C", featured:7, art:"flat",
+    img:U("1522708323590-d24dbb6b0267"), features:["Meublé","Balcon","Proche Part-Dieu"], charges:"charges comprises",
+    desc:"Appartement entièrement meublé et équipé, deux chambres, balcon sur cour calme. À cinq minutes à pied de la gare Part-Dieu." },
+  { ref:"LL-L203", tx:"location", type:"Appartement", title:"Loft industriel", city:"Lyon 7e", price:1780, surface:95, rooms:3, beds:2, land:0, dpe:"D", featured:9, art:"loft",
+    img:U("1560448204-e02f11c3d0e2"), features:["Hauteur 4 m","Verrière","Mezzanine"], charges:"charges comprises",
+    desc:"Ancien atelier transformé en loft, volumes généreux, verrière et mezzanine. Quartier vivant, proche des quais du Rhône." },
+  { ref:"LL-L204", tx:"location", type:"Appartement", title:"Studio étudiant rénové", city:"Lyon 7e", price:590, surface:24, rooms:1, beds:0, land:0, dpe:"E", featured:10, art:"flat",
+    img:U("1536376072261-38c75010e6c9"), features:["Meublé","Proche universités","Tram"], charges:"charges comprises",
+    desc:"Studio meublé et rénové, coin nuit séparé, kitchenette équipée. À proximité immédiate des universités et du tram." },
+  { ref:"LL-V107", tx:"vente", type:"Appartement", title:"T2 lumineux, idéal investisseur", city:"Lyon 7e", price:239000, surface:45, rooms:2, beds:1, land:0, dpe:"C", featured:11, art:"flat",
+    img:U("1493809842364-78817add7ffb"), features:["Loué 780 €/mois","Balcon","Proche tram"],
+    desc:"Deux-pièces rénové vendu loué, rendement brut proche de 3,9 %. Séjour sur balcon, chambre sur cour, copropriété bien tenue. Gestion locative possible dès l'achat." },
+  { ref:"LL-L205", tx:"location", type:"Maison", title:"Maison de village avec cour", city:"Monts d'Or", price:1450, surface:90, rooms:4, beds:3, land:150, dpe:"D", featured:12, art:"town",
+    img:U("1564013799919-ab600027ffc6"), features:["Cour privative","Cheminée","Calme"], charges:"charges comprises",
+    desc:"Maison de village sur deux niveaux, trois chambres, cuisine ouverte et petite cour privative. Commerces et écoles accessibles à pied." }
+];
+
+const SECTORS = [
+  { name:"Lyon 6e", sale:6900, rent:19.5 }, { name:"Lyon 3e", sale:5300, rent:17 }, { name:"Lyon 7e", sale:5000, rent:17.5 },
+  { name:"Villeurbanne", sale:4300, rent:15 }, { name:"Écully", sale:5600, rent:15.5 }, { name:"Caluire-et-Cuire", sale:5200, rent:15.5 },
+  { name:"Monts d'Or", sale:5900, rent:15 }, { name:"Meyzieu", sale:3600, rent:13 }, { name:"Pays beaujolais", sale:3000, rent:10.5 }
+];
+
+const fmt = n => new Intl.NumberFormat("fr-FR", { maximumFractionDigits:0 }).format(n);
+const priceLabel = l => l.tx === "vente" ? `${fmt(l.price)} €` : `${fmt(l.price)} € <small>/ mois</small>`;
+
+/* Illustration de repli si la photo ne charge pas */
+function artSVG(kind, seed) {
+  const sky = ["#D9D3C3","#CFC6AE","#D6CFBE"][seed % 3], gold="#BEAF87", ink="#2A2A2C", wall="#F1EDE3", glass="#3B4148";
+  let house = "";
+  if (kind === "villa") house = `<rect x="70" y="150" width="260" height="90" fill="${wall}"/><rect x="170" y="110" width="180" height="60" fill="${wall}"/><rect x="60" y="142" width="280" height="10" fill="${ink}"/><rect x="160" y="102" width="200" height="10" fill="${ink}"/><rect x="90" y="170" width="120" height="55" fill="${glass}"/><rect x="230" y="122" width="100" height="36" fill="${glass}"/><rect x="40" y="240" width="320" height="22" fill="#7FA6B5"/>`;
+  else if (kind === "manor") house = `<rect x="90" y="130" width="220" height="115" fill="${wall}"/><polygon points="80,132 200,70 320,132" fill="${ink}"/>${[110,160,215,265].map(x=>`<rect x="${x}" y="150" width="26" height="36" fill="${glass}"/><rect x="${x}" y="200" width="26" height="36" fill="${glass}"/>`).join("")}<rect x="186" y="200" width="28" height="45" fill="${gold}"/>`;
+  else if (kind === "longere") house = `<rect x="40" y="165" width="320" height="80" fill="#D8CBB0"/><polygon points="30,168 70,120 330,120 370,168" fill="#7A4E3A"/>${[70,130,250,310].map(x=>`<rect x="${x}" y="185" width="22" height="30" fill="${glass}"/>`).join("")}<rect x="175" y="180" width="50" height="65" fill="#6B5644"/>`;
+  else if (kind === "town") house = `<rect x="130" y="95" width="140" height="150" fill="${wall}"/><polygon points="120,98 200,50 280,98" fill="${ink}"/>${[105,150,195].map(y=>`<rect x="150" y="${y+10}" width="30" height="30" fill="${glass}"/><rect x="220" y="${y+10}" width="30" height="30" fill="${glass}"/>`).join("")}<rect x="60" y="200" width="70" height="45" fill="#8FA27A"/>`;
+  else if (kind === "loft") house = `<rect x="60" y="100" width="280" height="145" fill="#8B5A45"/>${[80,150,220,290].map(x=>`<rect x="${x}" y="120" width="40" height="50" fill="${glass}"/><rect x="${x}" y="185" width="40" height="50" fill="${glass}"/>`).join("")}<polygon points="60,100 130,70 200,100 270,70 340,100" fill="${ink}"/>`;
+  else if (kind === "family") house = `<rect x="80" y="160" width="240" height="85" fill="${wall}"/><polygon points="70,162 200,100 330,162" fill="#9C5B43"/><rect x="105" y="180" width="40" height="34" fill="${glass}"/><rect x="255" y="180" width="40" height="34" fill="${glass}"/><rect x="180" y="185" width="40" height="60" fill="${gold}"/>`;
+  else house = `<rect x="110" y="60" width="180" height="185" fill="${wall}"/>${[75,115,155,195].map(y=>[130,180,230].map(x=>`<rect x="${x}" y="${y}" width="34" height="26" fill="${glass}"/>`).join("")).join("")}<rect x="100" y="52" width="200" height="10" fill="${ink}"/>`;
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300"><rect width="400" height="300" fill="${sky}"/><circle cx="330" cy="70" r="26" fill="${gold}" opacity=".7"/><rect y="245" width="400" height="55" fill="#A9B08A"/>${house}</svg>`;
+  return "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svg);
+}
+function setImg(img, l, i) {
+  img.onerror = () => { img.onerror = null; img.src = artSVG(l.art, i); };
+  img.src = l.img;
+}
+
+/* Hero */
+const hero = LISTINGS[0];
+setImg(document.getElementById("heroImg"), hero, 0);
+document.getElementById("heroTagPrice").textContent = `${fmt(hero.price)} €`;
+document.getElementById("heroTagText").textContent = `${hero.title}, ${hero.city} · ${hero.surface} m²`;
+
+/* Filtres */
+const state = { tx:"all", type:"all", sort:"featured", city:"", budget:0 };
+const grid = document.getElementById("grid");
+
+function render() {
+  let list = LISTINGS.filter(l =>
+    (state.tx === "all" || l.tx === state.tx) &&
+    (state.type === "all" || l.type === state.type) &&
+    (!state.city || l.city.toLowerCase().includes(state.city.toLowerCase())) &&
+    (!state.budget || l.price <= state.budget));
+  const s = state.sort;
+  list.sort((a,b) => s==="asc" ? a.price-b.price : s==="desc" ? b.price-a.price : s==="surface" ? b.surface-a.surface : a.featured-b.featured);
+  const crit = [state.city && `« ${state.city} »`, state.budget && `jusqu'à ${fmt(state.budget)} €`].filter(Boolean).join(", ");
+  document.getElementById("count").innerHTML = `${list.length} bien${list.length>1?"s":""}${crit ? ` · ${crit} · <a href="#" id="resetQ">effacer la recherche</a>` : ""}`;
+  const r = document.getElementById("resetQ");
+  if (r) r.onclick = e => { e.preventDefault(); state.city=""; state.budget=0; document.getElementById("qCity").value=""; document.getElementById("qBudget").value="0"; render(); };
+
+  if (!list.length) { grid.innerHTML = `<div class="empty">Aucun bien ne correspond à ces critères pour le moment. Laissez vos critères à Louis : il vous prévient dès qu'un bien arrive.</div>`; return; }
+  grid.innerHTML = "";
+  list.forEach((l, i) => {
+    const card = document.createElement("button");
+    card.type = "button"; card.className = "card";
+    card.setAttribute("aria-label", `${l.title}, ${l.city}, voir la fiche`);
+    card.innerHTML = `
+      <div class="card-media"><img alt="" loading="lazy"><span class="badge ${l.tx==="location"?"rent":""}">${l.tx==="vente"?"À vendre":"À louer"}</span><span class="badge-ex">Exemple</span></div>
+      <div class="card-body">
+        <div class="card-price">${priceLabel(l)}</div>
+        <div class="card-title">${l.title}</div>
+        <div class="card-city">${l.type} · ${l.city}</div>
+        <div class="specs"><span><b>${l.surface}</b> m²</span><span><b>${l.rooms}</b> pièce${l.rooms>1?"s":""}</span>${l.beds?`<span><b>${l.beds}</b> ch.</span>`:""}${l.land?`<span><b>${fmt(l.land)}</b> m² terrain</span>`:""}</div>
+        <div class="card-foot"><span class="dpe">DPE <i class="dpe-${l.dpe}">${l.dpe}</i></span><span class="ref">Réf. ${l.ref}</span></div>
+      </div>`;
+    setImg(card.querySelector("img"), l, LISTINGS.indexOf(l));
+    card.onclick = () => openSheet(l);
+    grid.appendChild(card);
+  });
+}
+
+function pressGroup(container, attr, val) {
+  container.querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset[attr] === val)));
+}
+const seg = document.querySelector(".seg");
+seg.addEventListener("click", e => { const b = e.target.closest("button"); if (!b) return; state.tx = b.dataset.tx; pressGroup(seg, "tx", state.tx); render(); });
+document.getElementById("fType").onchange = e => { state.type = e.target.value; render(); };
+document.getElementById("fSort").onchange = e => { state.sort = e.target.value; render(); };
+
+/* Recherche du hero */
+let mode = "vente";
+const tabs = document.querySelector(".search-tabs"), qBudget = document.getElementById("qBudget");
+function fillBudget() {
+  const opts = mode === "vente" ? [300000,500000,700000,1000000,1500000] : [800,1200,1600,2000,2500];
+  qBudget.innerHTML = `<option value="0">Indifférent</option>` + opts.map(v => `<option value="${v}">${fmt(v)} €${mode==="location"?" / mois":""}</option>`).join("");
+}
+tabs.addEventListener("click", e => { const b = e.target.closest("button"); if (!b) return; mode = b.dataset.mode; pressGroup(tabs, "mode", mode); fillBudget(); });
+fillBudget();
+document.getElementById("heroSearch").addEventListener("submit", e => {
+  e.preventDefault();
+  state.tx = mode; pressGroup(seg, "tx", mode);
+  state.city = document.getElementById("qCity").value.trim();
+  state.budget = Number(qBudget.value);
+  render();
+  document.getElementById("biens").scrollIntoView();
+});
+
+/* Fiche détaillée */
+const sheet = document.getElementById("sheet");
+function openSheet(l) {
+  setImg(document.getElementById("sheetImg"), l, LISTINGS.indexOf(l));
+  document.getElementById("sheetImg").alt = l.title;
+  let calc = "";
+  if (l.tx === "vente") {
+    const loan = l.price * 0.9, r = 0.034/12, n = 240, m = loan * r / (1 - Math.pow(1 + r, -n));
+    calc = `<div class="calc"><span>Mensualité indicative</span><b>${fmt(m)} € / mois</b><small>Exemple : 10 % d'apport, prêt sur 20 ans à 3,4 %, hors assurance. À affiner avec un courtier.</small></div>`;
+  } else {
+    calc = `<div class="calc"><span>Revenus conseillés</span><b>${fmt(l.price*3)} € / mois</b><small>Repère courant : revenus nets d'environ trois fois le loyer. Dépôt de garantie et frais d'agence selon la réglementation.</small></div>`;
+  }
+  document.getElementById("sheetBody").innerHTML = `
+    <p class="eyebrow">${l.tx==="vente"?"À vendre":"À louer"} · Réf. ${l.ref} · exemple</p>
+    <h3 id="sheetTitle">${l.title}</h3>
+    <div class="card-price">${priceLabel(l)}${l.charges?` <small>${l.charges}</small>`:""}</div>
+    <p style="color:var(--muted)">${l.desc}</p>
+    <div class="kv">
+      <div><span>Type</span><b>${l.type}</b></div><div><span>Secteur</span><b>${l.city}</b></div>
+      <div><span>Surface</span><b>${l.surface} m²</b></div><div><span>Pièces</span><b>${l.rooms}</b></div>
+      <div><span>Chambres</span><b>${l.beds || "—"}</b></div><div><span>Terrain</span><b>${l.land ? fmt(l.land)+" m²" : "—"}</b></div>
+      ${l.tx==="vente"?`<div><span>Prix au m²</span><b>${fmt(l.price/l.surface)} €</b></div>`:`<div><span>Loyer au m²</span><b>${(l.price/l.surface).toFixed(1).replace(".",",")} €</b></div>`}
+      <div><span>DPE</span><span class="dpe"><i class="dpe-${l.dpe}">${l.dpe}</i></span></div>
+    </div>
+    <ul class="feature-list">${l.features.map(f=>`<li>${f}</li>`).join("")}</ul>
+    ${calc}
+    <a class="btn btn-gold" href="#contact" id="visitBtn">Demander une visite</a>`;
+  document.getElementById("visitBtn").onclick = () => {
+    sheet.close();
+    const proj = l.tx === "vente" ? "Acheter" : "Louer";
+    document.querySelector(`input[name="proj"][value="${proj}"]`).checked = true;
+    document.getElementById("cMsg").value = `Bonjour, je souhaite visiter le bien réf. ${l.ref} (${l.title}, ${l.city}). Mes disponibilités : `;
+  };
+  sheet.showModal();
+}
+document.getElementById("sheetClose").onclick = () => sheet.close();
+sheet.addEventListener("click", e => { if (e.target === sheet) sheet.close(); });
+
+/* Estimation */
+const eCity = document.getElementById("eCity");
+eCity.innerHTML = SECTORS.map((s,i) => `<option value="${i}">${s.name}</option>`).join("");
+function estimate() {
+  const s = SECTORS[eCity.value], goal = document.getElementById("eGoal").value;
+  const surf = Math.max(10, Number(document.getElementById("eSurface").value) || 0);
+  const k = Number(document.getElementById("eState").value) * Number(document.getElementById("eExtra").value) * (document.getElementById("eType").value === "maison" ? 1.04 : 1);
+  const isSale = goal === "vente";
+  const base = (isSale ? s.sale : s.rent) * surf * k;
+  const lo = base * 0.93, hi = base * 1.07, round = isSale ? 5000 : 10;
+  const r = v => Math.round(v / round) * round;
+  document.getElementById("estLabel").textContent = isSale ? "Valeur de vente estimée" : "Loyer mensuel estimé";
+  document.getElementById("estRange").textContent = `${fmt(r(lo))} – ${fmt(r(hi))} €`;
+  document.getElementById("estMin").textContent = "Bas";
+  document.getElementById("estMax").textContent = "Haut";
+  document.getElementById("estPm").textContent = isSale ? `≈ ${fmt(base/surf)} € / m²` : `≈ ${(base/surf).toFixed(1).replace(".",",")} € / m² / mois`;
+  const bar = document.getElementById("estBar"); bar.style.left = "20%"; bar.style.right = "20%";
+  document.getElementById("estCta").textContent = isSale ? "Demander un avis de valeur" : "Faire louer mon bien";
+}
+document.getElementById("estForm").addEventListener("input", estimate);
+document.getElementById("estForm").addEventListener("submit", e => e.preventDefault());
+document.getElementById("estCta").addEventListener("click", () => {
+  const isSale = document.getElementById("eGoal").value === "vente";
+  document.querySelector(`input[name="proj"][value="${isSale ? "Vendre" : "Mettre en location"}"]`).checked = true;
+  const s = SECTORS[eCity.value];
+  document.getElementById("cMsg").value = `Bonjour, je souhaite ${isSale ? "un avis de valeur" : "mettre en location"} pour mon bien (${document.getElementById("eType").value}, ${document.getElementById("eSurface").value} m², ${s.name}).`;
+});
+estimate();
+
+/* Contact */
+document.getElementById("contactForm").addEventListener("submit", e => {
+  e.preventDefault();
+  const name = document.getElementById("cName"), phone = document.getElementById("cPhone"), ok = document.getElementById("formOk");
+  if (!name.value.trim() || !phone.value.trim()) {
+    ok.hidden = false; ok.style.borderLeftColor = "#C0392B";
+    ok.textContent = "Indiquez votre nom et votre téléphone pour que Louis puisse vous rappeler.";
+    (name.value.trim() ? phone : name).focus();
+    return;
+  }
+  const proj = document.querySelector('input[name="proj"]:checked').value;
+  ok.hidden = false; ok.style.borderLeftColor = "";
+  ok.textContent = `Merci ${name.value.trim()}, votre demande « ${proj} » est prête. Version de démonstration : ce formulaire doit encore être relié à la messagerie de Louis pour être envoyé.`;
+});
+
+render();
+</script>
+</body>
+</html>
