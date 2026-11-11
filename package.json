@@ -1,0 +1,15 @@
+{
+  "name": "tokyo-drift-video",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Vidéo procédurale 9:16 : voiture de sport japonaise en drift dans Tokyo (Three.js + ffmpeg)",
+  "scripts": {
+    "audio": "node src/audio.mjs",
+    "render": "node src/render.mjs",
+    "build": "node src/audio.mjs && node src/render.mjs"
+  },
+  "dependencies": {
+    "three": "0.170.0"
+  }
+}
