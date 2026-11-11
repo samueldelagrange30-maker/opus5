@@ -105,7 +105,7 @@ struct Unkai : Scene {
             float ao = sstep(cbase - 0.02, cbase + 0.26, p.y);
             float fwd = powf(max(dot(rd, sun), 0.0f), 6);
             v3 ccol = mix(v3(0.22, 0.26, 0.44), v3(1.0, 0.70, 0.50) * 1.0, wrapL * (0.30 + 0.70 * ao)) + v3(1.0, 0.55, 0.25) * (0.45 * fwd * ao);
-            float alpha = hT ? 1 - expf(-(tT - tC) * 16) : 1;
+            float alpha = hT ? sat(1 - expf(-max(tT - tC, 0.0f) * 16)) : 1;
             col = mix(tcol, ccol, alpha);
             t = tC;
         } else {

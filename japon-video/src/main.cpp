@@ -5,6 +5,12 @@
 #include "scenes_terrain.h"
 #include "scenes_objects.h"
 
+// test bit à bit : -ffast-math supprime les comparaisons NaN classiques
+static inline bool isFiniteBits(float x) {
+    uint32_t u;
+    memcpy(&u, &x, 4);
+    return (u & 0x7f800000u) != 0x7f800000u;
+}
 static inline v3 aces(v3 x) {
     auto f = [](float v) { return sat((v * (2.51f * v + 0.03f)) / (v * (2.43f * v + 0.59f) + 0.14f)); };
     return v3(f(x.x), f(x.y), f(x.z));
@@ -67,12 +73,27 @@ int main(int argc, char **argv) {
         auto sample = [&](float px, float py) {
             float sx = (2 * px / W - 1) * aspect, sy = 1 - 2 * py / H;
             v3 c = sc->shade(cam.ro, cam.dir(sx, sy), time);
-            if (!(c.x == c.x) || !(c.y == c.y) || !(c.z == c.z)) c = v3(0);
-            return vmax(c, 0) * sc->exposure;
+            if (!isFiniteBits(c.x) || !isFiniteBits(c.y) || !isFiniteBits(c.z)) return v3(-1); // pixel invalide, réparé plus bas
+            return v3(clampf(c.x, 0, 500), clampf(c.y, 0, 500), clampf(c.z, 0, 500)) * sc->exposure;
         };
 #pragma omp parallel for schedule(dynamic, 2)
         for (int y = 0; y < H; y++)
             for (int x = 0; x < W; x++) img[(size_t)y * W + x] = sample(x + 0.5f, y + 0.5f);
+        // pixels invalides : remplacés par la moyenne des voisins valides
+        for (int y = 0; y < H; y++)
+            for (int x = 0; x < W; x++)
+                if (img[(size_t)y * W + x].x < 0) {
+                    v3 s(0);
+                    int n = 0;
+                    for (int j = -2; j <= 2; j++)
+                        for (int i = -2; i <= 2; i++) {
+                            int xx = x + i, yy = y + j;
+                            if (xx < 0 || yy < 0 || xx >= W || yy >= H) continue;
+                            v3 q = img[(size_t)yy * W + xx];
+                            if (q.x >= 0) { s += q; n++; }
+                        }
+                    img[(size_t)y * W + x] = n ? s / (float)n : v3(0);
+                }
         // anticrénelage adaptatif : suréchantillonnage des pixels à fort contraste
         auto tl = [](v3 c) { float l = lum(c); return l / (1 + l); };
 #pragma omp parallel for schedule(dynamic, 2)
@@ -89,6 +110,7 @@ int main(int argc, char **argv) {
                     v3 s(0);
                     for (int k = 0; k < 4; k++) {
                         v3 q = sample(x + 0.5f + ox[k], y + 0.5f + oy[k]);
+                        if (q.x < 0) q = c;
                         // limite les lucioles (reflets du soleil) avant moyenne
                         float ql = lum(q);
                         if (ql > 12) q = q * (12 / ql);
