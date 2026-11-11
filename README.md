@@ -31,7 +31,7 @@ npm run audio     # build/audio.wav  (quelques secondes)
 npm run render    # build/frames/*.jpg puis out/tokyo-drift.mp4  (~25 min sur 4 cœurs sans GPU)
 ```
 
-Options de `src/render.mjs` : `--scale 0.3 --step 2` (aperçu rapide), `--workers N`, `--crf 19`.
+Options de `src/render.mjs` : `--scale 0.3 --step 2` (aperçu rapide), `--workers N`, `--crf 21`.
 Le rendu est reprenable : les images déjà présentes dans `build/frames` ne sont pas recalculées.
 Aperçus d'images isolées : `src/sheet.sh <dossier> <échelle> <t1> <t2> …`.
 

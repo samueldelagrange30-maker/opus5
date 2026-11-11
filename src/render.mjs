@@ -38,9 +38,9 @@ srv.close();
 if (to - from < TOTAL) process.exit(0);
 const args = ['-y', '-loglevel', 'error', '-framerate', String(FPS / step), '-i', path.join(framesDir, '%05d.jpg')];
 if (fs.existsSync(audio)) args.push('-i', audio);
-args.push('-vf', `scale=1080:1920:flags=lanczos,fps=${FPS},format=yuv420p`, '-c:v', 'libx264', '-preset', 'slow', '-crf', arg('crf', '19'), '-maxrate', '10M', '-bufsize', '20M',
+args.push('-vf', `scale=1080:1920:flags=lanczos,fps=${FPS},format=yuv420p`, '-c:v', 'libx264', '-preset', 'slow', '-crf', arg('crf', '21'), '-maxrate', '7M', '-bufsize', '14M',
   '-profile:v', 'high', '-level', '4.2', '-color_primaries', 'bt709', '-color_trc', 'bt709', '-colorspace', 'bt709', '-movflags', '+faststart');
-if (fs.existsSync(audio)) args.push('-c:a', 'aac', '-b:a', '256k', '-ar', '48000', '-shortest');
+if (fs.existsSync(audio)) args.push('-af', 'volume=-1.5dB', '-c:a', 'aac', '-b:a', '256k', '-ar', '48000', '-shortest');
 args.push(out);
 const r = spawnSync('ffmpeg', args, { stdio: 'inherit' });
 console.log(r.status === 0 ? `Vidéo écrite : ${out}` : 'Échec ffmpeg');
