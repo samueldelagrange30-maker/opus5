@@ -1,0 +1,571 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Le Chat Qui Danse</title>
+<meta name="description" content="Un chat qui danse sur une piste disco, avec musique, plusieurs danses et réglage du tempo.">
+<style>
+  :root {
+    --bg1: #1a0b2e;
+    --bg2: #3b0f5c;
+    --text: #fff7ec;
+    --muted: #d9c7f0;
+    --accent: #ffcf3f;
+    --panel: rgba(255, 255, 255, 0.08);
+    --panel-border: rgba(255, 255, 255, 0.18);
+    --fur: #f59a3c;
+    --fur-dark: #d9741c;
+    --cream: #ffe9cc;
+    --pink: #ff9fb6;
+    --ink: #2a1630;
+    --beat: 0.5s;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; }
+  body {
+    background: radial-gradient(ellipse at 50% 20%, var(--bg2), var(--bg1) 70%);
+    background-color: var(--bg1);
+    color: var(--text);
+    font-family: "Trebuchet MS", "Segoe UI", system-ui, sans-serif;
+    overflow-x: hidden;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-height: 100vh;
+  }
+
+  header { text-align: center; padding: 20px 16px 0; position: relative; z-index: 2; }
+  h1 {
+    margin: 0;
+    font-size: clamp(2rem, 7vw, 3.6rem);
+    letter-spacing: 0.02em;
+    background: linear-gradient(90deg, #ff6ec7, #ffcf3f, #5ee7ff, #ff6ec7);
+    background-size: 300% 100%;
+    -webkit-background-clip: text; background-clip: text;
+    color: transparent;
+    animation: shine 6s linear infinite;
+  }
+  header p { margin: 6px 0 0; color: var(--muted); }
+  @keyframes shine { to { background-position: 300% 0; } }
+
+  /* ---------- Scène ---------- */
+  .stage {
+    position: relative;
+    width: min(560px, 100%);
+    flex: 1;
+    min-height: 460px;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    padding: 0 16px;
+    overflow-x: clip;
+  }
+
+  .ball {
+    position: absolute; top: 0; left: 50%;
+    width: 70px; height: 70px; margin-left: -35px;
+    border-radius: 50%;
+    background:
+      repeating-linear-gradient(0deg, transparent 0 9px, rgba(0,0,0,.35) 9px 10px),
+      repeating-linear-gradient(90deg, transparent 0 9px, rgba(0,0,0,.35) 9px 10px),
+      radial-gradient(circle at 35% 30%, #fff, #b9c3d6 45%, #5b6680);
+    box-shadow: 0 0 40px rgba(255,255,255,.35);
+    animation: spin 4s linear infinite;
+  }
+  .cord {
+    position: absolute; left: 50%; top: -400px; width: 2px; height: 400px;
+    background: #999; margin-left: -1px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .spots { position: fixed; inset: 0; pointer-events: none; z-index: 0; overflow: hidden; }
+  .spot {
+    position: absolute; width: 14px; height: 14px; border-radius: 50%;
+    background: rgba(255,255,255,.55); filter: blur(1px);
+    animation: drift 7s linear infinite;
+  }
+  @keyframes drift {
+    from { transform: translateX(-60px); opacity: 0; }
+    20%, 80% { opacity: 1; }
+    to { transform: translateX(60px); opacity: 0; }
+  }
+
+  .floor {
+    position: absolute; left: 50%; bottom: 0;
+    width: 100%; max-width: 640px;
+    transform: translateX(-50%) perspective(400px) rotateX(55deg);
+    transform-origin: bottom;
+    display: grid; grid-template-columns: repeat(8, 1fr); gap: 3px;
+    padding: 3px;
+  }
+  .tile { aspect-ratio: 1; border-radius: 3px; background: #2b1745; transition: background .15s; }
+
+  .cat-wrap {
+    position: relative; z-index: 1;
+    width: min(300px, 78vw);
+    margin-bottom: 40px;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .cat-wrap::after {
+    content: ""; position: absolute; left: 20%; right: 20%; bottom: -6px; height: 18px;
+    background: rgba(0,0,0,.45); border-radius: 50%; filter: blur(4px);
+  }
+  svg.cat { width: 100%; height: auto; display: block; overflow: visible; }
+
+  .bubble {
+    position: absolute; top: 2%; right: -6%;
+    background: #fff; color: var(--ink);
+    font-weight: 700; padding: 8px 14px; border-radius: 18px;
+    transform: scale(0); transform-origin: bottom left;
+    transition: transform .2s cubic-bezier(.3,1.6,.6,1);
+    z-index: 3; white-space: nowrap;
+  }
+  .bubble::after {
+    content: ""; position: absolute; left: 10px; bottom: -8px;
+    border: 8px solid transparent; border-top-color: #fff; border-bottom: 0;
+  }
+  .bubble.show { transform: scale(1); }
+
+  .note {
+    position: absolute; bottom: 45%; font-size: 26px; pointer-events: none; z-index: 2;
+    animation: floatUp 2.4s ease-out forwards;
+  }
+  @keyframes floatUp {
+    from { transform: translate(0, 0) rotate(0); opacity: 1; }
+    to { transform: translate(var(--dx), -220px) rotate(var(--rot)); opacity: 0; }
+  }
+
+  /* ---------- Pièces du chat (origines en unités SVG) ---------- */
+  .cat * { transform-box: view-box; }
+  #whole   { transform-origin: 150px 380px; }
+  #head    { transform-origin: 150px 215px; }
+  #armL    { transform-origin: 108px 250px; }
+  #armR    { transform-origin: 192px 250px; }
+  #legL    { transform-origin: 130px 325px; }
+  #legR    { transform-origin: 170px 325px; }
+  #tail    { transform-origin: 190px 310px; }
+  #torso   { transform-origin: 150px 340px; }
+  .eye     { transform-origin: center; transform-box: fill-box; animation: blink 4s infinite; }
+  #shades  { opacity: 0; transition: opacity .25s; }
+  .cool #shades { opacity: 1; }
+  .cool .eye { visibility: hidden; }
+
+  @keyframes blink { 0%, 92%, 100% { transform: scaleY(1); } 96% { transform: scaleY(.1); } }
+
+  .paused .cat * { animation-play-state: paused; }
+
+  /* Disco */
+  .disco #whole { animation: bob var(--beat) ease-in-out infinite alternate; }
+  .disco #head  { animation: tilt calc(var(--beat) * 2) ease-in-out infinite; }
+  .disco #armR  { animation: point calc(var(--beat) * 2) ease-in-out infinite; }
+  .disco #armL  { animation: hipHand calc(var(--beat) * 2) ease-in-out infinite; }
+  .disco #torso { animation: sway calc(var(--beat) * 2) ease-in-out infinite; }
+  .disco #legL  { animation: stepL calc(var(--beat) * 2) ease-in-out infinite; }
+  .disco #legR  { animation: stepR calc(var(--beat) * 2) ease-in-out infinite; }
+  .disco #tail  { animation: wag var(--beat) ease-in-out infinite alternate; }
+
+  @keyframes bob   { from { transform: translateY(0); } to { transform: translateY(-14px); } }
+  @keyframes tilt  { 0%,100% { transform: rotate(-10deg); } 50% { transform: rotate(10deg); } }
+  @keyframes point { 0%,100% { transform: rotate(-115deg); } 50% { transform: rotate(10deg); } }
+  @keyframes hipHand { 0%,100% { transform: rotate(40deg); } 50% { transform: rotate(-20deg); } }
+  @keyframes sway  { 0%,100% { transform: rotate(-5deg); } 50% { transform: rotate(5deg); } }
+  @keyframes stepL { 0%,100% { transform: rotate(0); } 25% { transform: rotate(18deg); } }
+  @keyframes stepR { 0%,100% { transform: rotate(0); } 75% { transform: rotate(-18deg); } }
+  @keyframes wag   { from { transform: rotate(-20deg); } to { transform: rotate(25deg); } }
+
+  /* Twist */
+  .twist #whole { animation: twistAll calc(var(--beat) * 2) ease-in-out infinite; }
+  .twist #torso { animation: twistBody var(--beat) ease-in-out infinite alternate; }
+  .twist #head  { animation: twistHead var(--beat) ease-in-out infinite alternate; }
+  .twist #armL  { animation: swingL var(--beat) ease-in-out infinite alternate; }
+  .twist #armR  { animation: swingR var(--beat) ease-in-out infinite alternate; }
+  .twist #legL  { animation: kneeL var(--beat) ease-in-out infinite alternate; }
+  .twist #legR  { animation: kneeR var(--beat) ease-in-out infinite alternate; }
+  .twist #tail  { animation: wag calc(var(--beat) / 2) ease-in-out infinite alternate; }
+
+  @keyframes twistAll  { 0%,100% { transform: translateY(0); } 50% { transform: translateY(12px); } }
+  @keyframes twistBody { from { transform: rotate(-12deg); } to { transform: rotate(12deg); } }
+  @keyframes twistHead { from { transform: rotate(14deg); } to { transform: rotate(-14deg); } }
+  @keyframes swingL    { from { transform: rotate(60deg); } to { transform: rotate(-30deg); } }
+  @keyframes swingR    { from { transform: rotate(30deg); } to { transform: rotate(-60deg); } }
+  @keyframes kneeL     { from { transform: rotate(15deg); } to { transform: rotate(-5deg); } }
+  @keyframes kneeR     { from { transform: rotate(5deg); } to { transform: rotate(-15deg); } }
+
+  /* Saut */
+  .jump #whole { animation: hop var(--beat) cubic-bezier(.3,0,.7,1) infinite; }
+  .jump #armL  { animation: upL var(--beat) ease-in-out infinite; }
+  .jump #armR  { animation: upR var(--beat) ease-in-out infinite; }
+  .jump #legL  { animation: tuckL var(--beat) ease-in-out infinite; }
+  .jump #legR  { animation: tuckR var(--beat) ease-in-out infinite; }
+  .jump #head  { animation: nod var(--beat) ease-in-out infinite; }
+  .jump #tail  { animation: wag calc(var(--beat) / 2) ease-in-out infinite alternate; }
+
+  @keyframes hop   { 0%,100% { transform: translateY(0) scaleY(.94); } 15% { transform: translateY(0) scaleY(1); } 50% { transform: translateY(-60px) scaleY(1.03); } }
+  @keyframes upL   { 0%,100% { transform: rotate(10deg); } 50% { transform: rotate(130deg); } }
+  @keyframes upR   { 0%,100% { transform: rotate(-10deg); } 50% { transform: rotate(-130deg); } }
+  @keyframes tuckL { 0%,100% { transform: rotate(0); } 50% { transform: rotate(-30deg); } }
+  @keyframes tuckR { 0%,100% { transform: rotate(0); } 50% { transform: rotate(30deg); } }
+  @keyframes nod   { 0%,100% { transform: rotate(0) translateY(4px); } 50% { transform: rotate(0) translateY(-4px); } }
+
+  /* Moonwalk */
+  .moon #whole { animation: glide calc(var(--beat) * 8) linear infinite; }
+  .moon #legL  { animation: slideL var(--beat) ease-in-out infinite alternate; }
+  .moon #legR  { animation: slideR var(--beat) ease-in-out infinite alternate; }
+  .moon #armL  { animation: swingL calc(var(--beat) * 2) ease-in-out infinite alternate; }
+  .moon #armR  { animation: swingR calc(var(--beat) * 2) ease-in-out infinite alternate; }
+  .moon #head  { animation: tilt calc(var(--beat) * 4) ease-in-out infinite; }
+  .moon #tail  { animation: wag var(--beat) ease-in-out infinite alternate; }
+
+  @keyframes glide {
+    0%   { transform: translateX(70px) scaleX(1); }
+    49%  { transform: translateX(-70px) scaleX(1); }
+    50%  { transform: translateX(-70px) scaleX(-1); }
+    99%  { transform: translateX(70px) scaleX(-1); }
+    100% { transform: translateX(70px) scaleX(1); }
+  }
+  @keyframes slideL { from { transform: rotate(-18deg); } to { transform: rotate(8deg); } }
+  @keyframes slideR { from { transform: rotate(8deg); } to { transform: rotate(-18deg); } }
+
+  /* ---------- Contrôles ---------- */
+  .controls {
+    position: relative; z-index: 2;
+    width: min(560px, calc(100% - 32px));
+    margin: 18px 16px 24px;
+    background: var(--panel);
+    border: 1px solid var(--panel-border);
+    border-radius: 20px;
+    padding: 16px;
+    backdrop-filter: blur(6px);
+    display: grid; gap: 14px;
+  }
+  .row { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
+  button {
+    font: inherit; font-weight: 700;
+    border: 0; border-radius: 999px;
+    padding: 10px 16px;
+    background: rgba(255,255,255,.12); color: var(--text);
+    cursor: pointer; transition: transform .1s, background .2s;
+  }
+  button:hover { background: rgba(255,255,255,.22); }
+  button:active { transform: scale(.95); }
+  button[aria-pressed="true"] { background: var(--accent); color: var(--ink); }
+  #music { background: linear-gradient(90deg, #ff6ec7, #ff9a3c); color: #fff; font-size: 1.05rem; padding: 12px 22px; }
+  #music[aria-pressed="true"] { background: linear-gradient(90deg, #5ee7ff, #7b6cff); }
+  label.tempo { display: flex; align-items: center; gap: 10px; justify-content: center; color: var(--muted); }
+  label.tempo input { width: min(260px, 50vw); accent-color: var(--accent); }
+  .bpm { min-width: 70px; color: var(--text); font-weight: 700; }
+  footer { color: var(--muted); font-size: .85rem; padding-bottom: 18px; text-align: center; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .ball, h1 { animation: none; }
+  }
+</style>
+</head>
+<body>
+<div class="spots" id="spots" aria-hidden="true"></div>
+
+<header>
+  <h1>Le Chat Qui Danse</h1>
+  <p>Lance la musique, choisis une danse et clique sur le chat !</p>
+</header>
+
+<main class="stage">
+  <div class="cord" aria-hidden="true"></div>
+  <div class="ball" aria-hidden="true"></div>
+  <div class="floor" id="floor" aria-hidden="true"></div>
+
+  <div class="cat-wrap" id="catWrap" role="button" tabindex="0" aria-label="Le chat danseur, clique pour qu'il miaule">
+    <div class="bubble" id="bubble">Miaou !</div>
+    <svg class="cat disco" id="cat" viewBox="0 0 300 400" aria-hidden="true">
+      <g id="whole">
+        <!-- Queue -->
+        <g id="tail">
+          <path d="M188 312 C 250 310, 262 230, 228 190" fill="none" stroke="var(--fur)" stroke-width="18" stroke-linecap="round"/>
+          <path d="M240 222 l 14 -6 M246 250 l 14 -2" stroke="var(--fur-dark)" stroke-width="6" stroke-linecap="round"/>
+        </g>
+
+        <!-- Jambes -->
+        <g id="legL">
+          <path d="M130 322 L120 372" stroke="var(--fur)" stroke-width="24" stroke-linecap="round"/>
+          <ellipse cx="114" cy="376" rx="20" ry="11" fill="var(--cream)"/>
+        </g>
+        <g id="legR">
+          <path d="M170 322 L180 372" stroke="var(--fur)" stroke-width="24" stroke-linecap="round"/>
+          <ellipse cx="186" cy="376" rx="20" ry="11" fill="var(--cream)"/>
+        </g>
+
+        <!-- Corps -->
+        <g id="torso">
+          <ellipse cx="150" cy="282" rx="56" ry="64" fill="var(--fur)"/>
+          <ellipse cx="150" cy="292" rx="32" ry="46" fill="var(--cream)"/>
+          <path d="M98 262 q 12 4 18 -4 M96 290 q 12 4 18 -4 M202 262 q -12 4 -18 -4 M204 290 q -12 4 -18 -4" fill="none" stroke="var(--fur-dark)" stroke-width="5" stroke-linecap="round"/>
+          <!-- Nœud papillon -->
+          <path d="M150 228 l -20 -11 v 22 z M150 228 l 20 -11 v 22 z" fill="#e2245a"/>
+          <circle cx="150" cy="228" r="6" fill="#ff5e8a"/>
+        </g>
+
+        <!-- Bras -->
+        <g id="armL">
+          <path d="M108 250 L70 290" stroke="var(--fur)" stroke-width="20" stroke-linecap="round"/>
+          <circle cx="68" cy="293" r="13" fill="var(--cream)"/>
+        </g>
+        <g id="armR">
+          <path d="M192 250 L230 290" stroke="var(--fur)" stroke-width="20" stroke-linecap="round"/>
+          <circle cx="232" cy="293" r="13" fill="var(--cream)"/>
+        </g>
+
+        <!-- Tête -->
+        <g id="head">
+          <path d="M98 140 L104 74 L144 108 Z" fill="var(--fur)"/>
+          <path d="M202 140 L196 74 L156 108 Z" fill="var(--fur)"/>
+          <path d="M108 124 L111 92 L132 110 Z" fill="var(--pink)"/>
+          <path d="M192 124 L189 92 L168 110 Z" fill="var(--pink)"/>
+          <ellipse cx="150" cy="160" rx="62" ry="56" fill="var(--fur)"/>
+          <path d="M150 106 v 16 M136 109 l 3 13 M164 109 l -3 13" stroke="var(--fur-dark)" stroke-width="5" stroke-linecap="round"/>
+          <ellipse cx="150" cy="185" rx="30" ry="20" fill="var(--cream)"/>
+
+          <g class="eye"><ellipse cx="127" cy="156" rx="10" ry="13" fill="var(--ink)"/><circle cx="130" cy="151" r="3.5" fill="#fff"/></g>
+          <g class="eye"><ellipse cx="173" cy="156" rx="10" ry="13" fill="var(--ink)"/><circle cx="176" cy="151" r="3.5" fill="#fff"/></g>
+
+          <g id="shades">
+            <path d="M104 146 H196" stroke="#111" stroke-width="5"/>
+            <rect x="106" y="143" width="40" height="24" rx="9" fill="#111"/>
+            <rect x="154" y="143" width="40" height="24" rx="9" fill="#111"/>
+            <path d="M112 150 l 10 0 M160 150 l 10 0" stroke="#5ee7ff" stroke-width="3" stroke-linecap="round"/>
+          </g>
+
+          <ellipse cx="114" cy="178" rx="9" ry="5" fill="var(--pink)" opacity=".6"/>
+          <ellipse cx="186" cy="178" rx="9" ry="5" fill="var(--pink)" opacity=".6"/>
+          <path d="M143 175 h 14 l -7 8 z" fill="var(--pink)"/>
+          <path d="M150 183 q -6 10 -15 4 M150 183 q 6 10 15 4" fill="none" stroke="var(--ink)" stroke-width="3" stroke-linecap="round"/>
+          <path d="M120 182 l -32 -6 M120 189 l -32 4 M180 182 l 32 -6 M180 189 l 32 4" stroke="#fff" stroke-width="2" stroke-linecap="round" opacity=".85"/>
+        </g>
+      </g>
+    </svg>
+  </div>
+</main>
+
+<section class="controls" aria-label="Contrôles">
+  <div class="row">
+    <button id="music" aria-pressed="false">▶ Lancer la musique</button>
+  </div>
+  <div class="row" role="group" aria-label="Choix de la danse" id="dances">
+    <button data-dance="disco" aria-pressed="true">🕺 Disco</button>
+    <button data-dance="twist" aria-pressed="false">🌀 Twist</button>
+    <button data-dance="jump" aria-pressed="false">🦘 Saut</button>
+    <button data-dance="moon" aria-pressed="false">🌙 Moonwalk</button>
+  </div>
+  <div class="row">
+    <button id="shadesBtn" aria-pressed="false">😎 Lunettes</button>
+    <button id="pauseBtn" aria-pressed="false">⏸ Pause</button>
+  </div>
+  <label class="tempo">Tempo
+    <input type="range" id="tempo" min="70" max="170" value="120">
+    <span class="bpm" id="bpm">120 BPM</span>
+  </label>
+</section>
+
+<footer>Fait avec des pattes et beaucoup de groove.</footer>
+
+<script>
+(() => {
+  const cat = document.getElementById('cat');
+  const catWrap = document.getElementById('catWrap');
+  const bubble = document.getElementById('bubble');
+  const floor = document.getElementById('floor');
+  const tempo = document.getElementById('tempo');
+  const bpmLabel = document.getElementById('bpm');
+  const musicBtn = document.getElementById('music');
+  const stage = document.querySelector('.stage');
+
+  /* Piste de danse */
+  const tiles = [];
+  for (let i = 0; i < 32; i++) {
+    const t = document.createElement('div');
+    t.className = 'tile';
+    floor.appendChild(t);
+    tiles.push(t);
+  }
+  const colors = ['#ff6ec7', '#ffcf3f', '#5ee7ff', '#7b6cff', '#5dff9a', '#ff7a45'];
+  function flashFloor() {
+    tiles.forEach(t => {
+      t.style.background = Math.random() < 0.45
+        ? colors[Math.floor(Math.random() * colors.length)]
+        : '#2b1745';
+    });
+  }
+
+  /* Taches de lumière de la boule */
+  const spots = document.getElementById('spots');
+  for (let i = 0; i < 26; i++) {
+    const s = document.createElement('div');
+    s.className = 'spot';
+    s.style.left = Math.random() * 100 + '%';
+    s.style.top = Math.random() * 100 + '%';
+    s.style.animationDelay = (-Math.random() * 7) + 's';
+    s.style.background = `hsla(${Math.random() * 360}, 100%, 80%, .5)`;
+    spots.appendChild(s);
+  }
+
+  /* Tempo */
+  let bpm = 120;
+  function setTempo(v) {
+    bpm = v;
+    bpmLabel.textContent = v + ' BPM';
+    document.documentElement.style.setProperty('--beat', (60 / v) + 's');
+    restartBeatTimer();
+  }
+  tempo.addEventListener('input', e => setTempo(+e.target.value));
+
+  /* Danses */
+  const dances = ['disco', 'twist', 'jump', 'moon'];
+  document.getElementById('dances').addEventListener('click', e => {
+    const b = e.target.closest('button');
+    if (!b) return;
+    document.querySelectorAll('#dances button').forEach(x => x.setAttribute('aria-pressed', x === b));
+    cat.classList.remove(...dances);
+    void cat.getBoundingClientRect(); // relance proprement les animations
+    cat.classList.add(b.dataset.dance);
+  });
+
+  document.getElementById('shadesBtn').addEventListener('click', e => {
+    const on = cat.classList.toggle('cool');
+    e.currentTarget.setAttribute('aria-pressed', on);
+  });
+
+  let paused = false;
+  document.getElementById('pauseBtn').addEventListener('click', e => {
+    paused = !paused;
+    catWrap.classList.toggle('paused', paused);
+    e.currentTarget.setAttribute('aria-pressed', paused);
+    e.currentTarget.textContent = paused ? '▶ Reprendre' : '⏸ Pause';
+  });
+
+  /* Audio : boîte à rythmes générée */
+  let ctx = null, master = null, playing = false, step = 0, nextTime = 0, schedTimer = null;
+  const bassLine = [55, 0, 55, 65.4, 0, 73.4, 65.4, 0, 49, 0, 49, 58.3, 0, 65.4, 58.3, 0];
+
+  function initAudio() {
+    if (ctx) return;
+    ctx = new (window.AudioContext || window.webkitAudioContext)();
+    master = ctx.createGain();
+    master.gain.value = 0.5;
+    master.connect(ctx.destination);
+  }
+  function kick(t) {
+    const o = ctx.createOscillator(), g = ctx.createGain();
+    o.frequency.setValueAtTime(150, t);
+    o.frequency.exponentialRampToValueAtTime(40, t + 0.15);
+    g.gain.setValueAtTime(1, t);
+    g.gain.exponentialRampToValueAtTime(0.001, t + 0.3);
+    o.connect(g).connect(master); o.start(t); o.stop(t + 0.3);
+  }
+  function noise(t, dur, freq, vol) {
+    const len = Math.floor(ctx.sampleRate * dur);
+    const buf = ctx.createBuffer(1, len, ctx.sampleRate);
+    const d = buf.getChannelData(0);
+    for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
+    const src = ctx.createBufferSource(); src.buffer = buf;
+    const f = ctx.createBiquadFilter(); f.type = 'highpass'; f.frequency.value = freq;
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(vol, t);
+    g.gain.exponentialRampToValueAtTime(0.001, t + dur);
+    src.connect(f).connect(g).connect(master); src.start(t);
+  }
+  function bass(t, freq, dur) {
+    const o = ctx.createOscillator(), g = ctx.createGain(), f = ctx.createBiquadFilter();
+    o.type = 'sawtooth'; o.frequency.value = freq * 2;
+    f.type = 'lowpass'; f.frequency.value = 700;
+    g.gain.setValueAtTime(0.25, t);
+    g.gain.exponentialRampToValueAtTime(0.001, t + dur);
+    o.connect(f).connect(g).connect(master); o.start(t); o.stop(t + dur);
+  }
+  function scheduler() {
+    const sixteenth = 60 / bpm / 4;
+    while (nextTime < ctx.currentTime + 0.12) {
+      const s = step % 16;
+      if (s % 4 === 0) kick(nextTime);
+      if (s === 4 || s === 12) noise(nextTime, 0.18, 1500, 0.5);
+      if (s % 2 === 0) noise(nextTime, 0.04, 7000, 0.18);
+      else noise(nextTime, 0.03, 8000, 0.08);
+      if (bassLine[s]) bass(nextTime, bassLine[s], sixteenth * 1.8);
+      nextTime += sixteenth;
+      step++;
+    }
+  }
+  function toggleMusic() {
+    initAudio();
+    if (ctx.state === 'suspended') ctx.resume();
+    playing = !playing;
+    musicBtn.setAttribute('aria-pressed', playing);
+    musicBtn.textContent = playing ? '⏹ Couper la musique' : '▶ Lancer la musique';
+    if (playing) {
+      step = 0; nextTime = ctx.currentTime + 0.05;
+      schedTimer = setInterval(scheduler, 25);
+    } else {
+      clearInterval(schedTimer);
+    }
+  }
+  musicBtn.addEventListener('click', toggleMusic);
+
+  /* Pulsation visuelle (sol + notes) */
+  let beatTimer = null, beatCount = 0;
+  function onBeat() {
+    if (paused) return;
+    flashFloor();
+    beatCount++;
+    if (playing && beatCount % 2 === 0) spawnNote();
+  }
+  function restartBeatTimer() {
+    clearInterval(beatTimer);
+    beatTimer = setInterval(onBeat, 60000 / bpm);
+  }
+
+  function spawnNote() {
+    const n = document.createElement('span');
+    n.className = 'note';
+    n.textContent = ['♪', '♫', '♬', '🎵'][Math.floor(Math.random() * 4)];
+    n.style.left = (30 + Math.random() * 40) + '%';
+    n.style.color = colors[Math.floor(Math.random() * colors.length)];
+    n.style.setProperty('--dx', (Math.random() * 120 - 60) + 'px');
+    n.style.setProperty('--rot', (Math.random() * 60 - 30) + 'deg');
+    stage.appendChild(n);
+    setTimeout(() => n.remove(), 2400);
+  }
+
+  /* Miaou */
+  const meows = ['Miaou !', 'Miaaaou ✨', 'Purrr 😺', 'On danse !', 'Mrrrou 🎶'];
+  let bubbleTimer;
+  function meow() {
+    bubble.textContent = meows[Math.floor(Math.random() * meows.length)];
+    bubble.classList.add('show');
+    clearTimeout(bubbleTimer);
+    bubbleTimer = setTimeout(() => bubble.classList.remove('show'), 1200);
+    initAudio();
+    if (ctx.state === 'suspended') ctx.resume();
+    const t = ctx.currentTime;
+    const o = ctx.createOscillator(), g = ctx.createGain(), f = ctx.createBiquadFilter();
+    o.type = 'sawtooth';
+    o.frequency.setValueAtTime(500, t);
+    o.frequency.linearRampToValueAtTime(900, t + 0.15);
+    o.frequency.linearRampToValueAtTime(420, t + 0.55);
+    f.type = 'bandpass'; f.frequency.value = 1200; f.Q.value = 2;
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(0.5, t + 0.05);
+    g.gain.exponentialRampToValueAtTime(0.001, t + 0.6);
+    o.connect(f).connect(g).connect(master); o.start(t); o.stop(t + 0.6);
+    for (let i = 0; i < 3; i++) setTimeout(spawnNote, i * 120);
+  }
+  catWrap.addEventListener('click', meow);
+  catWrap.addEventListener('keydown', e => {
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); meow(); }
+  });
+
+  setTempo(120);
+  flashFloor();
+})();
+</script>
+</body>
+</html>
