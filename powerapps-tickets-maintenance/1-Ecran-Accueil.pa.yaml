@@ -1,0 +1,403 @@
+Screens:
+  scrAccueil:
+    Properties:
+      Fill: =RGBA(241, 245, 249, 1)
+      OnVisible: =Refresh(TicketsMaintenance)
+    Children:
+      - recEntete:
+          Control: Rectangle
+          Properties:
+            X: =0
+            Y: =0
+            Width: =Parent.Width
+            Height: =80
+            Fill: =RGBA(15, 23, 42, 1)
+      - lblTitreApp:
+          Control: Label
+          Properties:
+            X: =32
+            Y: =0
+            Width: =600
+            Height: =80
+            Text: ="🔧 Tickets de maintenance"
+            Color: =RGBA(255, 255, 255, 1)
+            Size: =22
+            FontWeight: =FontWeight.Bold
+      - lblUtilisateur:
+          Control: Label
+          Properties:
+            X: =Parent.Width - 432
+            Y: =0
+            Width: =400
+            Height: =80
+            Text: ="Bonjour " & User().FullName
+            Color: =RGBA(203, 213, 225, 1)
+            Size: =13
+            Align: =Align.Right
+      - recKpiOuverts:
+          Control: Rectangle
+          Properties:
+            X: =32
+            Y: =100
+            Width: =(Parent.Width - 112) / 4
+            Height: =90
+            Fill: =RGBA(255, 255, 255, 1)
+            BorderColor: =RGBA(37, 99, 235, 1)
+            BorderThickness: =2
+      - lblKpiOuvertsVal:
+          Control: Label
+          Properties:
+            X: =recKpiOuverts.X + 16
+            Y: =recKpiOuverts.Y + 8
+            Width: =recKpiOuverts.Width - 32
+            Height: =46
+            Text: =CountIf(TicketsMaintenance, Statut = "Ouvert")
+            Color: =RGBA(37, 99, 235, 1)
+            Size: =26
+            FontWeight: =FontWeight.Bold
+      - lblKpiOuvertsTxt:
+          Control: Label
+          Properties:
+            X: =recKpiOuverts.X + 16
+            Y: =recKpiOuverts.Y + 52
+            Width: =recKpiOuverts.Width - 32
+            Height: =30
+            Text: ="Tickets ouverts"
+            Color: =RGBA(71, 85, 105, 1)
+            Size: =12
+      - recKpiEnCours:
+          Control: Rectangle
+          Properties:
+            X: =recKpiOuverts.X + recKpiOuverts.Width + 16
+            Y: =100
+            Width: =recKpiOuverts.Width
+            Height: =90
+            Fill: =RGBA(255, 255, 255, 1)
+            BorderColor: =RGBA(147, 51, 234, 1)
+            BorderThickness: =2
+      - lblKpiEnCoursVal:
+          Control: Label
+          Properties:
+            X: =recKpiEnCours.X + 16
+            Y: =recKpiEnCours.Y + 8
+            Width: =recKpiEnCours.Width - 32
+            Height: =46
+            Text: =CountIf(TicketsMaintenance, Statut = "En cours" || Statut = "En attente")
+            Color: =RGBA(147, 51, 234, 1)
+            Size: =26
+            FontWeight: =FontWeight.Bold
+      - lblKpiEnCoursTxt:
+          Control: Label
+          Properties:
+            X: =recKpiEnCours.X + 16
+            Y: =recKpiEnCours.Y + 52
+            Width: =recKpiEnCours.Width - 32
+            Height: =30
+            Text: ="En cours / en attente"
+            Color: =RGBA(71, 85, 105, 1)
+            Size: =12
+      - recKpiUrgents:
+          Control: Rectangle
+          Properties:
+            X: =recKpiEnCours.X + recKpiEnCours.Width + 16
+            Y: =100
+            Width: =recKpiOuverts.Width
+            Height: =90
+            Fill: =RGBA(255, 255, 255, 1)
+            BorderColor: =RGBA(220, 38, 38, 1)
+            BorderThickness: =2
+      - lblKpiUrgentsVal:
+          Control: Label
+          Properties:
+            X: =recKpiUrgents.X + 16
+            Y: =recKpiUrgents.Y + 8
+            Width: =recKpiUrgents.Width - 32
+            Height: =46
+            Text: =CountIf(TicketsMaintenance, Priorite = "Urgente" && Statut <> "Résolu" && Statut <> "Clôturé")
+            Color: =RGBA(220, 38, 38, 1)
+            Size: =26
+            FontWeight: =FontWeight.Bold
+      - lblKpiUrgentsTxt:
+          Control: Label
+          Properties:
+            X: =recKpiUrgents.X + 16
+            Y: =recKpiUrgents.Y + 52
+            Width: =recKpiUrgents.Width - 32
+            Height: =30
+            Text: ="Urgents non résolus"
+            Color: =RGBA(71, 85, 105, 1)
+            Size: =12
+      - recKpiResolus:
+          Control: Rectangle
+          Properties:
+            X: =recKpiUrgents.X + recKpiUrgents.Width + 16
+            Y: =100
+            Width: =recKpiOuverts.Width
+            Height: =90
+            Fill: =RGBA(255, 255, 255, 1)
+            BorderColor: =RGBA(22, 163, 74, 1)
+            BorderThickness: =2
+      - lblKpiResolusVal:
+          Control: Label
+          Properties:
+            X: =recKpiResolus.X + 16
+            Y: =recKpiResolus.Y + 8
+            Width: =recKpiResolus.Width - 32
+            Height: =46
+            Text: =CountIf(TicketsMaintenance, Statut = "Résolu" || Statut = "Clôturé")
+            Color: =RGBA(22, 163, 74, 1)
+            Size: =26
+            FontWeight: =FontWeight.Bold
+      - lblKpiResolusTxt:
+          Control: Label
+          Properties:
+            X: =recKpiResolus.X + 16
+            Y: =recKpiResolus.Y + 52
+            Width: =recKpiResolus.Width - 32
+            Height: =30
+            Text: ="Résolus / clôturés"
+            Color: =RGBA(71, 85, 105, 1)
+            Size: =12
+      - txtRecherche:
+          Control: Classic/TextInput
+          Properties:
+            X: =32
+            Y: =210
+            Width: =380
+            Height: =44
+            Default: =""
+            HintText: ="Rechercher (n°, titre, équipement, lieu)…"
+            Size: =12
+      - drpStatut:
+          Control: Classic/DropDown
+          Properties:
+            X: =428
+            Y: =210
+            Width: =200
+            Height: =44
+            Items: =["Tous", "Ouvert", "En cours", "En attente", "Résolu", "Clôturé"]
+            Default: ="Tous"
+            Size: =12
+      - drpPriorite:
+          Control: Classic/DropDown
+          Properties:
+            X: =644
+            Y: =210
+            Width: =200
+            Height: =44
+            Items: =["Toutes", "Urgente", "Haute", "Moyenne", "Basse"]
+            Default: ="Toutes"
+            Size: =12
+      - btnNouveau:
+          Control: Classic/Button
+          Properties:
+            X: =Parent.Width - 232
+            Y: =210
+            Width: =200
+            Height: =44
+            Text: ="+ Nouveau ticket"
+            Fill: =RGBA(37, 99, 235, 1)
+            HoverFill: =RGBA(29, 78, 216, 1)
+            Color: =RGBA(255, 255, 255, 1)
+            Size: =13
+            FontWeight: =FontWeight.Semibold
+            RadiusTopLeft: =8
+            RadiusTopRight: =8
+            RadiusBottomLeft: =8
+            RadiusBottomRight: =8
+            OnSelect: |-
+              =Set(varNouveau, true);
+              Set(varTicket, Defaults(TicketsMaintenance));
+              Navigate(scrTicket, ScreenTransition.Cover)
+      - galTickets:
+          Control: Gallery
+          Variant: BrowseLayout_Vertical_TwoTextOneImageVariant_ver5.0
+          Properties:
+            X: =32
+            Y: =270
+            Width: =Parent.Width - 64
+            Height: =Parent.Height - 286
+            TemplateSize: =96
+            TemplatePadding: =0
+            ShowScrollbar: =true
+            Items: |-
+              =SortByColumns(
+                  Filter(
+                      TicketsMaintenance,
+                      (drpStatut.Selected.Value = "Tous" || Statut = drpStatut.Selected.Value) &&
+                      (drpPriorite.Selected.Value = "Toutes" || Priorite = drpPriorite.Selected.Value) &&
+                      (
+                          IsBlank(txtRecherche.Text) ||
+                          txtRecherche.Text in Titre ||
+                          txtRecherche.Text in Equipement ||
+                          txtRecherche.Text in Localisation ||
+                          txtRecherche.Text in Text(NumTicket)
+                      )
+                  ),
+                  "NumTicket",
+                  SortOrder.Descending
+              )
+            OnSelect: |-
+              =Set(varNouveau, false);
+              Set(varTicket, ThisItem);
+              Navigate(scrTicket, ScreenTransition.Cover)
+          Children:
+            - recCarte:
+                Control: Rectangle
+                Properties:
+                  X: =0
+                  Y: =0
+                  Width: =Parent.TemplateWidth
+                  Height: =Parent.TemplateHeight - 8
+                  Fill: =RGBA(255, 255, 255, 1)
+                  BorderColor: =RGBA(226, 232, 240, 1)
+                  BorderThickness: =1
+                  OnSelect: =Select(Parent)
+            - recPrioriteBarre:
+                Control: Rectangle
+                Properties:
+                  X: =0
+                  Y: =0
+                  Width: =8
+                  Height: =Parent.TemplateHeight - 8
+                  Fill: |-
+                    =Switch(
+                        ThisItem.Priorite,
+                        "Urgente", RGBA(220, 38, 38, 1),
+                        "Haute", RGBA(234, 88, 12, 1),
+                        "Moyenne", RGBA(202, 138, 4, 1),
+                        RGBA(22, 163, 74, 1)
+                    )
+                  OnSelect: =Select(Parent)
+            - lblNumero:
+                Control: Label
+                Properties:
+                  X: =24
+                  Y: =10
+                  Width: =90
+                  Height: =28
+                  Text: ="#" & ThisItem.NumTicket
+                  Color: =RGBA(100, 116, 139, 1)
+                  Size: =12
+                  FontWeight: =FontWeight.Semibold
+                  OnSelect: =Select(Parent)
+            - lblTitreTicket:
+                Control: Label
+                Properties:
+                  X: =110
+                  Y: =10
+                  Width: =Parent.TemplateWidth - 500
+                  Height: =28
+                  Text: =ThisItem.Titre
+                  Color: =RGBA(15, 23, 42, 1)
+                  Size: =14
+                  FontWeight: =FontWeight.Bold
+                  OnSelect: =Select(Parent)
+            - lblInfos:
+                Control: Label
+                Properties:
+                  X: =110
+                  Y: =40
+                  Width: =Parent.TemplateWidth - 500
+                  Height: =24
+                  Text: =ThisItem.Equipement & "  ·  " & ThisItem.Localisation & "  ·  " & ThisItem.Categorie
+                  Color: =RGBA(71, 85, 105, 1)
+                  Size: =11
+                  OnSelect: =Select(Parent)
+            - lblDates:
+                Control: Label
+                Properties:
+                  X: =110
+                  Y: =62
+                  Width: =Parent.TemplateWidth - 500
+                  Height: =22
+                  Text: |-
+                    ="Créé le " & Text(ThisItem.DateCreation, "dd/mm/yyyy") &
+                    If(IsBlank(ThisItem.DateEcheance), "", "  ·  Échéance " & Text(ThisItem.DateEcheance, "dd/mm/yyyy")) &
+                    If(IsBlank(ThisItem.Technicien), "  ·  Non assigné", "  ·  Technicien : " & ThisItem.Technicien)
+                  Color: =RGBA(100, 116, 139, 1)
+                  Size: =10
+                  OnSelect: =Select(Parent)
+            - lblRetard:
+                Control: Label
+                Properties:
+                  X: =Parent.TemplateWidth - 380
+                  Y: =52
+                  Width: =110
+                  Height: =26
+                  Text: ="⚠ En retard"
+                  Color: =RGBA(220, 38, 38, 1)
+                  Size: =11
+                  FontWeight: =FontWeight.Bold
+                  Align: =Align.Center
+                  Visible: |-
+                    =!IsBlank(ThisItem.DateEcheance) &&
+                    ThisItem.DateEcheance < Today() &&
+                    ThisItem.Statut <> "Résolu" &&
+                    ThisItem.Statut <> "Clôturé"
+                  OnSelect: =Select(Parent)
+            - lblPriorite:
+                Control: Label
+                Properties:
+                  X: =Parent.TemplateWidth - 260
+                  Y: =14
+                  Width: =100
+                  Height: =28
+                  Text: =ThisItem.Priorite
+                  Align: =Align.Center
+                  Size: =11
+                  FontWeight: =FontWeight.Semibold
+                  Color: =RGBA(255, 255, 255, 1)
+                  Fill: |-
+                    =Switch(
+                        ThisItem.Priorite,
+                        "Urgente", RGBA(220, 38, 38, 1),
+                        "Haute", RGBA(234, 88, 12, 1),
+                        "Moyenne", RGBA(202, 138, 4, 1),
+                        RGBA(22, 163, 74, 1)
+                    )
+                  OnSelect: =Select(Parent)
+            - lblStatut:
+                Control: Label
+                Properties:
+                  X: =Parent.TemplateWidth - 150
+                  Y: =14
+                  Width: =100
+                  Height: =28
+                  Text: =ThisItem.Statut
+                  Align: =Align.Center
+                  Size: =11
+                  FontWeight: =FontWeight.Semibold
+                  Color: =RGBA(255, 255, 255, 1)
+                  Fill: |-
+                    =Switch(
+                        ThisItem.Statut,
+                        "Ouvert", RGBA(37, 99, 235, 1),
+                        "En cours", RGBA(147, 51, 234, 1),
+                        "En attente", RGBA(202, 138, 4, 1),
+                        "Résolu", RGBA(22, 163, 74, 1),
+                        RGBA(100, 116, 139, 1)
+                    )
+                  OnSelect: =Select(Parent)
+            - icoOuvrir:
+                Control: Classic/Icon
+                Properties:
+                  X: =Parent.TemplateWidth - 44
+                  Y: =30
+                  Width: =28
+                  Height: =28
+                  Icon: =Icon.ChevronRight
+                  Color: =RGBA(148, 163, 184, 1)
+                  OnSelect: =Select(Parent)
+      - lblAucunTicket:
+          Control: Label
+          Properties:
+            X: =32
+            Y: =330
+            Width: =Parent.Width - 64
+            Height: =60
+            Text: ="Aucun ticket ne correspond à vos critères."
+            Align: =Align.Center
+            Color: =RGBA(100, 116, 139, 1)
+            Size: =14
+            Visible: =CountRows(galTickets.AllItems) = 0
