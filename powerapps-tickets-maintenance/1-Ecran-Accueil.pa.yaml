@@ -51,7 +51,7 @@ Screens:
             Y: =recKpiOuverts.Y + 8
             Width: =recKpiOuverts.Width - 32
             Height: =46
-            Text: =CountIf(TicketsMaintenance, Statut = "Ouvert")
+            Text: =CountRows(Filter(TicketsMaintenance, Statut.Value = "Ouvert"))
             Color: =RGBA(37, 99, 235, 1)
             Size: =26
             FontWeight: =FontWeight.Bold
@@ -82,7 +82,7 @@ Screens:
             Y: =recKpiEnCours.Y + 8
             Width: =recKpiEnCours.Width - 32
             Height: =46
-            Text: =CountIf(TicketsMaintenance, Statut = "En cours" || Statut = "En attente")
+            Text: =CountRows(Filter(TicketsMaintenance, Statut.Value = "En cours" || Statut.Value = "En attente"))
             Color: =RGBA(147, 51, 234, 1)
             Size: =26
             FontWeight: =FontWeight.Bold
@@ -113,7 +113,7 @@ Screens:
             Y: =recKpiUrgents.Y + 8
             Width: =recKpiUrgents.Width - 32
             Height: =46
-            Text: =CountIf(TicketsMaintenance, Priorite = "Urgente" && Statut <> "Résolu" && Statut <> "Clôturé")
+            Text: =CountRows(Filter(TicketsMaintenance, Urgence.Value = "Urgente" && Statut.Value <> "Résolu" && Statut.Value <> "Clôturé"))
             Color: =RGBA(220, 38, 38, 1)
             Size: =26
             FontWeight: =FontWeight.Bold
@@ -127,7 +127,7 @@ Screens:
             Text: ="Urgents non résolus"
             Color: =RGBA(71, 85, 105, 1)
             Size: =12
-      - recKpiResolus:
+      - recKpiMesTickets:
           Control: Rectangle
           Properties:
             X: =recKpiUrgents.X + recKpiUrgents.Width + 16
@@ -137,25 +137,25 @@ Screens:
             Fill: =RGBA(255, 255, 255, 1)
             BorderColor: =RGBA(22, 163, 74, 1)
             BorderThickness: =2
-      - lblKpiResolusVal:
+      - lblKpiMesTicketsVal:
           Control: Label
           Properties:
-            X: =recKpiResolus.X + 16
-            Y: =recKpiResolus.Y + 8
-            Width: =recKpiResolus.Width - 32
+            X: =recKpiMesTickets.X + 16
+            Y: =recKpiMesTickets.Y + 8
+            Width: =recKpiMesTickets.Width - 32
             Height: =46
-            Text: =CountIf(TicketsMaintenance, Statut = "Résolu" || Statut = "Clôturé")
+            Text: =CountRows(Filter(TicketsMaintenance, Technicien.Email = User().Email && Statut.Value <> "Résolu" && Statut.Value <> "Clôturé"))
             Color: =RGBA(22, 163, 74, 1)
             Size: =26
             FontWeight: =FontWeight.Bold
-      - lblKpiResolusTxt:
+      - lblKpiMesTicketsTxt:
           Control: Label
           Properties:
-            X: =recKpiResolus.X + 16
-            Y: =recKpiResolus.Y + 52
-            Width: =recKpiResolus.Width - 32
+            X: =recKpiMesTickets.X + 16
+            Y: =recKpiMesTickets.Y + 52
+            Width: =recKpiMesTickets.Width - 32
             Height: =30
-            Text: ="Résolus / clôturés"
+            Text: ="Assignés à moi (à traiter)"
             Color: =RGBA(71, 85, 105, 1)
             Size: =12
       - txtRecherche:
@@ -163,27 +163,37 @@ Screens:
           Properties:
             X: =32
             Y: =210
-            Width: =380
+            Width: =300
             Height: =44
             Default: =""
-            HintText: ="Rechercher (n°, titre, équipement, lieu)…"
+            HintText: ="Rechercher (titre, équipement, lieu)…"
+            Size: =12
+      - drpVue:
+          Control: Classic/DropDown
+          Properties:
+            X: =344
+            Y: =210
+            Width: =200
+            Height: =44
+            Items: =["Tous les tickets", "Mes tickets", "Mes demandes"]
+            Default: ="Tous les tickets"
             Size: =12
       - drpStatut:
           Control: Classic/DropDown
           Properties:
-            X: =428
+            X: =556
             Y: =210
-            Width: =200
+            Width: =180
             Height: =44
             Items: =["Tous", "Ouvert", "En cours", "En attente", "Résolu", "Clôturé"]
             Default: ="Tous"
             Size: =12
-      - drpPriorite:
+      - drpUrgence:
           Control: Classic/DropDown
           Properties:
-            X: =644
+            X: =748
             Y: =210
-            Width: =200
+            Width: =180
             Height: =44
             Items: =["Toutes", "Urgente", "Haute", "Moyenne", "Basse"]
             Default: ="Toutes"
@@ -224,17 +234,21 @@ Screens:
               =SortByColumns(
                   Filter(
                       TicketsMaintenance,
-                      (drpStatut.Selected.Value = "Tous" || Statut = drpStatut.Selected.Value) &&
-                      (drpPriorite.Selected.Value = "Toutes" || Priorite = drpPriorite.Selected.Value) &&
+                      (drpStatut.Selected.Value = "Tous" || Statut.Value = drpStatut.Selected.Value) &&
+                      (drpUrgence.Selected.Value = "Toutes" || Urgence.Value = drpUrgence.Selected.Value) &&
+                      (
+                          drpVue.Selected.Value = "Tous les tickets" ||
+                          (drpVue.Selected.Value = "Mes tickets" && Technicien.Email = User().Email) ||
+                          (drpVue.Selected.Value = "Mes demandes" && Author.Email = User().Email)
+                      ) &&
                       (
                           IsBlank(txtRecherche.Text) ||
-                          txtRecherche.Text in Titre ||
-                          txtRecherche.Text in Equipement ||
-                          txtRecherche.Text in Localisation ||
-                          txtRecherche.Text in Text(NumTicket)
+                          StartsWith(Title, txtRecherche.Text) ||
+                          StartsWith(Equipement, txtRecherche.Text) ||
+                          StartsWith(Lieu, txtRecherche.Text)
                       )
                   ),
-                  "NumTicket",
+                  "ID",
                   SortOrder.Descending
               )
             OnSelect: |-
@@ -253,7 +267,7 @@ Screens:
                   BorderColor: =RGBA(226, 232, 240, 1)
                   BorderThickness: =1
                   OnSelect: =Select(Parent)
-            - recPrioriteBarre:
+            - recUrgenceBarre:
                 Control: Rectangle
                 Properties:
                   X: =0
@@ -262,7 +276,7 @@ Screens:
                   Height: =Parent.TemplateHeight - 8
                   Fill: |-
                     =Switch(
-                        ThisItem.Priorite,
+                        ThisItem.Urgence.Value,
                         "Urgente", RGBA(220, 38, 38, 1),
                         "Haute", RGBA(234, 88, 12, 1),
                         "Moyenne", RGBA(202, 138, 4, 1),
@@ -276,7 +290,8 @@ Screens:
                   Y: =10
                   Width: =90
                   Height: =28
-                  Text: ="#" & ThisItem.NumTicket
+                  Text: |-
+                    ="#" & ThisItem.ID
                   Color: =RGBA(100, 116, 139, 1)
                   Size: =12
                   FontWeight: =FontWeight.Semibold
@@ -288,7 +303,7 @@ Screens:
                   Y: =10
                   Width: =Parent.TemplateWidth - 500
                   Height: =28
-                  Text: =ThisItem.Titre
+                  Text: =ThisItem.Title
                   Color: =RGBA(15, 23, 42, 1)
                   Size: =14
                   FontWeight: =FontWeight.Bold
@@ -300,7 +315,7 @@ Screens:
                   Y: =40
                   Width: =Parent.TemplateWidth - 500
                   Height: =24
-                  Text: =ThisItem.Equipement & "  ·  " & ThisItem.Localisation & "  ·  " & ThisItem.Categorie
+                  Text: =ThisItem.Equipement & "  ·  " & ThisItem.Lieu & "  ·  " & ThisItem.Domaine.Value
                   Color: =RGBA(71, 85, 105, 1)
                   Size: =11
                   OnSelect: =Select(Parent)
@@ -312,9 +327,9 @@ Screens:
                   Width: =Parent.TemplateWidth - 500
                   Height: =22
                   Text: |-
-                    ="Créé le " & Text(ThisItem.DateCreation, "dd/mm/yyyy") &
-                    If(IsBlank(ThisItem.DateEcheance), "", "  ·  Échéance " & Text(ThisItem.DateEcheance, "dd/mm/yyyy")) &
-                    If(IsBlank(ThisItem.Technicien), "  ·  Non assigné", "  ·  Technicien : " & ThisItem.Technicien)
+                    ="Créé le " & Text(ThisItem.Created, "dd/mm/yyyy") & " par " & ThisItem.Author.DisplayName &
+                    If(IsBlank(ThisItem.DateLimite), "", "  ·  Échéance " & Text(ThisItem.DateLimite, "dd/mm/yyyy")) &
+                    If(IsBlank(ThisItem.Technicien.DisplayName), "  ·  Non assigné", "  ·  Technicien : " & ThisItem.Technicien.DisplayName)
                   Color: =RGBA(100, 116, 139, 1)
                   Size: =10
                   OnSelect: =Select(Parent)
@@ -331,26 +346,26 @@ Screens:
                   FontWeight: =FontWeight.Bold
                   Align: =Align.Center
                   Visible: |-
-                    =!IsBlank(ThisItem.DateEcheance) &&
-                    ThisItem.DateEcheance < Today() &&
-                    ThisItem.Statut <> "Résolu" &&
-                    ThisItem.Statut <> "Clôturé"
+                    =!IsBlank(ThisItem.DateLimite) &&
+                    ThisItem.DateLimite < Today() &&
+                    ThisItem.Statut.Value <> "Résolu" &&
+                    ThisItem.Statut.Value <> "Clôturé"
                   OnSelect: =Select(Parent)
-            - lblPriorite:
+            - lblUrgence:
                 Control: Label
                 Properties:
                   X: =Parent.TemplateWidth - 260
                   Y: =14
                   Width: =100
                   Height: =28
-                  Text: =ThisItem.Priorite
+                  Text: =ThisItem.Urgence.Value
                   Align: =Align.Center
                   Size: =11
                   FontWeight: =FontWeight.Semibold
                   Color: =RGBA(255, 255, 255, 1)
                   Fill: |-
                     =Switch(
-                        ThisItem.Priorite,
+                        ThisItem.Urgence.Value,
                         "Urgente", RGBA(220, 38, 38, 1),
                         "Haute", RGBA(234, 88, 12, 1),
                         "Moyenne", RGBA(202, 138, 4, 1),
@@ -364,14 +379,14 @@ Screens:
                   Y: =14
                   Width: =100
                   Height: =28
-                  Text: =ThisItem.Statut
+                  Text: =ThisItem.Statut.Value
                   Align: =Align.Center
                   Size: =11
                   FontWeight: =FontWeight.Semibold
                   Color: =RGBA(255, 255, 255, 1)
                   Fill: |-
                     =Switch(
-                        ThisItem.Statut,
+                        ThisItem.Statut.Value,
                         "Ouvert", RGBA(37, 99, 235, 1),
                         "En cours", RGBA(147, 51, 234, 1),
                         "En attente", RGBA(202, 138, 4, 1),

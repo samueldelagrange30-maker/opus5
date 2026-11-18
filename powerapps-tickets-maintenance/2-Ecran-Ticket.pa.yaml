@@ -5,15 +5,14 @@ Screens:
       OnVisible: |-
         =Reset(txtTitre);
         Reset(txtEquipement);
-        Reset(txtLocalisation);
+        Reset(txtLieu);
         Reset(txtDescription);
-        Reset(txtCommentaire);
-        Reset(txtDemandeur);
-        Reset(txtTechnicien);
-        Reset(drpCategorie);
-        Reset(drpPrioriteT);
+        Reset(txtIntervention);
+        Reset(drpDomaine);
+        Reset(drpUrgenceT);
         Reset(drpStatutT);
-        Reset(dteEcheance)
+        Reset(cmbTechnicien);
+        Reset(dteLimite)
     Children:
       - recEnteteT:
           Control: Rectangle
@@ -41,7 +40,7 @@ Screens:
             Width: =700
             Height: =40
             Text: |-
-              =If(varNouveau, "Nouveau ticket", "Ticket #" & varTicket.NumTicket)
+              =If(varNouveau, "Nouveau ticket", "Ticket #" & varTicket.ID)
             Color: =RGBA(255, 255, 255, 1)
             Size: =20
             FontWeight: =FontWeight.Bold
@@ -50,13 +49,14 @@ Screens:
           Properties:
             X: =76
             Y: =44
-            Width: =900
+            Width: =Parent.Width - 108
             Height: =28
             Text: |-
               =If(
                   varNouveau,
-                  "Décrivez le problème, il sera créé avec le statut « Ouvert »",
-                  "Créé le " & Text(varTicket.DateCreation, "dd/mm/yyyy") & " par " & varTicket.Demandeur &
+                  "Décrivez le problème : le ticket sera créé avec le statut « Ouvert ».",
+                  "Créé le " & Text(varTicket.Created, "dd/mm/yyyy") & " par " & varTicket.Author.DisplayName &
+                  "  ·  Modifié le " & Text(varTicket.Modified, "dd/mm/yyyy hh:mm") &
                   If(IsBlank(varTicket.DateCloture), "", "  ·  Clôturé le " & Text(varTicket.DateCloture, "dd/mm/yyyy"))
               )
             Color: =RGBA(203, 213, 225, 1)
@@ -89,7 +89,7 @@ Screens:
             Y: =138
             Width: =(Parent.Width - 136) / 2
             Height: =40
-            Default: =If(varNouveau, "", varTicket.Titre)
+            Default: =If(varNouveau, "", varTicket.Title)
             HintText: |-
               ="Ex. : Fuite d'huile presse P2"
             Size: =12
@@ -114,25 +114,25 @@ Screens:
             Default: =If(varNouveau, "", varTicket.Equipement)
             HintText: ="Machine, installation, pièce…"
             Size: =12
-      - lblLocalisationChamp:
+      - lblLieuChamp:
           Control: Label
           Properties:
             X: =56
             Y: =272
             Width: =(Parent.Width - 136) / 2
             Height: =26
-            Text: ="Localisation"
+            Text: ="Lieu"
             Size: =11
             FontWeight: =FontWeight.Semibold
             Color: =RGBA(51, 65, 85, 1)
-      - txtLocalisation:
+      - txtLieu:
           Control: Classic/TextInput
           Properties:
             X: =56
             Y: =298
             Width: =(Parent.Width - 136) / 2
             Height: =40
-            Default: =If(varNouveau, "", varTicket.Localisation)
+            Default: =If(varNouveau, "", varTicket.Lieu)
             HintText: ="Bâtiment, atelier, étage…"
             Size: =12
       - lblDescriptionChamp:
@@ -156,18 +156,18 @@ Screens:
             Mode: =TextMode.MultiLine
             Default: =If(varNouveau, "", varTicket.Description)
             Size: =12
-      - lblCommentaireChamp:
+      - lblInterventionChamp:
           Control: Label
           Properties:
             X: =56
             Y: =512
             Width: =(Parent.Width - 136) / 2
             Height: =26
-            Text: ="Commentaire / intervention réalisée"
+            Text: ="Intervention réalisée / commentaire"
             Size: =11
             FontWeight: =FontWeight.Semibold
             Color: =RGBA(51, 65, 85, 1)
-      - txtCommentaire:
+      - txtIntervention:
           Control: Classic/TextInput
           Properties:
             X: =56
@@ -175,49 +175,49 @@ Screens:
             Width: =(Parent.Width - 136) / 2
             Height: =100
             Mode: =TextMode.MultiLine
-            Default: =If(varNouveau, "", varTicket.Commentaire)
+            Default: =If(varNouveau, "", varTicket.Intervention)
             Size: =12
-      - lblCategorieChamp:
+      - lblDomaineChamp:
           Control: Label
           Properties:
             X: =80 + (Parent.Width - 136) / 2
             Y: =112
             Width: =(Parent.Width - 136) / 2
             Height: =26
-            Text: ="Catégorie"
+            Text: ="Domaine"
             Size: =11
             FontWeight: =FontWeight.Semibold
             Color: =RGBA(51, 65, 85, 1)
-      - drpCategorie:
+      - drpDomaine:
           Control: Classic/DropDown
           Properties:
             X: =80 + (Parent.Width - 136) / 2
             Y: =138
             Width: =(Parent.Width - 136) / 2
             Height: =40
-            Items: =["Mécanique", "Électricité", "Plomberie", "CVC", "Informatique", "Bâtiment", "Préventif", "Autre"]
-            Default: =If(varNouveau, "Mécanique", varTicket.Categorie)
+            Items: =Choices(TicketsMaintenance.Domaine)
+            Default: =If(varNouveau, "Mécanique", varTicket.Domaine.Value)
             Size: =12
-      - lblPrioriteChamp:
+      - lblUrgenceChamp:
           Control: Label
           Properties:
             X: =80 + (Parent.Width - 136) / 2
             Y: =192
             Width: =(Parent.Width - 136) / 2
             Height: =26
-            Text: ="Priorité"
+            Text: ="Urgence"
             Size: =11
             FontWeight: =FontWeight.Semibold
             Color: =RGBA(51, 65, 85, 1)
-      - drpPrioriteT:
+      - drpUrgenceT:
           Control: Classic/DropDown
           Properties:
             X: =80 + (Parent.Width - 136) / 2
             Y: =218
             Width: =(Parent.Width - 136) / 2
             Height: =40
-            Items: =["Basse", "Moyenne", "Haute", "Urgente"]
-            Default: =If(varNouveau, "Moyenne", varTicket.Priorite)
+            Items: =Choices(TicketsMaintenance.Urgence)
+            Default: =If(varNouveau, "Moyenne", varTicket.Urgence.Value)
             Size: =12
       - lblStatutChamp:
           Control: Label
@@ -237,8 +237,8 @@ Screens:
             Y: =298
             Width: =(Parent.Width - 136) / 2
             Height: =40
-            Items: =["Ouvert", "En cours", "En attente", "Résolu", "Clôturé"]
-            Default: =If(varNouveau, "Ouvert", varTicket.Statut)
+            Items: =Choices(TicketsMaintenance.Statut)
+            Default: =If(varNouveau, "Ouvert", varTicket.Statut.Value)
             DisplayMode: =If(varNouveau, DisplayMode.Disabled, DisplayMode.Edit)
             Size: =12
       - lblDemandeurChamp:
@@ -252,14 +252,19 @@ Screens:
             Size: =11
             FontWeight: =FontWeight.Semibold
             Color: =RGBA(51, 65, 85, 1)
-      - txtDemandeur:
-          Control: Classic/TextInput
+      - lblDemandeur:
+          Control: Label
           Properties:
             X: =80 + (Parent.Width - 136) / 2
             Y: =378
             Width: =(Parent.Width - 136) / 2
             Height: =40
-            Default: =If(varNouveau, User().FullName, varTicket.Demandeur)
+            Text: =If(varNouveau, User().FullName, varTicket.Author.DisplayName)
+            Fill: =RGBA(248, 250, 252, 1)
+            BorderColor: =RGBA(203, 213, 225, 1)
+            BorderThickness: =1
+            PaddingLeft: =12
+            Color: =RGBA(71, 85, 105, 1)
             Size: =12
       - lblTechnicienChamp:
           Control: Label
@@ -272,16 +277,20 @@ Screens:
             Size: =11
             FontWeight: =FontWeight.Semibold
             Color: =RGBA(51, 65, 85, 1)
-      - txtTechnicien:
-          Control: Classic/TextInput
+      - cmbTechnicien:
+          Control: Classic/ComboBox
           Properties:
             X: =80 + (Parent.Width - 136) / 2
             Y: =458
             Width: =(Parent.Width - 136) / 2 - 170
             Height: =40
-            Default: =If(varNouveau, "", varTicket.Technicien)
-            HintText: ="Nom du technicien"
-            Size: =12
+            Items: =Choices(TicketsMaintenance.Technicien)
+            DefaultSelectedItems: =If(varNouveau, Blank(), varTicket.Technicien)
+            SelectMultiple: =false
+            IsSearchable: =true
+            SearchFields: =["DisplayName"]
+            DisplayFields: =["DisplayName"]
+            InputTextPlaceholder: ="Rechercher une personne…"
       - btnPrendreEnCharge:
           Control: Classic/Button
           Properties:
@@ -298,31 +307,41 @@ Screens:
             RadiusTopRight: =8
             RadiusBottomLeft: =8
             RadiusBottomRight: =8
-            Visible: =!varNouveau && varTicket.Statut <> "Résolu" && varTicket.Statut <> "Clôturé"
+            Visible: =!varNouveau && varTicket.Statut.Value <> "Résolu" && varTicket.Statut.Value <> "Clôturé"
             OnSelect: |-
               =Set(
                   varTicket,
                   Patch(
                       TicketsMaintenance,
-                      LookUp(TicketsMaintenance, NumTicket = varTicket.NumTicket),
-                      {Technicien: User().FullName, Statut: "En cours"}
+                      LookUp(TicketsMaintenance, ID = varTicket.ID),
+                      {
+                          Technicien: {
+                              Claims: "i:0#.f|membership|" & Lower(User().Email),
+                              DisplayName: User().FullName,
+                              Email: User().Email,
+                              Department: "",
+                              JobTitle: "",
+                              Picture: ""
+                          },
+                          Statut: {Value: "En cours"}
+                      }
                   )
               );
-              Reset(txtTechnicien);
+              Reset(cmbTechnicien);
               Reset(drpStatutT);
               Notify("Ticket pris en charge par " & User().FullName, NotificationType.Success)
-      - lblEcheanceChamp:
+      - lblLimiteChamp:
           Control: Label
           Properties:
             X: =80 + (Parent.Width - 136) / 2
             Y: =512
             Width: =(Parent.Width - 136) / 2
             Height: =26
-            Text: ="Date d'échéance"
+            Text: ="Date limite d'intervention"
             Size: =11
             FontWeight: =FontWeight.Semibold
             Color: =RGBA(51, 65, 85, 1)
-      - dteEcheance:
+      - dteLimite:
           Control: Classic/DatePicker
           Properties:
             X: =80 + (Parent.Width - 136) / 2
@@ -333,7 +352,7 @@ Screens:
               =If(
                   varNouveau,
                   DateAdd(Today(), 7, TimeUnit.Days),
-                  varTicket.DateEcheance
+                  varTicket.DateLimite
               )
             Format: =DateTimeFormat.ShortDate
             Size: =12
@@ -377,44 +396,26 @@ Screens:
               =If(
                   IsBlank(Trim(txtTitre.Text)) || IsBlank(Trim(txtEquipement.Text)),
                   Notify("Le titre et l'équipement sont obligatoires.", NotificationType.Error),
-                  With(
+                  Patch(
+                      TicketsMaintenance,
+                      If(varNouveau, Defaults(TicketsMaintenance), LookUp(TicketsMaintenance, ID = varTicket.ID)),
                       {
-                          wDonnees: {
-                              Titre: Trim(txtTitre.Text),
-                              Description: txtDescription.Text,
-                              Equipement: Trim(txtEquipement.Text),
-                              Localisation: Trim(txtLocalisation.Text),
-                              Categorie: drpCategorie.Selected.Value,
-                              Priorite: drpPrioriteT.Selected.Value,
-                              Statut: If(varNouveau, "Ouvert", drpStatutT.Selected.Value),
-                              Demandeur: txtDemandeur.Text,
-                              Technicien: txtTechnicien.Text,
-                              DateEcheance: dteEcheance.SelectedDate,
-                              Commentaire: txtCommentaire.Text,
-                              DateCloture: If(
-                                  !varNouveau && (drpStatutT.Selected.Value = "Résolu" || drpStatutT.Selected.Value = "Clôturé"),
-                                  Coalesce(varTicket.DateCloture, Today()),
-                                  Blank()
-                              )
-                          }
-                      },
-                      If(
-                          varNouveau,
-                          Patch(
-                              TicketsMaintenance,
-                              Defaults(TicketsMaintenance),
-                              wDonnees,
-                              {
-                                  NumTicket: Coalesce(Max(TicketsMaintenance, NumTicket), 0) + 1,
-                                  DateCreation: Today()
-                              }
-                          ),
-                          Patch(
-                              TicketsMaintenance,
-                              LookUp(TicketsMaintenance, NumTicket = varTicket.NumTicket),
-                              wDonnees
+                          Title: Trim(txtTitre.Text),
+                          Description: txtDescription.Text,
+                          Equipement: Trim(txtEquipement.Text),
+                          Lieu: Trim(txtLieu.Text),
+                          Domaine: drpDomaine.Selected,
+                          Urgence: drpUrgenceT.Selected,
+                          Statut: drpStatutT.Selected,
+                          Technicien: cmbTechnicien.Selected,
+                          DateLimite: dteLimite.SelectedDate,
+                          Intervention: txtIntervention.Text,
+                          DateCloture: If(
+                              drpStatutT.Selected.Value = "Résolu" || drpStatutT.Selected.Value = "Clôturé",
+                              Coalesce(varTicket.DateCloture, Today()),
+                              Blank()
                           )
-                      )
+                      }
                   );
                   If(
                       IsEmpty(Errors(TicketsMaintenance)),
