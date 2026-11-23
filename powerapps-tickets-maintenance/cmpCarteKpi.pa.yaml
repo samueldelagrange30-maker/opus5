@@ -1,0 +1,177 @@
+ComponentDefinitions:
+  cmpCarteKpi:
+    DefinitionType: CanvasComponent
+    AccessAppScope: false
+    CustomProperties:
+      Titre:
+        PropertyKind: Input
+        DisplayName: Titre
+        Description: Libellé de l'indicateur (ex. Tickets ouverts).
+        DataType: Text
+        Default: ="Tickets ouverts"
+      Valeur:
+        PropertyKind: Input
+        DisplayName: Valeur
+        Description: Nombre affiché en grand.
+        DataType: Number
+        Default: =12
+      Detail:
+        PropertyKind: Input
+        DisplayName: Detail
+        Description: Petite phrase sous le titre (laisser vide pour la masquer).
+        DataType: Text
+        Default: ="À prendre en charge"
+      Icone:
+        PropertyKind: Input
+        DisplayName: Icone
+        Description: Emoji affiché dans la pastille (ex. 📋, ⏳, ✅).
+        DataType: Text
+        Default: ="📋"
+      Couleur:
+        PropertyKind: Input
+        DisplayName: Couleur
+        Description: Couleur d'accent de la carte (nombre, pastille, bordure active).
+        DataType: Color
+        Default: =ColorValue("#001E62")
+      Selectionne:
+        PropertyKind: Input
+        DisplayName: Selectionne
+        Description: Quand true, la carte est mise en avant (bordure de couleur).
+        DataType: Boolean
+        Default: =false
+      OnSelect:
+        PropertyKind: Event
+        DisplayName: OnSelect
+        Description: Se déclenche quand on clique sur la carte.
+        ReturnType: None
+        Default: =false
+    Properties:
+      Fill: =RGBA(0, 0, 0, 0)
+      Height: =120
+      Width: =260
+    Children:
+      - conCarteKpi:
+          Control: GroupContainer@1.5.0
+          Variant: ManualLayout
+          Properties:
+            BorderColor: =If(cmpCarteKpi.Selectionne, cmpCarteKpi.Couleur, ColorValue("#E6E8EB"))
+            BorderThickness: =If(cmpCarteKpi.Selectionne, 2, 1)
+            DropShadow: =DropShadow.Light
+            Fill: =If(cmpCarteKpi.Selectionne, ColorFade(cmpCarteKpi.Couleur, 0.94), ColorValue("#FFFFFF"))
+            Height: =Parent.Height
+            RadiusBottomLeft: =12
+            RadiusBottomRight: =12
+            RadiusTopLeft: =12
+            RadiusTopRight: =12
+            Width: =Parent.Width
+            X: =0
+            Y: =0
+          Children:
+            - conPastille:
+                Control: GroupContainer@1.5.0
+                Variant: ManualLayout
+                Properties:
+                  DropShadow: =DropShadow.None
+                  Fill: =ColorFade(cmpCarteKpi.Couleur, 0.85)
+                  Height: =44
+                  RadiusBottomLeft: =22
+                  RadiusBottomRight: =22
+                  RadiusTopLeft: =22
+                  RadiusTopRight: =22
+                  Width: =44
+                  X: =16
+                  Y: =16
+                Children:
+                  - lblIcone:
+                      Control: Label@2.5.1
+                      Properties:
+                        Align: =Align.Center
+                        Height: =44
+                        PaddingBottom: =0
+                        PaddingLeft: =0
+                        PaddingRight: =0
+                        PaddingTop: =0
+                        Size: =18
+                        Text: =cmpCarteKpi.Icone
+                        VerticalAlign: =VerticalAlign.Middle
+                        Width: =44
+                        X: =0
+                        Y: =0
+            - lblValeur:
+                Control: Label@2.5.1
+                Properties:
+                  Color: =cmpCarteKpi.Couleur
+                  Font: =Font.'Segoe UI'
+                  FontWeight: =FontWeight.Bold
+                  Height: =36
+                  PaddingBottom: =0
+                  PaddingLeft: =0
+                  PaddingRight: =0
+                  PaddingTop: =0
+                  Size: =24
+                  Text: =Text(cmpCarteKpi.Valeur)
+                  VerticalAlign: =VerticalAlign.Middle
+                  Width: =Parent.Width - 88
+                  X: =72
+                  Y: =12
+            - lblTitre:
+                Control: Label@2.5.1
+                Properties:
+                  Color: =ColorValue("#242424")
+                  Font: =Font.'Segoe UI'
+                  FontWeight: =FontWeight.Semibold
+                  Height: =20
+                  PaddingBottom: =0
+                  PaddingLeft: =0
+                  PaddingRight: =0
+                  PaddingTop: =0
+                  Size: =12
+                  Text: =cmpCarteKpi.Titre
+                  VerticalAlign: =VerticalAlign.Middle
+                  Width: =Parent.Width - 88
+                  Wrap: =false
+                  X: =72
+                  Y: =46
+            - lblDetail:
+                Control: Label@2.5.1
+                Properties:
+                  Color: =ColorValue("#707070")
+                  Font: =Font.'Segoe UI'
+                  Height: =20
+                  PaddingBottom: =0
+                  PaddingLeft: =0
+                  PaddingRight: =0
+                  PaddingTop: =0
+                  Size: =11
+                  Text: =cmpCarteKpi.Detail
+                  Visible: =!IsBlank(cmpCarteKpi.Detail)
+                  VerticalAlign: =VerticalAlign.Middle
+                  Width: =Parent.Width - 32
+                  Wrap: =false
+                  X: =16
+                  Y: =Parent.Height - 34
+            - btnCarteKpi:
+                Control: Classic/Button@2.2.0
+                Properties:
+                  AccessibleLabel: |-
+                    =cmpCarteKpi.Titre & " : " & cmpCarteKpi.Valeur
+                  BorderColor: =RGBA(0, 0, 0, 0)
+                  BorderStyle: =BorderStyle.None
+                  Color: =RGBA(0, 0, 0, 0)
+                  Fill: =RGBA(0, 0, 0, 0)
+                  Height: =Parent.Height
+                  HoverBorderColor: =RGBA(0, 0, 0, 0)
+                  HoverColor: =RGBA(0, 0, 0, 0)
+                  HoverFill: =RGBA(0, 0, 0, 0.03)
+                  OnSelect: =cmpCarteKpi.OnSelect()
+                  PressedBorderColor: =RGBA(0, 0, 0, 0)
+                  PressedColor: =RGBA(0, 0, 0, 0)
+                  PressedFill: =RGBA(0, 0, 0, 0.06)
+                  RadiusBottomLeft: =12
+                  RadiusBottomRight: =12
+                  RadiusTopLeft: =12
+                  RadiusTopRight: =12
+                  Text: =""
+                  Width: =Parent.Width
+                  X: =0
+                  Y: =0
