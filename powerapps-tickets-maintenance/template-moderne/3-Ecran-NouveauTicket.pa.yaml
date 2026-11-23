@@ -28,13 +28,13 @@ Screens:
               LayoutMinHeight: =0
               LayoutMinWidth: =0
               Fill: =ColorValue("#FFFFFF")
-              Height: =64
+              Height: =If(App.Width < 700, 56, 64)
               FillPortions: =0
               AlignInContainer: =AlignInContainer.Stretch
               LayoutAlignItems: =LayoutAlignItems.Center
-              LayoutGap: =8
-              PaddingLeft: =24
-              PaddingRight: =24
+              LayoutGap: =If(App.Width < 700, 4, 8)
+              PaddingLeft: =If(App.Width < 700, 10, 24)
+              PaddingRight: =If(App.Width < 700, 10, 24)
             Children:
             - nvLogo:
                 Control: Label@2.5.1
@@ -45,10 +45,10 @@ Screens:
                   PaddingBottom: =0
                   PaddingLeft: =0
                   PaddingRight: =0
-                  Width: =82
+                  Width: =If(App.Width < 700, 62, 82)
                   Height: =40
-                  LayoutMinWidth: =82
-                  Size: =20
+                  LayoutMinWidth: =If(App.Width < 700, 62, 82)
+                  Size: =If(App.Width < 700, 16, 20)
                   FontWeight: =FontWeight.Bold
                   Italic: =true
                   Color: =ColorValue("#001E62")
@@ -69,6 +69,7 @@ Screens:
                   FontWeight: =FontWeight.Semibold
                   Color: =ColorValue("#1B1B1F")
                   VerticalAlign: =VerticalAlign.Middle
+                  Visible: =App.Width >= 700
             - nvEspace:
                 Control: GroupContainer@1.5.0
                 Variant: AutoLayout
@@ -82,11 +83,11 @@ Screens:
             - nvNav1:
                 Control: Classic/Button@2.2.0
                 Properties:
-                  Text: ="Tickets"
-                  Width: =110
+                  Text: =If(App.Width < 700, "Tickets", "Tickets")
+                  Width: =If(App.Width < 700, 70, 110)
                   Height: =36
-                  LayoutMinWidth: =110
-                  Size: =12
+                  LayoutMinWidth: =If(App.Width < 700, 70, 110)
+                  Size: =If(App.Width < 700, 11, 12)
                   FontWeight: =FontWeight.Semibold
                   Fill: =RGBA(0, 0, 0, 0)
                   Color: =ColorValue("#5C5C66")
@@ -106,11 +107,11 @@ Screens:
             - nvNav2:
                 Control: Classic/Button@2.2.0
                 Properties:
-                  Text: ="Nouveau ticket"
-                  Width: =140
+                  Text: =If(App.Width < 700, "+ Nouveau", "Nouveau ticket")
+                  Width: =If(App.Width < 700, 92, 140)
                   Height: =36
-                  LayoutMinWidth: =140
-                  Size: =12
+                  LayoutMinWidth: =If(App.Width < 700, 92, 140)
+                  Size: =If(App.Width < 700, 11, 12)
                   FontWeight: =FontWeight.Semibold
                   Fill: =ColorValue("#E8EDF7")
                   Color: =ColorValue("#001E62")
@@ -132,11 +133,11 @@ Screens:
             - nvNav3:
                 Control: Classic/Button@2.2.0
                 Properties:
-                  Text: ="Tableau de bord"
-                  Width: =150
+                  Text: =If(App.Width < 700, "Stats", "Tableau de bord")
+                  Width: =If(App.Width < 700, 60, 150)
                   Height: =36
-                  LayoutMinWidth: =150
-                  Size: =12
+                  LayoutMinWidth: =If(App.Width < 700, 60, 150)
+                  Size: =If(App.Width < 700, 11, 12)
                   FontWeight: =FontWeight.Semibold
                   Fill: =RGBA(0, 0, 0, 0)
                   Color: =ColorValue("#5C5C66")
@@ -169,6 +170,7 @@ Screens:
                   Color: =ColorValue("#5C5C66")
                   Align: =Align.Right
                   VerticalAlign: =VerticalAlign.Middle
+                  Visible: =App.Width >= 900
         - nvSeparateur:
             Control: Rectangle@2.3.0
             Properties:
@@ -186,11 +188,11 @@ Screens:
               FillPortions: =1
               AlignInContainer: =AlignInContainer.Stretch
               Fill: =ColorValue("#F5F6F8")
-              LayoutGap: =14
-              PaddingTop: =20
-              PaddingBottom: =20
-              PaddingLeft: =24
-              PaddingRight: =24
+              LayoutGap: =If(App.Width < 700, 10, 14)
+              PaddingTop: =If(App.Width < 700, 12, 20)
+              PaddingBottom: =If(App.Width < 700, 10, 20)
+              PaddingLeft: =If(App.Width < 700, 10, 24)
+              PaddingRight: =If(App.Width < 700, 10, 24)
             Children:
             - nvTitre:
                 Control: Label@2.5.1
@@ -203,7 +205,7 @@ Screens:
                   PaddingRight: =0
                   Height: =32
                   AlignInContainer: =AlignInContainer.Stretch
-                  Size: =20
+                  Size: =If(App.Width < 700, 18, 20)
                   FontWeight: =FontWeight.Bold
                   Color: =ColorValue("#1B1B1F")
                   VerticalAlign: =VerticalAlign.Middle
@@ -217,7 +219,7 @@ Screens:
                   PaddingBottom: =0
                   PaddingLeft: =0
                   PaddingRight: =0
-                  Height: =20
+                  Height: =If(App.Width < 700, 36, 20)
                   AlignInContainer: =AlignInContainer.Stretch
                   Size: =12
                   Color: =ColorValue("#5C5C66")
@@ -256,7 +258,7 @@ Screens:
                       PaddingRight: =0
                       FillPortions: =1
                       Height: =40
-                      Size: =13
+                      Size: =If(App.Width < 700, 12, 13)
                       FontWeight: =FontWeight.Semibold
                       Color: =ColorValue("#0E700E")
                       VerticalAlign: =VerticalAlign.Middle
@@ -300,18 +302,18 @@ Screens:
                     Variant: AutoLayout
                     Properties:
                       LayoutDirection: =LayoutDirection.Vertical
-                      DropShadow: =DropShadow.Light
+                      DropShadow: =DropShadow.None
                       LayoutMinHeight: =0
-                      LayoutMinWidth: =320
+                      LayoutMinWidth: =0
                       FillPortions: =3
                       AlignInContainer: =AlignInContainer.Stretch
-                      Fill: =ColorValue("#FFFFFF")
-                      BorderColor: =ColorValue("#E6E8EB")
-                      BorderThickness: =1
                       PaddingTop: =8
                       PaddingBottom: =8
                       PaddingLeft: =8
                       PaddingRight: =8
+                      Fill: =ColorValue("#FFFFFF")
+                      BorderColor: =ColorValue("#E6E8EB")
+                      BorderThickness: =1
                       RadiusTopLeft: =12
                       RadiusTopRight: =12
                       RadiusBottomLeft: =12
@@ -327,14 +329,14 @@ Screens:
                       FillPortions: =1
                       AlignInContainer: =AlignInContainer.Stretch
                       LayoutGap: =16
-                      Visible: =App.Width >= 900
+                      Visible: =App.Width >= 1000
                     Children:
                     - nvCarteConseils:
                         Control: GroupContainer@1.5.0
                         Variant: AutoLayout
                         Properties:
                           LayoutDirection: =LayoutDirection.Vertical
-                          DropShadow: =DropShadow.Light
+                          DropShadow: =DropShadow.None
                           LayoutMinHeight: =0
                           LayoutMinWidth: =0
                           Height: =290
@@ -344,14 +346,14 @@ Screens:
                           Fill: =ColorValue("#FFFFFF")
                           BorderColor: =ColorValue("#E6E8EB")
                           BorderThickness: =1
-                          PaddingTop: =16
-                          PaddingBottom: =16
-                          PaddingLeft: =18
-                          PaddingRight: =18
                           RadiusTopLeft: =12
                           RadiusTopRight: =12
                           RadiusBottomLeft: =12
                           RadiusBottomRight: =12
+                          PaddingTop: =16
+                          PaddingBottom: =16
+                          PaddingLeft: =18
+                          PaddingRight: =18
                         Children:
                         - nvConseilsTitre:
                             Control: Label@2.5.1
@@ -387,14 +389,12 @@ Screens:
                               FillPortions: =1
                               LayoutMinHeight: =100
                               AlignInContainer: =AlignInContainer.Stretch
-                              Width: =Parent.Width
-                              Height: =220
                     - nvCarteMesTickets:
                         Control: GroupContainer@1.5.0
                         Variant: AutoLayout
                         Properties:
                           LayoutDirection: =LayoutDirection.Vertical
-                          DropShadow: =DropShadow.Light
+                          DropShadow: =DropShadow.None
                           LayoutMinHeight: =0
                           LayoutMinWidth: =0
                           FillPortions: =1
@@ -403,14 +403,14 @@ Screens:
                           Fill: =ColorValue("#FFFFFF")
                           BorderColor: =ColorValue("#E6E8EB")
                           BorderThickness: =1
-                          PaddingTop: =16
-                          PaddingBottom: =16
-                          PaddingLeft: =18
-                          PaddingRight: =18
                           RadiusTopLeft: =12
                           RadiusTopRight: =12
                           RadiusBottomLeft: =12
                           RadiusBottomRight: =12
+                          PaddingTop: =16
+                          PaddingBottom: =16
+                          PaddingLeft: =18
+                          PaddingRight: =18
                         Children:
                         - nvMesTicketsEntete:
                             Control: Label@2.5.1
@@ -453,8 +453,6 @@ Screens:
                               FillPortions: =1
                               LayoutMinHeight: =0
                               AlignInContainer: =AlignInContainer.Stretch
-                              Width: =Parent.Width
-                              Height: =300
                             Children:
                             - nvMesTicketsCarte:
                                 Control: GroupContainer@1.5.0
@@ -476,7 +474,7 @@ Screens:
                                 - nvMesTicketsTitre:
                                     Control: Label@2.5.1
                                     Properties:
-                                      Text: =ThisItem.Title
+                                      Text: =Coalesce(ThisItem.Title, ThisItem.Description, "Ticket sans titre")
                                       Font: =Font.'Segoe UI'
                                       PaddingTop: =0
                                       PaddingBottom: =0
@@ -484,7 +482,7 @@ Screens:
                                       PaddingRight: =0
                                       X: =12
                                       Y: =8
-                                      Width: =Parent.Width - 130
+                                      Width: =Parent.Width - 124
                                       Height: =22
                                       Size: =12
                                       FontWeight: =FontWeight.Semibold
@@ -501,7 +499,7 @@ Screens:
                                       PaddingRight: =0
                                       X: =12
                                       Y: =30
-                                      Width: =Parent.Width - 130
+                                      Width: =Parent.Width - 124
                                       Height: =18
                                       Size: =11
                                       Color: =ColorValue("#8A8A94")
@@ -511,15 +509,15 @@ Screens:
                                     Variant: ManualLayout
                                     Properties:
                                       DropShadow: =DropShadow.None
-                                      Width: =100
+                                      Width: =96
                                       Height: =26
-                                      LayoutMinWidth: =100
+                                      LayoutMinWidth: =96
                                       Fill: =ColorValue(Switch(ThisItem.'Ticket clôturer'.Value, "Oui", "#DFF6DD", "En cours", "#FFF4CE", "#E5F0FB"))
                                       RadiusTopLeft: =13
                                       RadiusTopRight: =13
                                       RadiusBottomLeft: =13
                                       RadiusBottomRight: =13
-                                      X: =Parent.Width - 112
+                                      X: =Parent.Width - 106
                                       Y: =15
                                     Children:
                                     - nvMesTicketsStatutTxt:
@@ -577,13 +575,13 @@ Screens:
                   Height: =64
                   FillPortions: =0
                   AlignInContainer: =AlignInContainer.Stretch
+                  LayoutAlignItems: =LayoutAlignItems.Center
+                  LayoutGap: =10
+                  PaddingLeft: =If(App.Width < 700, 12, 18)
+                  PaddingRight: =If(App.Width < 700, 12, 14)
                   Fill: =ColorValue("#FFFFFF")
                   BorderColor: =ColorValue("#E6E8EB")
                   BorderThickness: =1
-                  LayoutAlignItems: =LayoutAlignItems.Center
-                  LayoutGap: =10
-                  PaddingLeft: =18
-                  PaddingRight: =14
                   RadiusTopLeft: =12
                   RadiusTopRight: =12
                   RadiusBottomLeft: =12
@@ -600,17 +598,30 @@ Screens:
                       PaddingRight: =0
                       FillPortions: =1
                       Height: =36
-                      LayoutMinWidth: =120
+                      LayoutMinWidth: =0
                       Size: =12
                       Color: =ColorValue("#8A8A94")
                       VerticalAlign: =VerticalAlign.Middle
+                      Visible: =App.Width >= 700
+                - nvActionsEspace:
+                    Control: GroupContainer@1.5.0
+                    Variant: AutoLayout
+                    Properties:
+                      LayoutDirection: =LayoutDirection.Horizontal
+                      DropShadow: =DropShadow.None
+                      LayoutMinHeight: =0
+                      LayoutMinWidth: =0
+                      FillPortions: =If(App.Width < 700, 1, 0)
+                      Width: =1
+                      Height: =10
+                      Visible: =App.Width < 700
                 - nvEffacer:
                     Control: Classic/Button@2.2.0
                     Properties:
                       Text: ="Effacer"
-                      Width: =120
+                      Width: =If(App.Width < 700, 100, 120)
                       Height: =36
-                      LayoutMinWidth: =120
+                      LayoutMinWidth: =If(App.Width < 700, 100, 120)
                       Size: =12
                       FontWeight: =FontWeight.Semibold
                       OnSelect: |-
@@ -634,9 +645,9 @@ Screens:
                     Control: Classic/Button@2.2.0
                     Properties:
                       Text: ="Envoyer le ticket"
-                      Width: =170
+                      Width: =If(App.Width < 700, 150, 170)
                       Height: =36
-                      LayoutMinWidth: =170
+                      LayoutMinWidth: =If(App.Width < 700, 150, 170)
                       Size: =12
                       FontWeight: =FontWeight.Semibold
                       OnSelect: =SubmitForm(Form1)

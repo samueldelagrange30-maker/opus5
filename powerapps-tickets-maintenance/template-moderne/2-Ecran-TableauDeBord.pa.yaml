@@ -12,6 +12,34 @@ Screens:
             {Libelle: "Clôturés", Nombre: CountRows(Filter(colDbTickets, 'Ticket clôturer'.Value = "Oui")), Couleur: "#107C10"}
         );
         ClearCollect(
+            colDbDonut,
+            ForAll(
+                Sequence(CountRows(colDbStatut)) As i,
+                With(
+                    {r: Index(colDbStatut, i.Value), t: Max(varDbTotal, 1)},
+                    {
+                        Couleur: r.Couleur,
+                        Pct: r.Nombre / t * 100,
+                        Debut: Coalesce(Sum(FirstN(colDbStatut, i.Value - 1), Nombre), 0) / t * 100
+                    }
+                )
+            )
+        );
+        ClearCollect(
+            colDbMois,
+            ForAll(
+                Sequence(6, 5, -1) As s,
+                With(
+                    {d: DateAdd(Date(Year(Today()), Month(Today()), 1), -s.Value, TimeUnit.Months)},
+                    {
+                        Idx: 5 - s.Value,
+                        Libelle: Text(d, "mmm", "fr-FR"),
+                        Nombre: CountRows(Filter(colDbTickets, Year(Created) = Year(d) && Month(Created) = Month(d)))
+                    }
+                )
+            )
+        );
+        ClearCollect(
             colDbUrgence,
             ForAll(
                 Distinct(colDbTickets, 'Statut Urgence'.Value) As U,
@@ -80,13 +108,13 @@ Screens:
               LayoutMinHeight: =0
               LayoutMinWidth: =0
               Fill: =ColorValue("#FFFFFF")
-              Height: =64
+              Height: =If(App.Width < 700, 56, 64)
               FillPortions: =0
               AlignInContainer: =AlignInContainer.Stretch
               LayoutAlignItems: =LayoutAlignItems.Center
-              LayoutGap: =8
-              PaddingLeft: =24
-              PaddingRight: =24
+              LayoutGap: =If(App.Width < 700, 4, 8)
+              PaddingLeft: =If(App.Width < 700, 10, 24)
+              PaddingRight: =If(App.Width < 700, 10, 24)
             Children:
             - dbLogo:
                 Control: Label@2.5.1
@@ -97,10 +125,10 @@ Screens:
                   PaddingBottom: =0
                   PaddingLeft: =0
                   PaddingRight: =0
-                  Width: =82
+                  Width: =If(App.Width < 700, 62, 82)
                   Height: =40
-                  LayoutMinWidth: =82
-                  Size: =20
+                  LayoutMinWidth: =If(App.Width < 700, 62, 82)
+                  Size: =If(App.Width < 700, 16, 20)
                   FontWeight: =FontWeight.Bold
                   Italic: =true
                   Color: =ColorValue("#001E62")
@@ -121,6 +149,7 @@ Screens:
                   FontWeight: =FontWeight.Semibold
                   Color: =ColorValue("#1B1B1F")
                   VerticalAlign: =VerticalAlign.Middle
+                  Visible: =App.Width >= 700
             - dbEspace:
                 Control: GroupContainer@1.5.0
                 Variant: AutoLayout
@@ -134,11 +163,11 @@ Screens:
             - dbNav1:
                 Control: Classic/Button@2.2.0
                 Properties:
-                  Text: ="Tickets"
-                  Width: =110
+                  Text: =If(App.Width < 700, "Tickets", "Tickets")
+                  Width: =If(App.Width < 700, 70, 110)
                   Height: =36
-                  LayoutMinWidth: =110
-                  Size: =12
+                  LayoutMinWidth: =If(App.Width < 700, 70, 110)
+                  Size: =If(App.Width < 700, 11, 12)
                   FontWeight: =FontWeight.Semibold
                   Fill: =RGBA(0, 0, 0, 0)
                   Color: =ColorValue("#5C5C66")
@@ -158,11 +187,11 @@ Screens:
             - dbNav2:
                 Control: Classic/Button@2.2.0
                 Properties:
-                  Text: ="Nouveau ticket"
-                  Width: =140
+                  Text: =If(App.Width < 700, "+ Nouveau", "Nouveau ticket")
+                  Width: =If(App.Width < 700, 92, 140)
                   Height: =36
-                  LayoutMinWidth: =140
-                  Size: =12
+                  LayoutMinWidth: =If(App.Width < 700, 92, 140)
+                  Size: =If(App.Width < 700, 11, 12)
                   FontWeight: =FontWeight.Semibold
                   Fill: =RGBA(0, 0, 0, 0)
                   Color: =ColorValue("#5C5C66")
@@ -184,11 +213,11 @@ Screens:
             - dbNav3:
                 Control: Classic/Button@2.2.0
                 Properties:
-                  Text: ="Tableau de bord"
-                  Width: =150
+                  Text: =If(App.Width < 700, "Stats", "Tableau de bord")
+                  Width: =If(App.Width < 700, 60, 150)
                   Height: =36
-                  LayoutMinWidth: =150
-                  Size: =12
+                  LayoutMinWidth: =If(App.Width < 700, 60, 150)
+                  Size: =If(App.Width < 700, 11, 12)
                   FontWeight: =FontWeight.Semibold
                   Fill: =ColorValue("#E8EDF7")
                   Color: =ColorValue("#001E62")
@@ -221,6 +250,7 @@ Screens:
                   Color: =ColorValue("#5C5C66")
                   Align: =Align.Right
                   VerticalAlign: =VerticalAlign.Middle
+                  Visible: =App.Width >= 900
         - dbSeparateur:
             Control: Rectangle@2.3.0
             Properties:
@@ -239,10 +269,11 @@ Screens:
               AlignInContainer: =AlignInContainer.Stretch
               Fill: =ColorValue("#F5F6F8")
               LayoutGap: =16
-              PaddingTop: =20
+              LayoutOverflowY: =LayoutOverflow.Scroll
+              PaddingTop: =If(App.Width < 700, 12, 20)
               PaddingBottom: =24
-              PaddingLeft: =24
-              PaddingRight: =24
+              PaddingLeft: =If(App.Width < 700, 12, 24)
+              PaddingRight: =If(App.Width < 700, 12, 24)
             Children:
             - dbTitre:
                 Control: Label@2.5.1
@@ -255,7 +286,7 @@ Screens:
                   PaddingRight: =0
                   Height: =32
                   AlignInContainer: =AlignInContainer.Stretch
-                  Size: =20
+                  Size: =If(App.Width < 700, 18, 20)
                   FontWeight: =FontWeight.Bold
                   Color: =ColorValue("#1B1B1F")
                   VerticalAlign: =VerticalAlign.Middle
@@ -281,18 +312,20 @@ Screens:
                   DropShadow: =DropShadow.None
                   LayoutMinHeight: =0
                   LayoutMinWidth: =0
-                  Height: =92
+                  Height: =84
                   FillPortions: =0
                   AlignInContainer: =AlignInContainer.Stretch
-                  LayoutGap: =12
+                  LayoutGap: =If(App.Width < 700, 8, 12)
+                  LayoutOverflowX: =LayoutOverflow.Scroll
                 Children:
                 - dbKpiTotal:
                     Control: GroupContainer@1.5.0
                     Variant: ManualLayout
                     Properties:
-                      DropShadow: =DropShadow.Light
-                      FillPortions: =1
-                      LayoutMinWidth: =130
+                      DropShadow: =DropShadow.None
+                      FillPortions: =If(App.Width < 700, 0, 1)
+                      Width: =150
+                      LayoutMinWidth: =If(App.Width < 700, 150, 130)
                       AlignInContainer: =AlignInContainer.Stretch
                       Fill: =If(false, ColorFade(ColorValue("#001E62"), 0.93), ColorValue("#FFFFFF"))
                       BorderColor: =If(false, ColorValue("#001E62"), ColorValue("#E6E8EB"))
@@ -307,15 +340,15 @@ Screens:
                         Variant: ManualLayout
                         Properties:
                           DropShadow: =DropShadow.None
-                          X: =16
-                          Y: =(Parent.Height - 44) / 2
-                          Width: =44
-                          Height: =44
+                          X: =14
+                          Y: =(Parent.Height - 40) / 2
+                          Width: =40
+                          Height: =40
                           Fill: =ColorFade(ColorValue("#001E62"), 0.85)
-                          RadiusTopLeft: =22
-                          RadiusTopRight: =22
-                          RadiusBottomLeft: =22
-                          RadiusBottomRight: =22
+                          RadiusTopLeft: =20
+                          RadiusTopRight: =20
+                          RadiusBottomLeft: =20
+                          RadiusBottomRight: =20
                         Children:
                         - dbKpiTotalEmoji:
                             Control: Label@2.5.1
@@ -328,9 +361,9 @@ Screens:
                               PaddingRight: =0
                               X: =0
                               Y: =0
-                              Width: =44
-                              Height: =44
-                              Size: =18
+                              Width: =40
+                              Height: =40
+                              Size: =16
                               Align: =Align.Center
                               VerticalAlign: =VerticalAlign.Middle
                     - dbKpiTotalValeur:
@@ -342,11 +375,11 @@ Screens:
                           PaddingBottom: =0
                           PaddingLeft: =0
                           PaddingRight: =0
-                          X: =72
-                          Y: =Parent.Height / 2 - 28
-                          Width: =Parent.Width - 84
-                          Height: =32
-                          Size: =22
+                          X: =64
+                          Y: =Parent.Height / 2 - 26
+                          Width: =Parent.Width - 72
+                          Height: =30
+                          Size: =20
                           FontWeight: =FontWeight.Bold
                           Color: =ColorValue("#001E62")
                           VerticalAlign: =VerticalAlign.Middle
@@ -359,9 +392,9 @@ Screens:
                           PaddingBottom: =0
                           PaddingLeft: =0
                           PaddingRight: =0
-                          X: =72
+                          X: =64
                           Y: =Parent.Height / 2 + 4
-                          Width: =Parent.Width - 84
+                          Width: =Parent.Width - 72
                           Height: =20
                           Size: =12
                           FontWeight: =FontWeight.Semibold
@@ -372,9 +405,10 @@ Screens:
                     Control: GroupContainer@1.5.0
                     Variant: ManualLayout
                     Properties:
-                      DropShadow: =DropShadow.Light
-                      FillPortions: =1
-                      LayoutMinWidth: =130
+                      DropShadow: =DropShadow.None
+                      FillPortions: =If(App.Width < 700, 0, 1)
+                      Width: =150
+                      LayoutMinWidth: =If(App.Width < 700, 150, 130)
                       AlignInContainer: =AlignInContainer.Stretch
                       Fill: =If(false, ColorFade(ColorValue("#0F6CBD"), 0.93), ColorValue("#FFFFFF"))
                       BorderColor: =If(false, ColorValue("#0F6CBD"), ColorValue("#E6E8EB"))
@@ -389,15 +423,15 @@ Screens:
                         Variant: ManualLayout
                         Properties:
                           DropShadow: =DropShadow.None
-                          X: =16
-                          Y: =(Parent.Height - 44) / 2
-                          Width: =44
-                          Height: =44
+                          X: =14
+                          Y: =(Parent.Height - 40) / 2
+                          Width: =40
+                          Height: =40
                           Fill: =ColorFade(ColorValue("#0F6CBD"), 0.85)
-                          RadiusTopLeft: =22
-                          RadiusTopRight: =22
-                          RadiusBottomLeft: =22
-                          RadiusBottomRight: =22
+                          RadiusTopLeft: =20
+                          RadiusTopRight: =20
+                          RadiusBottomLeft: =20
+                          RadiusBottomRight: =20
                         Children:
                         - dbKpiOuvertsEmoji:
                             Control: Label@2.5.1
@@ -410,9 +444,9 @@ Screens:
                               PaddingRight: =0
                               X: =0
                               Y: =0
-                              Width: =44
-                              Height: =44
-                              Size: =18
+                              Width: =40
+                              Height: =40
+                              Size: =16
                               Align: =Align.Center
                               VerticalAlign: =VerticalAlign.Middle
                     - dbKpiOuvertsValeur:
@@ -424,11 +458,11 @@ Screens:
                           PaddingBottom: =0
                           PaddingLeft: =0
                           PaddingRight: =0
-                          X: =72
-                          Y: =Parent.Height / 2 - 28
-                          Width: =Parent.Width - 84
-                          Height: =32
-                          Size: =22
+                          X: =64
+                          Y: =Parent.Height / 2 - 26
+                          Width: =Parent.Width - 72
+                          Height: =30
+                          Size: =20
                           FontWeight: =FontWeight.Bold
                           Color: =ColorValue("#0F6CBD")
                           VerticalAlign: =VerticalAlign.Middle
@@ -441,9 +475,9 @@ Screens:
                           PaddingBottom: =0
                           PaddingLeft: =0
                           PaddingRight: =0
-                          X: =72
+                          X: =64
                           Y: =Parent.Height / 2 + 4
-                          Width: =Parent.Width - 84
+                          Width: =Parent.Width - 72
                           Height: =20
                           Size: =12
                           FontWeight: =FontWeight.Semibold
@@ -454,9 +488,10 @@ Screens:
                     Control: GroupContainer@1.5.0
                     Variant: ManualLayout
                     Properties:
-                      DropShadow: =DropShadow.Light
-                      FillPortions: =1
-                      LayoutMinWidth: =130
+                      DropShadow: =DropShadow.None
+                      FillPortions: =If(App.Width < 700, 0, 1)
+                      Width: =150
+                      LayoutMinWidth: =If(App.Width < 700, 150, 130)
                       AlignInContainer: =AlignInContainer.Stretch
                       Fill: =If(false, ColorFade(ColorValue("#B97A00"), 0.93), ColorValue("#FFFFFF"))
                       BorderColor: =If(false, ColorValue("#B97A00"), ColorValue("#E6E8EB"))
@@ -471,15 +506,15 @@ Screens:
                         Variant: ManualLayout
                         Properties:
                           DropShadow: =DropShadow.None
-                          X: =16
-                          Y: =(Parent.Height - 44) / 2
-                          Width: =44
-                          Height: =44
+                          X: =14
+                          Y: =(Parent.Height - 40) / 2
+                          Width: =40
+                          Height: =40
                           Fill: =ColorFade(ColorValue("#B97A00"), 0.85)
-                          RadiusTopLeft: =22
-                          RadiusTopRight: =22
-                          RadiusBottomLeft: =22
-                          RadiusBottomRight: =22
+                          RadiusTopLeft: =20
+                          RadiusTopRight: =20
+                          RadiusBottomLeft: =20
+                          RadiusBottomRight: =20
                         Children:
                         - dbKpiEnCoursEmoji:
                             Control: Label@2.5.1
@@ -492,9 +527,9 @@ Screens:
                               PaddingRight: =0
                               X: =0
                               Y: =0
-                              Width: =44
-                              Height: =44
-                              Size: =18
+                              Width: =40
+                              Height: =40
+                              Size: =16
                               Align: =Align.Center
                               VerticalAlign: =VerticalAlign.Middle
                     - dbKpiEnCoursValeur:
@@ -506,11 +541,11 @@ Screens:
                           PaddingBottom: =0
                           PaddingLeft: =0
                           PaddingRight: =0
-                          X: =72
-                          Y: =Parent.Height / 2 - 28
-                          Width: =Parent.Width - 84
-                          Height: =32
-                          Size: =22
+                          X: =64
+                          Y: =Parent.Height / 2 - 26
+                          Width: =Parent.Width - 72
+                          Height: =30
+                          Size: =20
                           FontWeight: =FontWeight.Bold
                           Color: =ColorValue("#B97A00")
                           VerticalAlign: =VerticalAlign.Middle
@@ -523,9 +558,9 @@ Screens:
                           PaddingBottom: =0
                           PaddingLeft: =0
                           PaddingRight: =0
-                          X: =72
+                          X: =64
                           Y: =Parent.Height / 2 + 4
-                          Width: =Parent.Width - 84
+                          Width: =Parent.Width - 72
                           Height: =20
                           Size: =12
                           FontWeight: =FontWeight.Semibold
@@ -536,9 +571,10 @@ Screens:
                     Control: GroupContainer@1.5.0
                     Variant: ManualLayout
                     Properties:
-                      DropShadow: =DropShadow.Light
-                      FillPortions: =1
-                      LayoutMinWidth: =130
+                      DropShadow: =DropShadow.None
+                      FillPortions: =If(App.Width < 700, 0, 1)
+                      Width: =150
+                      LayoutMinWidth: =If(App.Width < 700, 150, 130)
                       AlignInContainer: =AlignInContainer.Stretch
                       Fill: =If(false, ColorFade(ColorValue("#107C10"), 0.93), ColorValue("#FFFFFF"))
                       BorderColor: =If(false, ColorValue("#107C10"), ColorValue("#E6E8EB"))
@@ -553,15 +589,15 @@ Screens:
                         Variant: ManualLayout
                         Properties:
                           DropShadow: =DropShadow.None
-                          X: =16
-                          Y: =(Parent.Height - 44) / 2
-                          Width: =44
-                          Height: =44
+                          X: =14
+                          Y: =(Parent.Height - 40) / 2
+                          Width: =40
+                          Height: =40
                           Fill: =ColorFade(ColorValue("#107C10"), 0.85)
-                          RadiusTopLeft: =22
-                          RadiusTopRight: =22
-                          RadiusBottomLeft: =22
-                          RadiusBottomRight: =22
+                          RadiusTopLeft: =20
+                          RadiusTopRight: =20
+                          RadiusBottomLeft: =20
+                          RadiusBottomRight: =20
                         Children:
                         - dbKpiTauxEmoji:
                             Control: Label@2.5.1
@@ -574,9 +610,9 @@ Screens:
                               PaddingRight: =0
                               X: =0
                               Y: =0
-                              Width: =44
-                              Height: =44
-                              Size: =18
+                              Width: =40
+                              Height: =40
+                              Size: =16
                               Align: =Align.Center
                               VerticalAlign: =VerticalAlign.Middle
                     - dbKpiTauxValeur:
@@ -588,11 +624,11 @@ Screens:
                           PaddingBottom: =0
                           PaddingLeft: =0
                           PaddingRight: =0
-                          X: =72
-                          Y: =Parent.Height / 2 - 28
-                          Width: =Parent.Width - 84
-                          Height: =32
-                          Size: =22
+                          X: =64
+                          Y: =Parent.Height / 2 - 26
+                          Width: =Parent.Width - 72
+                          Height: =30
+                          Size: =20
                           FontWeight: =FontWeight.Bold
                           Color: =ColorValue("#107C10")
                           VerticalAlign: =VerticalAlign.Middle
@@ -605,9 +641,9 @@ Screens:
                           PaddingBottom: =0
                           PaddingLeft: =0
                           PaddingRight: =0
-                          X: =72
+                          X: =64
                           Y: =Parent.Height / 2 + 4
-                          Width: =Parent.Width - 84
+                          Width: =Parent.Width - 72
                           Height: =20
                           Size: =12
                           FontWeight: =FontWeight.Semibold
@@ -618,11 +654,12 @@ Screens:
                 Control: GroupContainer@1.5.0
                 Variant: AutoLayout
                 Properties:
-                  LayoutDirection: =LayoutDirection.Horizontal
+                  LayoutDirection: =If(App.Width < 700, LayoutDirection.Vertical, LayoutDirection.Horizontal)
                   DropShadow: =DropShadow.None
                   LayoutMinHeight: =0
                   LayoutMinWidth: =0
-                  FillPortions: =1
+                  Height: =If(App.Width < 700, 596, 290)
+                  FillPortions: =0
                   AlignInContainer: =AlignInContainer.Stretch
                   LayoutGap: =16
                 Children:
@@ -631,19 +668,19 @@ Screens:
                     Variant: AutoLayout
                     Properties:
                       LayoutDirection: =LayoutDirection.Vertical
-                      DropShadow: =DropShadow.Light
+                      DropShadow: =DropShadow.None
                       LayoutMinHeight: =0
-                      LayoutMinWidth: =260
+                      LayoutMinWidth: =0
                       FillPortions: =1
                       AlignInContainer: =AlignInContainer.Stretch
-                      Fill: =ColorValue("#FFFFFF")
-                      BorderColor: =ColorValue("#E6E8EB")
-                      BorderThickness: =1
                       LayoutGap: =6
                       PaddingTop: =16
                       PaddingBottom: =16
                       PaddingLeft: =18
                       PaddingRight: =18
+                      Fill: =ColorValue("#FFFFFF")
+                      BorderColor: =ColorValue("#E6E8EB")
+                      BorderThickness: =1
                       RadiusTopLeft: =12
                       RadiusTopRight: =12
                       RadiusBottomLeft: =12
@@ -652,7 +689,7 @@ Screens:
                     - dbGraphStatutTitre:
                         Control: Label@2.5.1
                         Properties:
-                          Text: ="Tickets par statut"
+                          Text: ="Répartition par statut"
                           Font: =Font.'Segoe UI'
                           PaddingTop: =0
                           PaddingBottom: =0
@@ -664,49 +701,156 @@ Screens:
                           FontWeight: =FontWeight.Semibold
                           Color: =ColorValue("#1B1B1F")
                           VerticalAlign: =VerticalAlign.Middle
-                    - dbGraphStatutBarres:
-                        Control: HtmlViewer@2.1.0
+                    - dbDonutZone:
+                        Control: GroupContainer@1.5.0
+                        Variant: AutoLayout
                         Properties:
-                          HtmlText: |-
-                            =With(
-                                {m: Max(Coalesce(Max(colDbStatut, Nombre), 0), 1)},
-                                "<div style='font-family:Segoe UI,sans-serif;font-size:12px'>" &
+                          LayoutDirection: =LayoutDirection.Horizontal
+                          DropShadow: =DropShadow.None
+                          LayoutMinHeight: =0
+                          LayoutMinWidth: =0
+                          FillPortions: =1
+                          AlignInContainer: =AlignInContainer.Stretch
+                          LayoutAlignItems: =LayoutAlignItems.Center
+                          LayoutGap: =16
+                        Children:
+                        - dbDonut:
+                            Control: Image@2.2.3
+                            Properties:
+                              Image: |-
+                                ="data:image/svg+xml;utf8," & EncodeUrl(
+                                    "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 42 42'>" &
+                                    "<circle cx='21' cy='21' r='15.915' fill='none' stroke='#EEF1F5' stroke-width='6'/>" &
+                                    Concat(
+                                        Filter(colDbDonut, Pct > 0),
+                                        "<circle cx='21' cy='21' r='15.915' fill='none' stroke='" & Couleur & "' stroke-width='6' stroke-dasharray='" &
+                                        Text(Pct, "0.00", "en-US") & " " & Text(100 - Pct, "0.00", "en-US") &
+                                        "' stroke-dashoffset='" & Text(25 - Debut, "0.00", "en-US") & "'/>"
+                                    ) &
+                                    "<text x='21' y='22' text-anchor='middle' font-family='Segoe UI,sans-serif' font-size='8' font-weight='700' fill='#1B1B1F'>" &
+                                    varDbTotal & "</text>" &
+                                    "<text x='21' y='28' text-anchor='middle' font-family='Segoe UI,sans-serif' font-size='3.4' fill='#8A8A94'>tickets</text>" &
+                                    "</svg>"
+                                )
+                              ImagePosition: =ImagePosition.Fit
+                              Width: =170
+                              Height: =170
+                              LayoutMinWidth: =150
+                              AlignInContainer: =AlignInContainer.Center
+                        - dbDonutLegende:
+                            Control: HtmlViewer@2.1.0
+                            Properties:
+                              HtmlText: |-
+                                ="<div style='font-family:Segoe UI,sans-serif;font-size:13px;color:#1B1B1F'>" &
                                 Concat(
                                     colDbStatut,
-                                    "<table style='width:100%;border-collapse:collapse;margin-top:12px'><tr>" &
-                                    "<td style='color:#424242'>" & Libelle & "</td>" &
-                                    "<td style='text-align:right;font-weight:600;color:#1B1B1F'>" & Nombre & "</td></tr></table>" &
-                                    "<div style='background:#EEF1F5;border-radius:6px;height:10px;margin-top:4px'>" &
-                                    "<div style='width:" & Round(Nombre / m * 100, 0) & "%;min-width:4px;background:" & Couleur &
-                                    ";height:10px;border-radius:6px'></div></div>"
+                                    "<div style='margin:10px 0'><span style='display:inline-block;width:12px;height:12px;border-radius:6px;background:" &
+                                    Couleur & ";margin-right:8px;vertical-align:middle'></span>" & Libelle &
+                                    "<span style='float:right;font-weight:600'>" & Nombre & "  <span style='color:#8A8A94;font-weight:400'>(" &
+                                    Round(Nombre / Max(varDbTotal, 1) * 100, 0) & " %)</span></span></div>"
                                 ) &
-                                If(CountRows(colDbStatut) = 0, "<div style='color:#8A8A94;padding:12px 0'>Aucune donnée</div>", "") &
                                 "</div>"
-                            )
-                          AutoHeight: =false
-                          FillPortions: =1
-                          LayoutMinHeight: =80
-                          AlignInContainer: =AlignInContainer.Stretch
-                          Width: =Parent.Width
-                          Height: =200
-                - dbGraphUrgence:
+                              AutoHeight: =false
+                              FillPortions: =1
+                              LayoutMinHeight: =60
+                              AlignInContainer: =AlignInContainer.Center
+                              Height: =140
+                - dbGraphMois:
                     Control: GroupContainer@1.5.0
                     Variant: AutoLayout
                     Properties:
                       LayoutDirection: =LayoutDirection.Vertical
-                      DropShadow: =DropShadow.Light
+                      DropShadow: =DropShadow.None
                       LayoutMinHeight: =0
-                      LayoutMinWidth: =260
+                      LayoutMinWidth: =0
                       FillPortions: =1
                       AlignInContainer: =AlignInContainer.Stretch
-                      Fill: =ColorValue("#FFFFFF")
-                      BorderColor: =ColorValue("#E6E8EB")
-                      BorderThickness: =1
                       LayoutGap: =6
                       PaddingTop: =16
                       PaddingBottom: =16
                       PaddingLeft: =18
                       PaddingRight: =18
+                      Fill: =ColorValue("#FFFFFF")
+                      BorderColor: =ColorValue("#E6E8EB")
+                      BorderThickness: =1
+                      RadiusTopLeft: =12
+                      RadiusTopRight: =12
+                      RadiusBottomLeft: =12
+                      RadiusBottomRight: =12
+                    Children:
+                    - dbGraphMoisTitre:
+                        Control: Label@2.5.1
+                        Properties:
+                          Text: ="Tickets créés par mois"
+                          Font: =Font.'Segoe UI'
+                          PaddingTop: =0
+                          PaddingBottom: =0
+                          PaddingLeft: =0
+                          PaddingRight: =0
+                          Height: =24
+                          AlignInContainer: =AlignInContainer.Stretch
+                          Size: =14
+                          FontWeight: =FontWeight.Semibold
+                          Color: =ColorValue("#1B1B1F")
+                          VerticalAlign: =VerticalAlign.Middle
+                    - dbMois:
+                        Control: Image@2.2.3
+                        Properties:
+                          Image: |-
+                            =With(
+                                {m: Max(Coalesce(Max(colDbMois, Nombre), 0), 1)},
+                                "data:image/svg+xml;utf8," & EncodeUrl(
+                                    "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 320 170' font-family='Segoe UI,sans-serif'>" &
+                                    "<line x1='10' y1='140' x2='310' y2='140' stroke='#E6E8EB' stroke-width='1'/>" &
+                                    Concat(
+                                        colDbMois,
+                                        With(
+                                            {h: Round(Nombre / m * 105, 0), x: 22 + Idx * 50},
+                                            "<rect x='" & x & "' y='" & (140 - h) & "' width='32' height='" & h & "' rx='6' fill='" &
+                                            If(Idx = 5, "#001E62", "#9DB0D9") & "'/>" &
+                                            "<text x='" & (x + 16) & "' y='" & (133 - h) & "' text-anchor='middle' font-size='12' font-weight='600' fill='#1B1B1F'>" &
+                                            Nombre & "</text>" &
+                                            "<text x='" & (x + 16) & "' y='160' text-anchor='middle' font-size='11' fill='#8A8A94'>" & Libelle & "</text>"
+                                        )
+                                    ) &
+                                    "</svg>"
+                                )
+                            )
+                          ImagePosition: =ImagePosition.Fit
+                          FillPortions: =1
+                          LayoutMinHeight: =120
+                          AlignInContainer: =AlignInContainer.Stretch
+            - dbLigne2:
+                Control: GroupContainer@1.5.0
+                Variant: AutoLayout
+                Properties:
+                  LayoutDirection: =If(App.Width < 700, LayoutDirection.Vertical, LayoutDirection.Horizontal)
+                  DropShadow: =DropShadow.None
+                  LayoutMinHeight: =0
+                  LayoutMinWidth: =0
+                  Height: =If(App.Width < 700, 596, 290)
+                  FillPortions: =0
+                  AlignInContainer: =AlignInContainer.Stretch
+                  LayoutGap: =16
+                Children:
+                - dbGraphUrgence:
+                    Control: GroupContainer@1.5.0
+                    Variant: AutoLayout
+                    Properties:
+                      LayoutDirection: =LayoutDirection.Vertical
+                      DropShadow: =DropShadow.None
+                      LayoutMinHeight: =0
+                      LayoutMinWidth: =0
+                      FillPortions: =1
+                      AlignInContainer: =AlignInContainer.Stretch
+                      LayoutGap: =6
+                      PaddingTop: =16
+                      PaddingBottom: =16
+                      PaddingLeft: =18
+                      PaddingRight: =18
+                      Fill: =ColorValue("#FFFFFF")
+                      BorderColor: =ColorValue("#E6E8EB")
+                      BorderThickness: =1
                       RadiusTopLeft: =12
                       RadiusTopRight: =12
                       RadiusBottomLeft: =12
@@ -727,7 +871,7 @@ Screens:
                           FontWeight: =FontWeight.Semibold
                           Color: =ColorValue("#1B1B1F")
                           VerticalAlign: =VerticalAlign.Middle
-                    - dbGraphUrgenceBarres:
+                    - dbUrgenceBarres:
                         Control: HtmlViewer@2.1.0
                         Properties:
                           HtmlText: |-
@@ -748,40 +892,26 @@ Screens:
                             )
                           AutoHeight: =false
                           FillPortions: =1
-                          LayoutMinHeight: =80
+                          LayoutMinHeight: =60
                           AlignInContainer: =AlignInContainer.Stretch
-                          Width: =Parent.Width
-                          Height: =200
-            - dbLigne2:
-                Control: GroupContainer@1.5.0
-                Variant: AutoLayout
-                Properties:
-                  LayoutDirection: =LayoutDirection.Horizontal
-                  DropShadow: =DropShadow.None
-                  LayoutMinHeight: =0
-                  LayoutMinWidth: =0
-                  FillPortions: =1
-                  AlignInContainer: =AlignInContainer.Stretch
-                  LayoutGap: =16
-                Children:
                 - dbGraphSecteur:
                     Control: GroupContainer@1.5.0
                     Variant: AutoLayout
                     Properties:
                       LayoutDirection: =LayoutDirection.Vertical
-                      DropShadow: =DropShadow.Light
+                      DropShadow: =DropShadow.None
                       LayoutMinHeight: =0
-                      LayoutMinWidth: =260
+                      LayoutMinWidth: =0
                       FillPortions: =1
                       AlignInContainer: =AlignInContainer.Stretch
-                      Fill: =ColorValue("#FFFFFF")
-                      BorderColor: =ColorValue("#E6E8EB")
-                      BorderThickness: =1
                       LayoutGap: =6
                       PaddingTop: =16
                       PaddingBottom: =16
                       PaddingLeft: =18
                       PaddingRight: =18
+                      Fill: =ColorValue("#FFFFFF")
+                      BorderColor: =ColorValue("#E6E8EB")
+                      BorderThickness: =1
                       RadiusTopLeft: =12
                       RadiusTopRight: =12
                       RadiusBottomLeft: =12
@@ -802,7 +932,7 @@ Screens:
                           FontWeight: =FontWeight.Semibold
                           Color: =ColorValue("#1B1B1F")
                           VerticalAlign: =VerticalAlign.Middle
-                    - dbGraphSecteurBarres:
+                    - dbSecteurBarres:
                         Control: HtmlViewer@2.1.0
                         Properties:
                           HtmlText: |-
@@ -823,28 +953,39 @@ Screens:
                             )
                           AutoHeight: =false
                           FillPortions: =1
-                          LayoutMinHeight: =80
+                          LayoutMinHeight: =60
                           AlignInContainer: =AlignInContainer.Stretch
-                          Width: =Parent.Width
-                          Height: =200
+            - dbLigne3:
+                Control: GroupContainer@1.5.0
+                Variant: AutoLayout
+                Properties:
+                  LayoutDirection: =If(App.Width < 700, LayoutDirection.Vertical, LayoutDirection.Horizontal)
+                  DropShadow: =DropShadow.None
+                  LayoutMinHeight: =0
+                  LayoutMinWidth: =0
+                  Height: =If(App.Width < 700, 596, 290)
+                  FillPortions: =0
+                  AlignInContainer: =AlignInContainer.Stretch
+                  LayoutGap: =16
+                Children:
                 - dbGraphEquipement:
                     Control: GroupContainer@1.5.0
                     Variant: AutoLayout
                     Properties:
                       LayoutDirection: =LayoutDirection.Vertical
-                      DropShadow: =DropShadow.Light
+                      DropShadow: =DropShadow.None
                       LayoutMinHeight: =0
-                      LayoutMinWidth: =260
+                      LayoutMinWidth: =0
                       FillPortions: =1
                       AlignInContainer: =AlignInContainer.Stretch
-                      Fill: =ColorValue("#FFFFFF")
-                      BorderColor: =ColorValue("#E6E8EB")
-                      BorderThickness: =1
                       LayoutGap: =6
                       PaddingTop: =16
                       PaddingBottom: =16
                       PaddingLeft: =18
                       PaddingRight: =18
+                      Fill: =ColorValue("#FFFFFF")
+                      BorderColor: =ColorValue("#E6E8EB")
+                      BorderThickness: =1
                       RadiusTopLeft: =12
                       RadiusTopRight: =12
                       RadiusBottomLeft: =12
@@ -865,7 +1006,7 @@ Screens:
                           FontWeight: =FontWeight.Semibold
                           Color: =ColorValue("#1B1B1F")
                           VerticalAlign: =VerticalAlign.Middle
-                    - dbGraphEquipementBarres:
+                    - dbEquipementBarres:
                         Control: HtmlViewer@2.1.0
                         Properties:
                           HtmlText: |-
@@ -886,7 +1027,64 @@ Screens:
                             )
                           AutoHeight: =false
                           FillPortions: =1
-                          LayoutMinHeight: =80
+                          LayoutMinHeight: =60
                           AlignInContainer: =AlignInContainer.Stretch
-                          Width: =Parent.Width
-                          Height: =200
+                - dbGraphUrgents:
+                    Control: GroupContainer@1.5.0
+                    Variant: AutoLayout
+                    Properties:
+                      LayoutDirection: =LayoutDirection.Vertical
+                      DropShadow: =DropShadow.None
+                      LayoutMinHeight: =0
+                      LayoutMinWidth: =0
+                      FillPortions: =1
+                      AlignInContainer: =AlignInContainer.Stretch
+                      LayoutGap: =6
+                      PaddingTop: =16
+                      PaddingBottom: =16
+                      PaddingLeft: =18
+                      PaddingRight: =18
+                      Fill: =ColorValue("#FFFFFF")
+                      BorderColor: =ColorValue("#E6E8EB")
+                      BorderThickness: =1
+                      RadiusTopLeft: =12
+                      RadiusTopRight: =12
+                      RadiusBottomLeft: =12
+                      RadiusBottomRight: =12
+                    Children:
+                    - dbGraphUrgentsTitre:
+                        Control: Label@2.5.1
+                        Properties:
+                          Text: ="🚨 Urgences à traiter"
+                          Font: =Font.'Segoe UI'
+                          PaddingTop: =0
+                          PaddingBottom: =0
+                          PaddingLeft: =0
+                          PaddingRight: =0
+                          Height: =24
+                          AlignInContainer: =AlignInContainer.Stretch
+                          Size: =14
+                          FontWeight: =FontWeight.Semibold
+                          Color: =ColorValue("#1B1B1F")
+                          VerticalAlign: =VerticalAlign.Middle
+                    - dbUrgentsListe:
+                        Control: HtmlViewer@2.1.0
+                        Properties:
+                          HtmlText: |-
+                            =With(
+                                {u: FirstN(SortByColumns(Filter(colDbTickets, StartsWith('Statut Urgence'.Value, "High") && 'Ticket clôturer'.Value <> "Oui"), "Created", SortOrder.Descending), 6)},
+                                "<div style='font-family:Segoe UI,sans-serif;font-size:12px;color:#1B1B1F'>" &
+                                Concat(
+                                    u,
+                                    "<div style='padding:8px 10px;margin-top:8px;background:#FDF3F4;border-left:4px solid #D13438;border-radius:6px'>" &
+                                    "<b>#" & ID & "</b>  ·  " & Substitute(Coalesce(Title, Description, "Ticket sans titre"), "<", "&lt;") &
+                                    "<br><span style='color:#8A8A94'>" & Coalesce('Intervention sur équipement'.Value, "—") & "  ·  " &
+                                    Coalesce('Secteur demandeur'.Value, "—") & "  ·  " & Text(Created, "dd/mm/yyyy") & "</span></div>"
+                                ) &
+                                If(CountRows(u) = 0, "<div style='color:#107C10;padding:12px 0'>✅ Aucun ticket urgent en attente</div>", "") &
+                                "</div>"
+                            )
+                          AutoHeight: =false
+                          FillPortions: =1
+                          LayoutMinHeight: =60
+                          AlignInContainer: =AlignInContainer.Stretch

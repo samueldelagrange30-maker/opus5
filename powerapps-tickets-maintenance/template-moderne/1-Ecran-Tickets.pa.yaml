@@ -2,7 +2,9 @@ Screens:
   scrTickets:
     Properties:
       Fill: =ColorValue("#F5F6F8")
-      OnVisible: =Refresh('Ticket dépannage')
+      OnVisible: |-
+        =Refresh('Ticket dépannage');
+        ClearCollect(colTkTous, 'Ticket dépannage')
     Children:
     - tkRacine:
         Control: GroupContainer@1.5.0
@@ -28,13 +30,13 @@ Screens:
               LayoutMinHeight: =0
               LayoutMinWidth: =0
               Fill: =ColorValue("#FFFFFF")
-              Height: =64
+              Height: =If(App.Width < 700, 56, 64)
               FillPortions: =0
               AlignInContainer: =AlignInContainer.Stretch
               LayoutAlignItems: =LayoutAlignItems.Center
-              LayoutGap: =8
-              PaddingLeft: =24
-              PaddingRight: =24
+              LayoutGap: =If(App.Width < 700, 4, 8)
+              PaddingLeft: =If(App.Width < 700, 10, 24)
+              PaddingRight: =If(App.Width < 700, 10, 24)
             Children:
             - tkLogo:
                 Control: Label@2.5.1
@@ -45,10 +47,10 @@ Screens:
                   PaddingBottom: =0
                   PaddingLeft: =0
                   PaddingRight: =0
-                  Width: =82
+                  Width: =If(App.Width < 700, 62, 82)
                   Height: =40
-                  LayoutMinWidth: =82
-                  Size: =20
+                  LayoutMinWidth: =If(App.Width < 700, 62, 82)
+                  Size: =If(App.Width < 700, 16, 20)
                   FontWeight: =FontWeight.Bold
                   Italic: =true
                   Color: =ColorValue("#001E62")
@@ -69,6 +71,7 @@ Screens:
                   FontWeight: =FontWeight.Semibold
                   Color: =ColorValue("#1B1B1F")
                   VerticalAlign: =VerticalAlign.Middle
+                  Visible: =App.Width >= 700
             - tkEspace:
                 Control: GroupContainer@1.5.0
                 Variant: AutoLayout
@@ -82,11 +85,11 @@ Screens:
             - tkNav1:
                 Control: Classic/Button@2.2.0
                 Properties:
-                  Text: ="Tickets"
-                  Width: =110
+                  Text: =If(App.Width < 700, "Tickets", "Tickets")
+                  Width: =If(App.Width < 700, 70, 110)
                   Height: =36
-                  LayoutMinWidth: =110
-                  Size: =12
+                  LayoutMinWidth: =If(App.Width < 700, 70, 110)
+                  Size: =If(App.Width < 700, 11, 12)
                   FontWeight: =FontWeight.Semibold
                   Fill: =ColorValue("#E8EDF7")
                   Color: =ColorValue("#001E62")
@@ -106,11 +109,11 @@ Screens:
             - tkNav2:
                 Control: Classic/Button@2.2.0
                 Properties:
-                  Text: ="Nouveau ticket"
-                  Width: =140
+                  Text: =If(App.Width < 700, "+ Nouveau", "Nouveau ticket")
+                  Width: =If(App.Width < 700, 92, 140)
                   Height: =36
-                  LayoutMinWidth: =140
-                  Size: =12
+                  LayoutMinWidth: =If(App.Width < 700, 92, 140)
+                  Size: =If(App.Width < 700, 11, 12)
                   FontWeight: =FontWeight.Semibold
                   Fill: =RGBA(0, 0, 0, 0)
                   Color: =ColorValue("#5C5C66")
@@ -132,11 +135,11 @@ Screens:
             - tkNav3:
                 Control: Classic/Button@2.2.0
                 Properties:
-                  Text: ="Tableau de bord"
-                  Width: =150
+                  Text: =If(App.Width < 700, "Stats", "Tableau de bord")
+                  Width: =If(App.Width < 700, 60, 150)
                   Height: =36
-                  LayoutMinWidth: =150
-                  Size: =12
+                  LayoutMinWidth: =If(App.Width < 700, 60, 150)
+                  Size: =If(App.Width < 700, 11, 12)
                   FontWeight: =FontWeight.Semibold
                   Fill: =RGBA(0, 0, 0, 0)
                   Color: =ColorValue("#5C5C66")
@@ -169,6 +172,7 @@ Screens:
                   Color: =ColorValue("#5C5C66")
                   Align: =Align.Right
                   VerticalAlign: =VerticalAlign.Middle
+                  Visible: =App.Width >= 900
         - tkSeparateur:
             Control: Rectangle@2.3.0
             Properties:
@@ -187,10 +191,10 @@ Screens:
               AlignInContainer: =AlignInContainer.Stretch
               Fill: =ColorValue("#F5F6F8")
               LayoutGap: =16
-              PaddingTop: =20
-              PaddingBottom: =20
-              PaddingLeft: =24
-              PaddingRight: =24
+              PaddingTop: =If(App.Width < 700, 10, 20)
+              PaddingBottom: =If(App.Width < 700, 10, 20)
+              PaddingLeft: =If(App.Width < 700, 10, 24)
+              PaddingRight: =If(App.Width < 700, 10, 24)
             Children:
             - tkColonneListe:
                 Control: GroupContainer@1.5.0
@@ -199,10 +203,11 @@ Screens:
                   LayoutDirection: =LayoutDirection.Vertical
                   DropShadow: =DropShadow.None
                   LayoutMinHeight: =0
-                  LayoutMinWidth: =360
+                  LayoutMinWidth: =If(App.Width < 700, 0, 360)
                   FillPortions: =3
                   AlignInContainer: =AlignInContainer.Stretch
-                  LayoutGap: =14
+                  LayoutGap: =If(App.Width < 700, 10, 14)
+                  Visible: =!(App.Width < 700 && varDetail)
                 Children:
                 - tkKpis:
                     Control: GroupContainer@1.5.0
@@ -212,18 +217,20 @@ Screens:
                       DropShadow: =DropShadow.None
                       LayoutMinHeight: =0
                       LayoutMinWidth: =0
-                      Height: =92
+                      Height: =84
                       FillPortions: =0
                       AlignInContainer: =AlignInContainer.Stretch
-                      LayoutGap: =12
+                      LayoutGap: =If(App.Width < 700, 8, 12)
+                      LayoutOverflowX: =LayoutOverflow.Scroll
                     Children:
                     - tkKpiTotal:
                         Control: GroupContainer@1.5.0
                         Variant: ManualLayout
                         Properties:
-                          DropShadow: =DropShadow.Light
-                          FillPortions: =1
-                          LayoutMinWidth: =130
+                          DropShadow: =DropShadow.None
+                          FillPortions: =If(App.Width < 700, 0, 1)
+                          Width: =150
+                          LayoutMinWidth: =If(App.Width < 700, 150, 130)
                           AlignInContainer: =AlignInContainer.Stretch
                           Fill: =If(IsBlank(varKpi), ColorFade(ColorValue("#001E62"), 0.93), ColorValue("#FFFFFF"))
                           BorderColor: =If(IsBlank(varKpi), ColorValue("#001E62"), ColorValue("#E6E8EB"))
@@ -238,15 +245,15 @@ Screens:
                             Variant: ManualLayout
                             Properties:
                               DropShadow: =DropShadow.None
-                              X: =16
-                              Y: =(Parent.Height - 44) / 2
-                              Width: =44
-                              Height: =44
+                              X: =14
+                              Y: =(Parent.Height - 40) / 2
+                              Width: =40
+                              Height: =40
                               Fill: =ColorFade(ColorValue("#001E62"), 0.85)
-                              RadiusTopLeft: =22
-                              RadiusTopRight: =22
-                              RadiusBottomLeft: =22
-                              RadiusBottomRight: =22
+                              RadiusTopLeft: =20
+                              RadiusTopRight: =20
+                              RadiusBottomLeft: =20
+                              RadiusBottomRight: =20
                             Children:
                             - tkKpiTotalEmoji:
                                 Control: Label@2.5.1
@@ -259,40 +266,40 @@ Screens:
                                   PaddingRight: =0
                                   X: =0
                                   Y: =0
-                                  Width: =44
-                                  Height: =44
-                                  Size: =18
+                                  Width: =40
+                                  Height: =40
+                                  Size: =16
                                   Align: =Align.Center
                                   VerticalAlign: =VerticalAlign.Middle
                         - tkKpiTotalValeur:
                             Control: Label@2.5.1
                             Properties:
-                              Text: =CountRows('Ticket dépannage')
+                              Text: =CountRows(colTkTous)
                               Font: =Font.'Segoe UI'
                               PaddingTop: =0
                               PaddingBottom: =0
                               PaddingLeft: =0
                               PaddingRight: =0
-                              X: =72
-                              Y: =Parent.Height / 2 - 28
-                              Width: =Parent.Width - 84
-                              Height: =32
-                              Size: =22
+                              X: =64
+                              Y: =Parent.Height / 2 - 26
+                              Width: =Parent.Width - 72
+                              Height: =30
+                              Size: =20
                               FontWeight: =FontWeight.Bold
                               Color: =ColorValue("#001E62")
                               VerticalAlign: =VerticalAlign.Middle
                         - tkKpiTotalTitre:
                             Control: Label@2.5.1
                             Properties:
-                              Text: ="Tous les tickets"
+                              Text: ="Tous"
                               Font: =Font.'Segoe UI'
                               PaddingTop: =0
                               PaddingBottom: =0
                               PaddingLeft: =0
                               PaddingRight: =0
-                              X: =72
+                              X: =64
                               Y: =Parent.Height / 2 + 4
-                              Width: =Parent.Width - 84
+                              Width: =Parent.Width - 72
                               Height: =20
                               Size: =12
                               FontWeight: =FontWeight.Semibold
@@ -326,9 +333,10 @@ Screens:
                         Control: GroupContainer@1.5.0
                         Variant: ManualLayout
                         Properties:
-                          DropShadow: =DropShadow.Light
-                          FillPortions: =1
-                          LayoutMinWidth: =130
+                          DropShadow: =DropShadow.None
+                          FillPortions: =If(App.Width < 700, 0, 1)
+                          Width: =150
+                          LayoutMinWidth: =If(App.Width < 700, 150, 130)
                           AlignInContainer: =AlignInContainer.Stretch
                           Fill: =If(varKpi = "Non", ColorFade(ColorValue("#0F6CBD"), 0.93), ColorValue("#FFFFFF"))
                           BorderColor: =If(varKpi = "Non", ColorValue("#0F6CBD"), ColorValue("#E6E8EB"))
@@ -343,15 +351,15 @@ Screens:
                             Variant: ManualLayout
                             Properties:
                               DropShadow: =DropShadow.None
-                              X: =16
-                              Y: =(Parent.Height - 44) / 2
-                              Width: =44
-                              Height: =44
+                              X: =14
+                              Y: =(Parent.Height - 40) / 2
+                              Width: =40
+                              Height: =40
                               Fill: =ColorFade(ColorValue("#0F6CBD"), 0.85)
-                              RadiusTopLeft: =22
-                              RadiusTopRight: =22
-                              RadiusBottomLeft: =22
-                              RadiusBottomRight: =22
+                              RadiusTopLeft: =20
+                              RadiusTopRight: =20
+                              RadiusBottomLeft: =20
+                              RadiusBottomRight: =20
                             Children:
                             - tkKpiOuvertsEmoji:
                                 Control: Label@2.5.1
@@ -364,25 +372,25 @@ Screens:
                                   PaddingRight: =0
                                   X: =0
                                   Y: =0
-                                  Width: =44
-                                  Height: =44
-                                  Size: =18
+                                  Width: =40
+                                  Height: =40
+                                  Size: =16
                                   Align: =Align.Center
                                   VerticalAlign: =VerticalAlign.Middle
                         - tkKpiOuvertsValeur:
                             Control: Label@2.5.1
                             Properties:
-                              Text: =CountRows(Filter('Ticket dépannage', 'Ticket clôturer'.Value = "Non"))
+                              Text: =CountRows(Filter(colTkTous, 'Ticket clôturer'.Value = "Non"))
                               Font: =Font.'Segoe UI'
                               PaddingTop: =0
                               PaddingBottom: =0
                               PaddingLeft: =0
                               PaddingRight: =0
-                              X: =72
-                              Y: =Parent.Height / 2 - 28
-                              Width: =Parent.Width - 84
-                              Height: =32
-                              Size: =22
+                              X: =64
+                              Y: =Parent.Height / 2 - 26
+                              Width: =Parent.Width - 72
+                              Height: =30
+                              Size: =20
                               FontWeight: =FontWeight.Bold
                               Color: =ColorValue("#0F6CBD")
                               VerticalAlign: =VerticalAlign.Middle
@@ -395,9 +403,9 @@ Screens:
                               PaddingBottom: =0
                               PaddingLeft: =0
                               PaddingRight: =0
-                              X: =72
+                              X: =64
                               Y: =Parent.Height / 2 + 4
-                              Width: =Parent.Width - 84
+                              Width: =Parent.Width - 72
                               Height: =20
                               Size: =12
                               FontWeight: =FontWeight.Semibold
@@ -431,9 +439,10 @@ Screens:
                         Control: GroupContainer@1.5.0
                         Variant: ManualLayout
                         Properties:
-                          DropShadow: =DropShadow.Light
-                          FillPortions: =1
-                          LayoutMinWidth: =130
+                          DropShadow: =DropShadow.None
+                          FillPortions: =If(App.Width < 700, 0, 1)
+                          Width: =150
+                          LayoutMinWidth: =If(App.Width < 700, 150, 130)
                           AlignInContainer: =AlignInContainer.Stretch
                           Fill: =If(varKpi = "En cours", ColorFade(ColorValue("#B97A00"), 0.93), ColorValue("#FFFFFF"))
                           BorderColor: =If(varKpi = "En cours", ColorValue("#B97A00"), ColorValue("#E6E8EB"))
@@ -448,15 +457,15 @@ Screens:
                             Variant: ManualLayout
                             Properties:
                               DropShadow: =DropShadow.None
-                              X: =16
-                              Y: =(Parent.Height - 44) / 2
-                              Width: =44
-                              Height: =44
+                              X: =14
+                              Y: =(Parent.Height - 40) / 2
+                              Width: =40
+                              Height: =40
                               Fill: =ColorFade(ColorValue("#B97A00"), 0.85)
-                              RadiusTopLeft: =22
-                              RadiusTopRight: =22
-                              RadiusBottomLeft: =22
-                              RadiusBottomRight: =22
+                              RadiusTopLeft: =20
+                              RadiusTopRight: =20
+                              RadiusBottomLeft: =20
+                              RadiusBottomRight: =20
                             Children:
                             - tkKpiEnCoursEmoji:
                                 Control: Label@2.5.1
@@ -469,25 +478,25 @@ Screens:
                                   PaddingRight: =0
                                   X: =0
                                   Y: =0
-                                  Width: =44
-                                  Height: =44
-                                  Size: =18
+                                  Width: =40
+                                  Height: =40
+                                  Size: =16
                                   Align: =Align.Center
                                   VerticalAlign: =VerticalAlign.Middle
                         - tkKpiEnCoursValeur:
                             Control: Label@2.5.1
                             Properties:
-                              Text: =CountRows(Filter('Ticket dépannage', 'Ticket clôturer'.Value = "En cours"))
+                              Text: =CountRows(Filter(colTkTous, 'Ticket clôturer'.Value = "En cours"))
                               Font: =Font.'Segoe UI'
                               PaddingTop: =0
                               PaddingBottom: =0
                               PaddingLeft: =0
                               PaddingRight: =0
-                              X: =72
-                              Y: =Parent.Height / 2 - 28
-                              Width: =Parent.Width - 84
-                              Height: =32
-                              Size: =22
+                              X: =64
+                              Y: =Parent.Height / 2 - 26
+                              Width: =Parent.Width - 72
+                              Height: =30
+                              Size: =20
                               FontWeight: =FontWeight.Bold
                               Color: =ColorValue("#B97A00")
                               VerticalAlign: =VerticalAlign.Middle
@@ -500,9 +509,9 @@ Screens:
                               PaddingBottom: =0
                               PaddingLeft: =0
                               PaddingRight: =0
-                              X: =72
+                              X: =64
                               Y: =Parent.Height / 2 + 4
-                              Width: =Parent.Width - 84
+                              Width: =Parent.Width - 72
                               Height: =20
                               Size: =12
                               FontWeight: =FontWeight.Semibold
@@ -536,9 +545,10 @@ Screens:
                         Control: GroupContainer@1.5.0
                         Variant: ManualLayout
                         Properties:
-                          DropShadow: =DropShadow.Light
-                          FillPortions: =1
-                          LayoutMinWidth: =130
+                          DropShadow: =DropShadow.None
+                          FillPortions: =If(App.Width < 700, 0, 1)
+                          Width: =150
+                          LayoutMinWidth: =If(App.Width < 700, 150, 130)
                           AlignInContainer: =AlignInContainer.Stretch
                           Fill: =If(varKpi = "Oui", ColorFade(ColorValue("#107C10"), 0.93), ColorValue("#FFFFFF"))
                           BorderColor: =If(varKpi = "Oui", ColorValue("#107C10"), ColorValue("#E6E8EB"))
@@ -553,15 +563,15 @@ Screens:
                             Variant: ManualLayout
                             Properties:
                               DropShadow: =DropShadow.None
-                              X: =16
-                              Y: =(Parent.Height - 44) / 2
-                              Width: =44
-                              Height: =44
+                              X: =14
+                              Y: =(Parent.Height - 40) / 2
+                              Width: =40
+                              Height: =40
                               Fill: =ColorFade(ColorValue("#107C10"), 0.85)
-                              RadiusTopLeft: =22
-                              RadiusTopRight: =22
-                              RadiusBottomLeft: =22
-                              RadiusBottomRight: =22
+                              RadiusTopLeft: =20
+                              RadiusTopRight: =20
+                              RadiusBottomLeft: =20
+                              RadiusBottomRight: =20
                             Children:
                             - tkKpiCloturesEmoji:
                                 Control: Label@2.5.1
@@ -574,25 +584,25 @@ Screens:
                                   PaddingRight: =0
                                   X: =0
                                   Y: =0
-                                  Width: =44
-                                  Height: =44
-                                  Size: =18
+                                  Width: =40
+                                  Height: =40
+                                  Size: =16
                                   Align: =Align.Center
                                   VerticalAlign: =VerticalAlign.Middle
                         - tkKpiCloturesValeur:
                             Control: Label@2.5.1
                             Properties:
-                              Text: =CountRows(Filter('Ticket dépannage', 'Ticket clôturer'.Value = "Oui"))
+                              Text: =CountRows(Filter(colTkTous, 'Ticket clôturer'.Value = "Oui"))
                               Font: =Font.'Segoe UI'
                               PaddingTop: =0
                               PaddingBottom: =0
                               PaddingLeft: =0
                               PaddingRight: =0
-                              X: =72
-                              Y: =Parent.Height / 2 - 28
-                              Width: =Parent.Width - 84
-                              Height: =32
-                              Size: =22
+                              X: =64
+                              Y: =Parent.Height / 2 - 26
+                              Width: =Parent.Width - 72
+                              Height: =30
+                              Size: =20
                               FontWeight: =FontWeight.Bold
                               Color: =ColorValue("#107C10")
                               VerticalAlign: =VerticalAlign.Middle
@@ -605,9 +615,9 @@ Screens:
                               PaddingBottom: =0
                               PaddingLeft: =0
                               PaddingRight: =0
-                              X: =72
+                              X: =64
                               Y: =Parent.Height / 2 + 4
-                              Width: =Parent.Width - 84
+                              Width: =Parent.Width - 72
                               Height: =20
                               Size: =12
                               FontWeight: =FontWeight.Semibold
@@ -641,18 +651,20 @@ Screens:
                     Control: GroupContainer@1.5.0
                     Variant: AutoLayout
                     Properties:
-                      LayoutDirection: =LayoutDirection.Horizontal
+                      LayoutDirection: =If(App.Width < 700, LayoutDirection.Vertical, LayoutDirection.Horizontal)
                       DropShadow: =DropShadow.None
                       LayoutMinHeight: =0
                       LayoutMinWidth: =0
-                      Fill: =ColorValue("#FFFFFF")
-                      Height: =58
+                      Height: =If(App.Width < 700, 190, 58)
                       FillPortions: =0
                       AlignInContainer: =AlignInContainer.Stretch
                       LayoutAlignItems: =LayoutAlignItems.Center
-                      LayoutGap: =10
+                      LayoutGap: =If(App.Width < 700, 8, 10)
                       PaddingLeft: =12
                       PaddingRight: =12
+                      PaddingTop: =If(App.Width < 700, 10, 0)
+                      PaddingBottom: =If(App.Width < 700, 10, 0)
+                      Fill: =ColorValue("#FFFFFF")
                       BorderColor: =ColorValue("#E6E8EB")
                       BorderThickness: =1
                       RadiusTopLeft: =12
@@ -667,9 +679,10 @@ Screens:
                           HintText: ="🔍  Rechercher un ticket, un équipement, un n°…"
                           DelayOutput: =true
                           Height: =36
-                          FillPortions: =1
+                          FillPortions: =If(App.Width < 700, 0, 1)
                           LayoutMinWidth: =160
                           Size: =12
+                          AlignInContainer: =If(App.Width < 700, AlignInContainer.Stretch, AlignInContainer.Center)
                           Fill: =ColorValue("#F7F8FA")
                           Color: =ColorValue("#1B1B1F")
                           BorderColor: =ColorValue("#E6E8EB")
@@ -693,6 +706,7 @@ Screens:
                           Height: =36
                           Size: =12
                           LayoutMinWidth: =150
+                          AlignInContainer: =If(App.Width < 700, AlignInContainer.Stretch, AlignInContainer.Center)
                     - tkFiltreSecteur:
                         Control: ModernCombobox@1.1.1
                         Properties:
@@ -705,6 +719,7 @@ Screens:
                           Height: =36
                           Size: =12
                           LayoutMinWidth: =140
+                          AlignInContainer: =If(App.Width < 700, AlignInContainer.Stretch, AlignInContainer.Center)
                     - tkReinitialiser:
                         Control: Classic/Button@2.2.0
                         Properties:
@@ -732,6 +747,7 @@ Screens:
                           HoverColor: =ColorValue("#001E62")
                           HoverBorderColor: =ColorValue("#001E62")
                           PressedFill: =ColorValue("#E8EDF7")
+                          AlignInContainer: =If(App.Width < 700, AlignInContainer.Stretch, AlignInContainer.Center)
                 - tkAucunTicket:
                     Control: Label@2.5.1
                     Properties:
@@ -771,21 +787,19 @@ Screens:
                             "Created",
                             SortOrder.Descending
                         )
-                      TemplateSize: =122
+                      TemplateSize: =118
                       TemplatePadding: =0
                       ShowScrollbar: =true
                       FillPortions: =1
                       LayoutMinHeight: =0
                       AlignInContainer: =AlignInContainer.Stretch
-                      Width: =Parent.Width
-                      Height: =Parent.Height
                       LoadingSpinner: =LoadingSpinner.Data
                     Children:
                     - tkCarte:
                         Control: GroupContainer@1.5.0
                         Variant: ManualLayout
                         Properties:
-                          DropShadow: =DropShadow.Light
+                          DropShadow: =DropShadow.None
                           X: =0
                           Y: =0
                           Width: =Parent.TemplateWidth - 12
@@ -815,9 +829,9 @@ Screens:
                               PaddingBottom: =0
                               PaddingLeft: =0
                               PaddingRight: =0
-                              X: =20
+                              X: =18
                               Y: =12
-                              Width: =Parent.Width - 170
+                              Width: =If(App.Width < 700, Parent.Width - 130, Parent.Width - 170)
                               Height: =18
                               Size: =11
                               Color: =ColorValue("#8A8A94")
@@ -825,32 +839,32 @@ Screens:
                         - tkCarteTitre:
                             Control: Label@2.5.1
                             Properties:
-                              Text: =ThisItem.Title
+                              Text: =Coalesce(ThisItem.Title, ThisItem.Description, "Ticket sans titre")
                               Font: =Font.'Segoe UI'
                               PaddingTop: =0
                               PaddingBottom: =0
                               PaddingLeft: =0
                               PaddingRight: =0
-                              X: =20
+                              X: =18
                               Y: =32
-                              Width: =Parent.Width - 170
+                              Width: =If(App.Width < 700, Parent.Width - 130, Parent.Width - 170)
                               Height: =26
-                              Size: =15
+                              Size: =If(App.Width < 700, 14, 15)
                               FontWeight: =FontWeight.Semibold
                               Color: =ColorValue("#1B1B1F")
                               Wrap: =false
                         - tkCarteInfos:
                             Control: Label@2.5.1
                             Properties:
-                              Text: =Coalesce(ThisItem.'Secteur demandeur'.Value, "—") & "  ·  " & Coalesce(ThisItem.'Intervention sur équipement'.Value, "—") & "  ·  " & Coalesce(ThisItem.'Dans quelle cellule devons nous intervenir ?'.Value, "—")
+                              Text: =Coalesce(ThisItem.'Secteur demandeur'.Value, "—") & "  ·  " & Coalesce(ThisItem.'Intervention sur équipement'.Value, "—")
                               Font: =Font.'Segoe UI'
                               PaddingTop: =0
                               PaddingBottom: =0
                               PaddingLeft: =0
                               PaddingRight: =0
-                              X: =20
+                              X: =18
                               Y: =60
-                              Width: =Parent.Width - 170
+                              Width: =If(App.Width < 700, Parent.Width - 130, Parent.Width - 170)
                               Height: =20
                               Size: =12
                               Color: =ColorValue("#5C5C66")
@@ -858,15 +872,15 @@ Screens:
                         - tkCarteAuteur:
                             Control: Label@2.5.1
                             Properties:
-                              Text: ="Par " & ThisItem.Author.DisplayName & If(IsBlank(ThisItem.'Prise en charge'.DisplayName), "", "  ·  Pris en charge par " & ThisItem.'Prise en charge'.DisplayName)
+                              Text: ="Par " & ThisItem.Author.DisplayName
                               Font: =Font.'Segoe UI'
                               PaddingTop: =0
                               PaddingBottom: =0
                               PaddingLeft: =0
                               PaddingRight: =0
-                              X: =20
+                              X: =18
                               Y: =82
-                              Width: =Parent.Width - 170
+                              Width: =If(App.Width < 700, Parent.Width - 130, Parent.Width - 170)
                               Height: =18
                               Size: =11
                               Color: =ColorValue("#8A8A94")
@@ -876,15 +890,15 @@ Screens:
                             Variant: ManualLayout
                             Properties:
                               DropShadow: =DropShadow.None
-                              Width: =128
+                              Width: =If(App.Width < 700, 104, 128)
                               Height: =26
-                              LayoutMinWidth: =128
+                              LayoutMinWidth: =If(App.Width < 700, 104, 128)
                               Fill: =ColorValue(Switch(ThisItem.'Ticket clôturer'.Value, "Oui", "#DFF6DD", "En cours", "#FFF4CE", "#E5F0FB"))
                               RadiusTopLeft: =13
                               RadiusTopRight: =13
                               RadiusBottomLeft: =13
                               RadiusBottomRight: =13
-                              X: =Parent.Width - 144
+                              X: =If(App.Width < 700, Parent.Width - 114, Parent.Width - 144)
                               Y: =14
                             Children:
                             - tkCarteStatutTxt:
@@ -910,15 +924,15 @@ Screens:
                             Variant: ManualLayout
                             Properties:
                               DropShadow: =DropShadow.None
-                              Width: =128
+                              Width: =If(App.Width < 700, 104, 128)
                               Height: =26
-                              LayoutMinWidth: =128
+                              LayoutMinWidth: =If(App.Width < 700, 104, 128)
                               Fill: =ColorValue(Switch(First(Split(Coalesce(ThisItem.'Statut Urgence'.Value, ""), " ")).Value, "High", "#FDE7E9", "Medium", "#FFF4CE", "Low", "#DFF6DD", "#F0F0F3"))
                               RadiusTopLeft: =13
                               RadiusTopRight: =13
                               RadiusBottomLeft: =13
                               RadiusBottomRight: =13
-                              X: =Parent.Width - 144
+                              X: =If(App.Width < 700, Parent.Width - 114, Parent.Width - 144)
                               Y: =48
                             Children:
                             - tkCarteUrgenceTxt:
@@ -969,20 +983,20 @@ Screens:
                 Variant: AutoLayout
                 Properties:
                   LayoutDirection: =LayoutDirection.Vertical
-                  DropShadow: =DropShadow.Light
+                  DropShadow: =DropShadow.None
                   LayoutMinHeight: =0
-                  LayoutMinWidth: =340
+                  LayoutMinWidth: =If(App.Width < 700, 0, 340)
                   FillPortions: =2
                   AlignInContainer: =AlignInContainer.Stretch
                   Visible: =varDetail
+                  LayoutGap: =12
+                  PaddingTop: =If(App.Width < 700, 14, 20)
+                  PaddingBottom: =If(App.Width < 700, 14, 20)
+                  PaddingLeft: =If(App.Width < 700, 14, 20)
+                  PaddingRight: =If(App.Width < 700, 14, 20)
                   Fill: =ColorValue("#FFFFFF")
                   BorderColor: =ColorValue("#E6E8EB")
                   BorderThickness: =1
-                  PaddingTop: =20
-                  PaddingBottom: =20
-                  PaddingLeft: =20
-                  PaddingRight: =20
-                  LayoutGap: =12
                   RadiusTopLeft: =12
                   RadiusTopRight: =12
                   RadiusBottomLeft: =12
@@ -1042,7 +1056,7 @@ Screens:
                 - tkDetailTitre:
                     Control: Label@2.5.1
                     Properties:
-                      Text: =varTicket.Title
+                      Text: =Coalesce(varTicket.Title, varTicket.Description, "Ticket sans titre")
                       Font: =Font.'Segoe UI'
                       PaddingTop: =0
                       PaddingBottom: =0
@@ -1050,7 +1064,7 @@ Screens:
                       PaddingRight: =0
                       Height: =54
                       AlignInContainer: =AlignInContainer.Stretch
-                      Size: =18
+                      Size: =If(App.Width < 700, 16, 18)
                       FontWeight: =FontWeight.Bold
                       Color: =ColorValue("#1B1B1F")
                       VerticalAlign: =VerticalAlign.Top
@@ -1072,9 +1086,9 @@ Screens:
                         Variant: ManualLayout
                         Properties:
                           DropShadow: =DropShadow.None
-                          Width: =120
+                          Width: =110
                           Height: =26
-                          LayoutMinWidth: =120
+                          LayoutMinWidth: =110
                           Fill: =ColorValue(Switch(varTicket.'Ticket clôturer'.Value, "Oui", "#DFF6DD", "En cours", "#FFF4CE", "#E5F0FB"))
                           RadiusTopLeft: =13
                           RadiusTopRight: =13
@@ -1104,9 +1118,9 @@ Screens:
                         Variant: ManualLayout
                         Properties:
                           DropShadow: =DropShadow.None
-                          Width: =140
+                          Width: =130
                           Height: =26
-                          LayoutMinWidth: =140
+                          LayoutMinWidth: =130
                           Fill: =ColorValue(Switch(First(Split(Coalesce(varTicket.'Statut Urgence'.Value, ""), " ")).Value, "High", "#FDE7E9", "Medium", "#FFF4CE", "Low", "#DFF6DD", "#F0F0F3"))
                           RadiusTopLeft: =13
                           RadiusTopRight: =13
@@ -1139,7 +1153,7 @@ Screens:
                       DropShadow: =DropShadow.None
                       LayoutMinHeight: =0
                       LayoutMinWidth: =0
-                      Height: =130
+                      Height: =If(App.Width < 700, 100, 130)
                       FillPortions: =0
                       AlignInContainer: =AlignInContainer.Stretch
                       LayoutGap: =8
@@ -1224,5 +1238,3 @@ Screens:
                       FillPortions: =1
                       LayoutMinHeight: =120
                       AlignInContainer: =AlignInContainer.Stretch
-                      Width: =Parent.Width
-                      Height: =300
