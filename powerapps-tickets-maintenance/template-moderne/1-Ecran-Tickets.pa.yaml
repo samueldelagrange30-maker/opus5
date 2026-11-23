@@ -128,7 +128,7 @@ Screens:
                   RadiusBottomRight: =8
                   OnSelect: |-
                     =NewForm(Form1);
-                    Navigate('Nouveau Ticket', ScreenTransition.Fade)
+                    Navigate(scrNouveauTicket, ScreenTransition.Fade)
             - tkNav3:
                 Control: Classic/Button@2.2.0
                 Properties:

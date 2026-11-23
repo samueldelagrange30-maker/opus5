@@ -30,7 +30,7 @@ class Block(str):
 
 
 def _repr_str(dumper, data):
-    style = "|" if ("\n" in data) else None
+    style = "|" if ("\n" in data or ": " in data or " #" in data or data.endswith(":")) else None
     return dumper.represent_scalar("tag:yaml.org,2002:str", data, style=style)
 
 
@@ -115,7 +115,7 @@ def button(name, text, onselect, width, primary=False, **p):
 # ---------------------------------------------------------------- en-tête
 NAV = [
     ("Tickets", "Navigate(scrTickets, ScreenTransition.Fade)", 110),
-    ("Nouveau ticket", "NewForm(Form1);\nNavigate('Nouveau Ticket', ScreenTransition.Fade)", 140),
+    ("Nouveau ticket", "NewForm(Form1);\nNavigate(scrNouveauTicket, ScreenTransition.Fade)", 140),
     ("Tableau de bord", "Navigate(scrTableauBord, ScreenTransition.Fade)", 150),
 ]
 
@@ -537,6 +537,116 @@ def dump(obj, path):
     with open(path, "w", encoding="utf-8") as fh:
         yaml.dump(obj, fh, sort_keys=False, allow_unicode=True, width=10000, default_flow_style=False)
 
+
+# ================================================================ ÉCRAN NOUVEAU TICKET
+P = "nv"
+
+conseils_html = Block("""="<div style='font-family:Segoe UI,sans-serif;font-size:12px;color:#424242;line-height:1.6'>" &
+"<div style='font-weight:600;color:#1B1B1F;margin:4px 0 6px'>Niveau d'urgence</div>" &
+"<div><span style='display:inline-block;width:10px;height:10px;border-radius:5px;background:#D13438;margin-right:8px'></span><b>High</b> : activité à l'arrêt</div>" &
+"<div><span style='display:inline-block;width:10px;height:10px;border-radius:5px;background:#F7A600;margin-right:8px'></span><b>Medium</b> : ralentissement de l'activité</div>" &
+"<div><span style='display:inline-block;width:10px;height:10px;border-radius:5px;background:#13A10E;margin-right:8px'></span><b>Low</b> : n'impacte pas l'activité</div>" &
+"<div style='font-weight:600;color:#1B1B1F;margin:14px 0 6px'>Pour un traitement rapide</div>" &
+"<ul style='margin:0;padding-left:18px'>" &
+"<li>Ajoutez au moins une photo de l'équipement.</li>" &
+"<li>Précisez la cellule et l'équipement concernés.</li>" &
+"<li>Indiquez un plan B si l'activité est bloquée.</li>" &
+"</ul></div>\"""")
+
+it = "ThisItem"
+mes_tickets_card = manual("nvMesTicketsCarte", [
+    label("nvMesTicketsTitre", f"{it}.Title", X=12, Y=8, Width="Parent.Width - 130", Height=22, Size=12,
+          FontWeight="FontWeight.Semibold", Color=TXT, Wrap="false"),
+    label("nvMesTicketsInfo", f'"#" & {it}.ID & "  ·  " & Text({it}.Created, "dd/mm/yyyy")', X=12, Y=30,
+          Width="Parent.Width - 130", Height=18, Size=11, Color=TXT3, Wrap="false"),
+    badge("nvMesTicketsStatut", statut_txt(it), statut_fill(it), statut_color(it), 100,
+          X="Parent.Width - 112", Y=15),
+    overlay_button("nvMesTicketsClic", Block(
+        "=Set(varTicket, ThisItem);\nSet(varDetail, true);\nNavigate(scrTickets, ScreenTransition.Fade)"), r=10),
+], X=0, Y=0, Width="Parent.TemplateWidth", Height="Parent.TemplateHeight - 8",
+    Fill='ColorValue("#F7F8FA")', BorderColor='ColorValue("#EEF0F3")', BorderThickness=1, **radius(10))
+
+carte_style = dict(Fill=WHITE, BorderColor=BORDER, BorderThickness=1, DropShadow="DropShadow.Light",
+                   PaddingTop=16, PaddingBottom=16, PaddingLeft=18, PaddingRight=18, **radius(12))
+
+colonne_aide = auto("nvColonneAide", "Vertical", [
+    auto("nvCarteConseils", "Vertical", [
+        label("nvConseilsTitre", '"💡  Avant d\'envoyer"', Height=24, AlignInContainer="AlignInContainer.Stretch",
+              Size=14, FontWeight="FontWeight.Semibold", Color=TXT, VerticalAlign="VerticalAlign.Middle"),
+        ctrl("nvConseilsTexte", HTML, {
+            "HtmlText": conseils_html, "AutoHeight": "false", "FillPortions": 1, "LayoutMinHeight": 100,
+            "AlignInContainer": "AlignInContainer.Stretch", "Width": "Parent.Width", "Height": 220,
+        }),
+    ], Height=290, FillPortions=0, AlignInContainer="AlignInContainer.Stretch", LayoutGap=6, **carte_style),
+    auto("nvCarteMesTickets", "Vertical", [
+        label("nvMesTicketsEntete", '"🕘  Mes derniers tickets"', Height=24,
+              AlignInContainer="AlignInContainer.Stretch", Size=14, FontWeight="FontWeight.Semibold",
+              Color=TXT, VerticalAlign="VerticalAlign.Middle"),
+        label("nvMesTicketsVide", '"Vous n\'avez encore créé aucun ticket."', Height=40,
+              AlignInContainer="AlignInContainer.Stretch", Size=12, Color=TXT3,
+              Visible="CountRows(nvMesTickets.AllItems) = 0", VerticalAlign="VerticalAlign.Middle"),
+        ctrl("nvMesTickets", GALLERY, {
+            "Items": f'FirstN(SortByColumns(Filter({LIST}, Author.Email = User().Email), "Created", SortOrder.Descending), 5)',
+            "TemplateSize": 64, "TemplatePadding": 0, "ShowScrollbar": "false", "FillPortions": 1,
+            "LayoutMinHeight": 0, "AlignInContainer": "AlignInContainer.Stretch",
+            "Width": "Parent.Width", "Height": 300,
+        }, [mes_tickets_card], variant="Vertical"),
+    ], FillPortions=1, AlignInContainer="AlignInContainer.Stretch", LayoutGap=8, **carte_style),
+], FillPortions=1, LayoutMinWidth=280, AlignInContainer="AlignInContainer.Stretch", LayoutGap=16,
+    Visible="App.Width >= 900")
+
+carte_formulaire = auto("nvCarteFormulaire", "Vertical", [], FillPortions=3, LayoutMinWidth=320,
+                        AlignInContainer="AlignInContainer.Stretch", Fill=WHITE, BorderColor=BORDER,
+                        BorderThickness=1, DropShadow="DropShadow.Light",
+                        PaddingTop=8, PaddingBottom=8, PaddingLeft=8, PaddingRight=8, **radius(12))
+
+bandeau = auto("nvBandeau", "Horizontal", [
+    label("nvBandeauTexte", '"✅  Ticket n° " & varNumTicket & " envoyé avec succès. L\'équipe maintenance a été prévenue."',
+          FillPortions=1, Height=40, Size=13, FontWeight="FontWeight.Semibold", Color='ColorValue("#0E700E")',
+          VerticalAlign="VerticalAlign.Middle"),
+    ctrl("nvBandeauFermer", BUTTON, {
+        "Text": '"✕"', "Width": 32, "Height": 32, "LayoutMinWidth": 32, "Size": 12,
+        "Fill": TRANSP, "Color": 'ColorValue("#0E700E")', "BorderStyle": "BorderStyle.None",
+        "BorderColor": TRANSP, "HoverFill": 'ColorValue("#CDEFCB")', "HoverColor": 'ColorValue("#0E700E")',
+        "HoverBorderColor": TRANSP, "PressedFill": 'ColorValue("#BFE8BC")', "PressedColor": 'ColorValue("#0E700E")',
+        "PressedBorderColor": TRANSP, "OnSelect": "Set(varMsgNv, false)", **radius(16),
+    }),
+], Height=52, FillPortions=0, AlignInContainer="AlignInContainer.Stretch", Visible="varMsgNv",
+    Fill='ColorValue("#DFF6DD")', BorderColor='ColorValue("#9FD89F")', BorderThickness=1,
+    LayoutAlignItems="LayoutAlignItems.Center", PaddingLeft=16, PaddingRight=8, **radius(10))
+
+actions = auto("nvActions", "Horizontal", [
+    label("nvActionsAide", '"Les champs marqués d\'un * sont obligatoires."', FillPortions=1, Height=36,
+          LayoutMinWidth=120, Size=12, Color=TXT3, VerticalAlign="VerticalAlign.Middle"),
+    button("nvEffacer", "Effacer", Block("=ResetForm(Form1);\nNewForm(Form1);\nSet(varMsgNv, false)"), 120),
+    button("nvEnvoyer", "Envoyer le ticket", "SubmitForm(Form1)", 170, primary=True,
+           DisplayMode="If(Form1.Valid, DisplayMode.Edit, DisplayMode.Disabled)",
+           DisabledFill='ColorValue("#C7CFDF")', DisabledColor='ColorValue("#FFFFFF")',
+           DisabledBorderColor='ColorValue("#C7CFDF")'),
+], Height=64, FillPortions=0, AlignInContainer="AlignInContainer.Stretch", Fill=WHITE,
+    BorderColor=BORDER, BorderThickness=1, LayoutAlignItems="LayoutAlignItems.Center", LayoutGap=10,
+    PaddingLeft=18, PaddingRight=14, **radius(12))
+
+nv_corps = auto("nvCorps", "Vertical", [
+    label("nvTitre", '"Nouveau ticket"', Height=32, AlignInContainer="AlignInContainer.Stretch", Size=20,
+          FontWeight="FontWeight.Bold", Color=TXT, VerticalAlign="VerticalAlign.Middle"),
+    label("nvSousTitre", '"Décrivez le problème : l\'équipe maintenance sera prévenue dès l\'envoi."', Height=20,
+          AlignInContainer="AlignInContainer.Stretch", Size=12, Color=TXT2, VerticalAlign="VerticalAlign.Middle"),
+    bandeau,
+    auto("nvContenu", "Horizontal", [carte_formulaire, colonne_aide], FillPortions=1,
+         AlignInContainer="AlignInContainer.Stretch", LayoutGap=16),
+    actions,
+], FillPortions=1, AlignInContainer="AlignInContainer.Stretch", Fill=BG, LayoutGap=14,
+    PaddingTop=20, PaddingBottom=20, PaddingLeft=24, PaddingRight=24)
+
+racine_nv = auto("nvRacine", "Vertical", header(P, "Nouveau ticket") + [nv_corps],
+                 X=0, Y=0, Width="Parent.Width", Height="Parent.Height", Fill=BG, LayoutGap=0)
+
+screen_nv = {"Screens": {"scrNouveauTicket": {
+    "Properties": {"Fill": f(BG), "OnVisible": f("Set(varMsgNv, false)")},
+    "Children": [racine_nv],
+}}}
+dump(screen_nv, f"{OUT}/3-Ecran-NouveauTicket.pa.yaml")
 
 dump(screen_tickets, f"{OUT}/1-Ecran-Tickets.pa.yaml")
 dump(screen_db, f"{OUT}/2-Ecran-TableauDeBord.pa.yaml")

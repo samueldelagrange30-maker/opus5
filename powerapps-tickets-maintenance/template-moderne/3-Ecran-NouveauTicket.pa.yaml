@@ -1,0 +1,659 @@
+Screens:
+  scrNouveauTicket:
+    Properties:
+      Fill: =ColorValue("#F5F6F8")
+      OnVisible: =Set(varMsgNv, false)
+    Children:
+    - nvRacine:
+        Control: GroupContainer@1.5.0
+        Variant: AutoLayout
+        Properties:
+          LayoutDirection: =LayoutDirection.Vertical
+          DropShadow: =DropShadow.None
+          LayoutMinHeight: =0
+          LayoutMinWidth: =0
+          X: =0
+          Y: =0
+          Width: =Parent.Width
+          Height: =Parent.Height
+          Fill: =ColorValue("#F5F6F8")
+          LayoutGap: =0
+        Children:
+        - nvEntete:
+            Control: GroupContainer@1.5.0
+            Variant: AutoLayout
+            Properties:
+              LayoutDirection: =LayoutDirection.Horizontal
+              DropShadow: =DropShadow.None
+              LayoutMinHeight: =0
+              LayoutMinWidth: =0
+              Fill: =ColorValue("#FFFFFF")
+              Height: =64
+              FillPortions: =0
+              AlignInContainer: =AlignInContainer.Stretch
+              LayoutAlignItems: =LayoutAlignItems.Center
+              LayoutGap: =8
+              PaddingLeft: =24
+              PaddingRight: =24
+            Children:
+            - nvLogo:
+                Control: Label@2.5.1
+                Properties:
+                  Text: ="ASICS"
+                  Font: =Font.'Segoe UI'
+                  PaddingTop: =0
+                  PaddingBottom: =0
+                  PaddingLeft: =0
+                  PaddingRight: =0
+                  Width: =82
+                  Height: =40
+                  LayoutMinWidth: =82
+                  Size: =20
+                  FontWeight: =FontWeight.Bold
+                  Italic: =true
+                  Color: =ColorValue("#001E62")
+                  VerticalAlign: =VerticalAlign.Middle
+            - nvNomApp:
+                Control: Label@2.5.1
+                Properties:
+                  Text: ="Ticket de maintenance"
+                  Font: =Font.'Segoe UI'
+                  PaddingTop: =0
+                  PaddingBottom: =0
+                  PaddingLeft: =0
+                  PaddingRight: =0
+                  Width: =210
+                  Height: =40
+                  LayoutMinWidth: =160
+                  Size: =14
+                  FontWeight: =FontWeight.Semibold
+                  Color: =ColorValue("#1B1B1F")
+                  VerticalAlign: =VerticalAlign.Middle
+            - nvEspace:
+                Control: GroupContainer@1.5.0
+                Variant: AutoLayout
+                Properties:
+                  LayoutDirection: =LayoutDirection.Horizontal
+                  DropShadow: =DropShadow.None
+                  LayoutMinHeight: =0
+                  LayoutMinWidth: =0
+                  FillPortions: =1
+                  Height: =10
+            - nvNav1:
+                Control: Classic/Button@2.2.0
+                Properties:
+                  Text: ="Tickets"
+                  Width: =110
+                  Height: =36
+                  LayoutMinWidth: =110
+                  Size: =12
+                  FontWeight: =FontWeight.Semibold
+                  Fill: =RGBA(0, 0, 0, 0)
+                  Color: =ColorValue("#5C5C66")
+                  BorderStyle: =BorderStyle.None
+                  BorderColor: =RGBA(0, 0, 0, 0)
+                  HoverBorderColor: =RGBA(0, 0, 0, 0)
+                  PressedBorderColor: =RGBA(0, 0, 0, 0)
+                  HoverFill: =ColorValue("#EEF1F7")
+                  HoverColor: =ColorValue("#001E62")
+                  PressedFill: =ColorValue("#E3E9F5")
+                  PressedColor: =ColorValue("#001E62")
+                  RadiusTopLeft: =8
+                  RadiusTopRight: =8
+                  RadiusBottomLeft: =8
+                  RadiusBottomRight: =8
+                  OnSelect: =Navigate(scrTickets, ScreenTransition.Fade)
+            - nvNav2:
+                Control: Classic/Button@2.2.0
+                Properties:
+                  Text: ="Nouveau ticket"
+                  Width: =140
+                  Height: =36
+                  LayoutMinWidth: =140
+                  Size: =12
+                  FontWeight: =FontWeight.Semibold
+                  Fill: =ColorValue("#E8EDF7")
+                  Color: =ColorValue("#001E62")
+                  BorderStyle: =BorderStyle.None
+                  BorderColor: =RGBA(0, 0, 0, 0)
+                  HoverBorderColor: =RGBA(0, 0, 0, 0)
+                  PressedBorderColor: =RGBA(0, 0, 0, 0)
+                  HoverFill: =ColorValue("#EEF1F7")
+                  HoverColor: =ColorValue("#001E62")
+                  PressedFill: =ColorValue("#E3E9F5")
+                  PressedColor: =ColorValue("#001E62")
+                  RadiusTopLeft: =8
+                  RadiusTopRight: =8
+                  RadiusBottomLeft: =8
+                  RadiusBottomRight: =8
+                  OnSelect: |-
+                    =NewForm(Form1);
+                    Navigate(scrNouveauTicket, ScreenTransition.Fade)
+            - nvNav3:
+                Control: Classic/Button@2.2.0
+                Properties:
+                  Text: ="Tableau de bord"
+                  Width: =150
+                  Height: =36
+                  LayoutMinWidth: =150
+                  Size: =12
+                  FontWeight: =FontWeight.Semibold
+                  Fill: =RGBA(0, 0, 0, 0)
+                  Color: =ColorValue("#5C5C66")
+                  BorderStyle: =BorderStyle.None
+                  BorderColor: =RGBA(0, 0, 0, 0)
+                  HoverBorderColor: =RGBA(0, 0, 0, 0)
+                  PressedBorderColor: =RGBA(0, 0, 0, 0)
+                  HoverFill: =ColorValue("#EEF1F7")
+                  HoverColor: =ColorValue("#001E62")
+                  PressedFill: =ColorValue("#E3E9F5")
+                  PressedColor: =ColorValue("#001E62")
+                  RadiusTopLeft: =8
+                  RadiusTopRight: =8
+                  RadiusBottomLeft: =8
+                  RadiusBottomRight: =8
+                  OnSelect: =Navigate(scrTableauBord, ScreenTransition.Fade)
+            - nvUtilisateur:
+                Control: Label@2.5.1
+                Properties:
+                  Text: =User().FullName
+                  Font: =Font.'Segoe UI'
+                  PaddingTop: =0
+                  PaddingBottom: =0
+                  PaddingLeft: =0
+                  PaddingRight: =0
+                  Width: =170
+                  Height: =40
+                  LayoutMinWidth: =120
+                  Size: =12
+                  Color: =ColorValue("#5C5C66")
+                  Align: =Align.Right
+                  VerticalAlign: =VerticalAlign.Middle
+        - nvSeparateur:
+            Control: Rectangle@2.3.0
+            Properties:
+              Fill: =ColorValue("#E6E8EB")
+              Height: =1
+              AlignInContainer: =AlignInContainer.Stretch
+        - nvCorps:
+            Control: GroupContainer@1.5.0
+            Variant: AutoLayout
+            Properties:
+              LayoutDirection: =LayoutDirection.Vertical
+              DropShadow: =DropShadow.None
+              LayoutMinHeight: =0
+              LayoutMinWidth: =0
+              FillPortions: =1
+              AlignInContainer: =AlignInContainer.Stretch
+              Fill: =ColorValue("#F5F6F8")
+              LayoutGap: =14
+              PaddingTop: =20
+              PaddingBottom: =20
+              PaddingLeft: =24
+              PaddingRight: =24
+            Children:
+            - nvTitre:
+                Control: Label@2.5.1
+                Properties:
+                  Text: ="Nouveau ticket"
+                  Font: =Font.'Segoe UI'
+                  PaddingTop: =0
+                  PaddingBottom: =0
+                  PaddingLeft: =0
+                  PaddingRight: =0
+                  Height: =32
+                  AlignInContainer: =AlignInContainer.Stretch
+                  Size: =20
+                  FontWeight: =FontWeight.Bold
+                  Color: =ColorValue("#1B1B1F")
+                  VerticalAlign: =VerticalAlign.Middle
+            - nvSousTitre:
+                Control: Label@2.5.1
+                Properties:
+                  Text: |-
+                    ="Décrivez le problème : l'équipe maintenance sera prévenue dès l'envoi."
+                  Font: =Font.'Segoe UI'
+                  PaddingTop: =0
+                  PaddingBottom: =0
+                  PaddingLeft: =0
+                  PaddingRight: =0
+                  Height: =20
+                  AlignInContainer: =AlignInContainer.Stretch
+                  Size: =12
+                  Color: =ColorValue("#5C5C66")
+                  VerticalAlign: =VerticalAlign.Middle
+            - nvBandeau:
+                Control: GroupContainer@1.5.0
+                Variant: AutoLayout
+                Properties:
+                  LayoutDirection: =LayoutDirection.Horizontal
+                  DropShadow: =DropShadow.None
+                  LayoutMinHeight: =0
+                  LayoutMinWidth: =0
+                  Height: =52
+                  FillPortions: =0
+                  AlignInContainer: =AlignInContainer.Stretch
+                  Visible: =varMsgNv
+                  Fill: =ColorValue("#DFF6DD")
+                  BorderColor: =ColorValue("#9FD89F")
+                  BorderThickness: =1
+                  LayoutAlignItems: =LayoutAlignItems.Center
+                  PaddingLeft: =16
+                  PaddingRight: =8
+                  RadiusTopLeft: =10
+                  RadiusTopRight: =10
+                  RadiusBottomLeft: =10
+                  RadiusBottomRight: =10
+                Children:
+                - nvBandeauTexte:
+                    Control: Label@2.5.1
+                    Properties:
+                      Text: ="✅  Ticket n° " & varNumTicket & " envoyé avec succès. L'équipe maintenance a été prévenue."
+                      Font: =Font.'Segoe UI'
+                      PaddingTop: =0
+                      PaddingBottom: =0
+                      PaddingLeft: =0
+                      PaddingRight: =0
+                      FillPortions: =1
+                      Height: =40
+                      Size: =13
+                      FontWeight: =FontWeight.Semibold
+                      Color: =ColorValue("#0E700E")
+                      VerticalAlign: =VerticalAlign.Middle
+                - nvBandeauFermer:
+                    Control: Classic/Button@2.2.0
+                    Properties:
+                      Text: ="✕"
+                      Width: =32
+                      Height: =32
+                      LayoutMinWidth: =32
+                      Size: =12
+                      Fill: =RGBA(0, 0, 0, 0)
+                      Color: =ColorValue("#0E700E")
+                      BorderStyle: =BorderStyle.None
+                      BorderColor: =RGBA(0, 0, 0, 0)
+                      HoverFill: =ColorValue("#CDEFCB")
+                      HoverColor: =ColorValue("#0E700E")
+                      HoverBorderColor: =RGBA(0, 0, 0, 0)
+                      PressedFill: =ColorValue("#BFE8BC")
+                      PressedColor: =ColorValue("#0E700E")
+                      PressedBorderColor: =RGBA(0, 0, 0, 0)
+                      OnSelect: =Set(varMsgNv, false)
+                      RadiusTopLeft: =16
+                      RadiusTopRight: =16
+                      RadiusBottomLeft: =16
+                      RadiusBottomRight: =16
+            - nvContenu:
+                Control: GroupContainer@1.5.0
+                Variant: AutoLayout
+                Properties:
+                  LayoutDirection: =LayoutDirection.Horizontal
+                  DropShadow: =DropShadow.None
+                  LayoutMinHeight: =0
+                  LayoutMinWidth: =0
+                  FillPortions: =1
+                  AlignInContainer: =AlignInContainer.Stretch
+                  LayoutGap: =16
+                Children:
+                - nvCarteFormulaire:
+                    Control: GroupContainer@1.5.0
+                    Variant: AutoLayout
+                    Properties:
+                      LayoutDirection: =LayoutDirection.Vertical
+                      DropShadow: =DropShadow.Light
+                      LayoutMinHeight: =0
+                      LayoutMinWidth: =320
+                      FillPortions: =3
+                      AlignInContainer: =AlignInContainer.Stretch
+                      Fill: =ColorValue("#FFFFFF")
+                      BorderColor: =ColorValue("#E6E8EB")
+                      BorderThickness: =1
+                      PaddingTop: =8
+                      PaddingBottom: =8
+                      PaddingLeft: =8
+                      PaddingRight: =8
+                      RadiusTopLeft: =12
+                      RadiusTopRight: =12
+                      RadiusBottomLeft: =12
+                      RadiusBottomRight: =12
+                - nvColonneAide:
+                    Control: GroupContainer@1.5.0
+                    Variant: AutoLayout
+                    Properties:
+                      LayoutDirection: =LayoutDirection.Vertical
+                      DropShadow: =DropShadow.None
+                      LayoutMinHeight: =0
+                      LayoutMinWidth: =280
+                      FillPortions: =1
+                      AlignInContainer: =AlignInContainer.Stretch
+                      LayoutGap: =16
+                      Visible: =App.Width >= 900
+                    Children:
+                    - nvCarteConseils:
+                        Control: GroupContainer@1.5.0
+                        Variant: AutoLayout
+                        Properties:
+                          LayoutDirection: =LayoutDirection.Vertical
+                          DropShadow: =DropShadow.Light
+                          LayoutMinHeight: =0
+                          LayoutMinWidth: =0
+                          Height: =290
+                          FillPortions: =0
+                          AlignInContainer: =AlignInContainer.Stretch
+                          LayoutGap: =6
+                          Fill: =ColorValue("#FFFFFF")
+                          BorderColor: =ColorValue("#E6E8EB")
+                          BorderThickness: =1
+                          PaddingTop: =16
+                          PaddingBottom: =16
+                          PaddingLeft: =18
+                          PaddingRight: =18
+                          RadiusTopLeft: =12
+                          RadiusTopRight: =12
+                          RadiusBottomLeft: =12
+                          RadiusBottomRight: =12
+                        Children:
+                        - nvConseilsTitre:
+                            Control: Label@2.5.1
+                            Properties:
+                              Text: ="💡  Avant d'envoyer"
+                              Font: =Font.'Segoe UI'
+                              PaddingTop: =0
+                              PaddingBottom: =0
+                              PaddingLeft: =0
+                              PaddingRight: =0
+                              Height: =24
+                              AlignInContainer: =AlignInContainer.Stretch
+                              Size: =14
+                              FontWeight: =FontWeight.Semibold
+                              Color: =ColorValue("#1B1B1F")
+                              VerticalAlign: =VerticalAlign.Middle
+                        - nvConseilsTexte:
+                            Control: HtmlViewer@2.1.0
+                            Properties:
+                              HtmlText: |-
+                                ="<div style='font-family:Segoe UI,sans-serif;font-size:12px;color:#424242;line-height:1.6'>" &
+                                "<div style='font-weight:600;color:#1B1B1F;margin:4px 0 6px'>Niveau d'urgence</div>" &
+                                "<div><span style='display:inline-block;width:10px;height:10px;border-radius:5px;background:#D13438;margin-right:8px'></span><b>High</b> : activité à l'arrêt</div>" &
+                                "<div><span style='display:inline-block;width:10px;height:10px;border-radius:5px;background:#F7A600;margin-right:8px'></span><b>Medium</b> : ralentissement de l'activité</div>" &
+                                "<div><span style='display:inline-block;width:10px;height:10px;border-radius:5px;background:#13A10E;margin-right:8px'></span><b>Low</b> : n'impacte pas l'activité</div>" &
+                                "<div style='font-weight:600;color:#1B1B1F;margin:14px 0 6px'>Pour un traitement rapide</div>" &
+                                "<ul style='margin:0;padding-left:18px'>" &
+                                "<li>Ajoutez au moins une photo de l'équipement.</li>" &
+                                "<li>Précisez la cellule et l'équipement concernés.</li>" &
+                                "<li>Indiquez un plan B si l'activité est bloquée.</li>" &
+                                "</ul></div>"
+                              AutoHeight: =false
+                              FillPortions: =1
+                              LayoutMinHeight: =100
+                              AlignInContainer: =AlignInContainer.Stretch
+                              Width: =Parent.Width
+                              Height: =220
+                    - nvCarteMesTickets:
+                        Control: GroupContainer@1.5.0
+                        Variant: AutoLayout
+                        Properties:
+                          LayoutDirection: =LayoutDirection.Vertical
+                          DropShadow: =DropShadow.Light
+                          LayoutMinHeight: =0
+                          LayoutMinWidth: =0
+                          FillPortions: =1
+                          AlignInContainer: =AlignInContainer.Stretch
+                          LayoutGap: =8
+                          Fill: =ColorValue("#FFFFFF")
+                          BorderColor: =ColorValue("#E6E8EB")
+                          BorderThickness: =1
+                          PaddingTop: =16
+                          PaddingBottom: =16
+                          PaddingLeft: =18
+                          PaddingRight: =18
+                          RadiusTopLeft: =12
+                          RadiusTopRight: =12
+                          RadiusBottomLeft: =12
+                          RadiusBottomRight: =12
+                        Children:
+                        - nvMesTicketsEntete:
+                            Control: Label@2.5.1
+                            Properties:
+                              Text: ="🕘  Mes derniers tickets"
+                              Font: =Font.'Segoe UI'
+                              PaddingTop: =0
+                              PaddingBottom: =0
+                              PaddingLeft: =0
+                              PaddingRight: =0
+                              Height: =24
+                              AlignInContainer: =AlignInContainer.Stretch
+                              Size: =14
+                              FontWeight: =FontWeight.Semibold
+                              Color: =ColorValue("#1B1B1F")
+                              VerticalAlign: =VerticalAlign.Middle
+                        - nvMesTicketsVide:
+                            Control: Label@2.5.1
+                            Properties:
+                              Text: ="Vous n'avez encore créé aucun ticket."
+                              Font: =Font.'Segoe UI'
+                              PaddingTop: =0
+                              PaddingBottom: =0
+                              PaddingLeft: =0
+                              PaddingRight: =0
+                              Height: =40
+                              AlignInContainer: =AlignInContainer.Stretch
+                              Size: =12
+                              Color: =ColorValue("#8A8A94")
+                              Visible: =CountRows(nvMesTickets.AllItems) = 0
+                              VerticalAlign: =VerticalAlign.Middle
+                        - nvMesTickets:
+                            Control: Gallery@2.15.0
+                            Variant: Vertical
+                            Properties:
+                              Items: =FirstN(SortByColumns(Filter('Ticket dépannage', Author.Email = User().Email), "Created", SortOrder.Descending), 5)
+                              TemplateSize: =64
+                              TemplatePadding: =0
+                              ShowScrollbar: =false
+                              FillPortions: =1
+                              LayoutMinHeight: =0
+                              AlignInContainer: =AlignInContainer.Stretch
+                              Width: =Parent.Width
+                              Height: =300
+                            Children:
+                            - nvMesTicketsCarte:
+                                Control: GroupContainer@1.5.0
+                                Variant: ManualLayout
+                                Properties:
+                                  DropShadow: =DropShadow.None
+                                  X: =0
+                                  Y: =0
+                                  Width: =Parent.TemplateWidth
+                                  Height: =Parent.TemplateHeight - 8
+                                  Fill: =ColorValue("#F7F8FA")
+                                  BorderColor: =ColorValue("#EEF0F3")
+                                  BorderThickness: =1
+                                  RadiusTopLeft: =10
+                                  RadiusTopRight: =10
+                                  RadiusBottomLeft: =10
+                                  RadiusBottomRight: =10
+                                Children:
+                                - nvMesTicketsTitre:
+                                    Control: Label@2.5.1
+                                    Properties:
+                                      Text: =ThisItem.Title
+                                      Font: =Font.'Segoe UI'
+                                      PaddingTop: =0
+                                      PaddingBottom: =0
+                                      PaddingLeft: =0
+                                      PaddingRight: =0
+                                      X: =12
+                                      Y: =8
+                                      Width: =Parent.Width - 130
+                                      Height: =22
+                                      Size: =12
+                                      FontWeight: =FontWeight.Semibold
+                                      Color: =ColorValue("#1B1B1F")
+                                      Wrap: =false
+                                - nvMesTicketsInfo:
+                                    Control: Label@2.5.1
+                                    Properties:
+                                      Text: ="#" & ThisItem.ID & "  ·  " & Text(ThisItem.Created, "dd/mm/yyyy")
+                                      Font: =Font.'Segoe UI'
+                                      PaddingTop: =0
+                                      PaddingBottom: =0
+                                      PaddingLeft: =0
+                                      PaddingRight: =0
+                                      X: =12
+                                      Y: =30
+                                      Width: =Parent.Width - 130
+                                      Height: =18
+                                      Size: =11
+                                      Color: =ColorValue("#8A8A94")
+                                      Wrap: =false
+                                - nvMesTicketsStatut:
+                                    Control: GroupContainer@1.5.0
+                                    Variant: ManualLayout
+                                    Properties:
+                                      DropShadow: =DropShadow.None
+                                      Width: =100
+                                      Height: =26
+                                      LayoutMinWidth: =100
+                                      Fill: =ColorValue(Switch(ThisItem.'Ticket clôturer'.Value, "Oui", "#DFF6DD", "En cours", "#FFF4CE", "#E5F0FB"))
+                                      RadiusTopLeft: =13
+                                      RadiusTopRight: =13
+                                      RadiusBottomLeft: =13
+                                      RadiusBottomRight: =13
+                                      X: =Parent.Width - 112
+                                      Y: =15
+                                    Children:
+                                    - nvMesTicketsStatutTxt:
+                                        Control: Label@2.5.1
+                                        Properties:
+                                          Text: =Switch(ThisItem.'Ticket clôturer'.Value, "Oui", "Clôturé", "En cours", "En cours", "Ouvert")
+                                          Font: =Font.'Segoe UI'
+                                          PaddingTop: =0
+                                          PaddingBottom: =0
+                                          PaddingLeft: =0
+                                          PaddingRight: =0
+                                          X: =0
+                                          Y: =0
+                                          Width: =Parent.Width
+                                          Height: =Parent.Height
+                                          Size: =11
+                                          FontWeight: =FontWeight.Semibold
+                                          Color: =ColorValue(Switch(ThisItem.'Ticket clôturer'.Value, "Oui", "#107C10", "En cours", "#8A6100", "#0F6CBD"))
+                                          Align: =Align.Center
+                                          VerticalAlign: =VerticalAlign.Middle
+                                - nvMesTicketsClic:
+                                    Control: Classic/Button@2.2.0
+                                    Properties:
+                                      Text: =""
+                                      Fill: =RGBA(0, 0, 0, 0)
+                                      Color: =RGBA(0, 0, 0, 0)
+                                      BorderColor: =RGBA(0, 0, 0, 0)
+                                      BorderStyle: =BorderStyle.None
+                                      HoverFill: =RGBA(0, 0, 0, 0.03)
+                                      HoverColor: =RGBA(0, 0, 0, 0)
+                                      HoverBorderColor: =RGBA(0, 0, 0, 0)
+                                      PressedFill: =RGBA(0, 0, 0, 0.06)
+                                      PressedColor: =RGBA(0, 0, 0, 0)
+                                      PressedBorderColor: =RGBA(0, 0, 0, 0)
+                                      X: =0
+                                      Y: =0
+                                      Width: =Parent.Width
+                                      Height: =Parent.Height
+                                      OnSelect: |-
+                                        =Set(varTicket, ThisItem);
+                                        Set(varDetail, true);
+                                        Navigate(scrTickets, ScreenTransition.Fade)
+                                      RadiusTopLeft: =10
+                                      RadiusTopRight: =10
+                                      RadiusBottomLeft: =10
+                                      RadiusBottomRight: =10
+            - nvActions:
+                Control: GroupContainer@1.5.0
+                Variant: AutoLayout
+                Properties:
+                  LayoutDirection: =LayoutDirection.Horizontal
+                  DropShadow: =DropShadow.None
+                  LayoutMinHeight: =0
+                  LayoutMinWidth: =0
+                  Height: =64
+                  FillPortions: =0
+                  AlignInContainer: =AlignInContainer.Stretch
+                  Fill: =ColorValue("#FFFFFF")
+                  BorderColor: =ColorValue("#E6E8EB")
+                  BorderThickness: =1
+                  LayoutAlignItems: =LayoutAlignItems.Center
+                  LayoutGap: =10
+                  PaddingLeft: =18
+                  PaddingRight: =14
+                  RadiusTopLeft: =12
+                  RadiusTopRight: =12
+                  RadiusBottomLeft: =12
+                  RadiusBottomRight: =12
+                Children:
+                - nvActionsAide:
+                    Control: Label@2.5.1
+                    Properties:
+                      Text: ="Les champs marqués d'un * sont obligatoires."
+                      Font: =Font.'Segoe UI'
+                      PaddingTop: =0
+                      PaddingBottom: =0
+                      PaddingLeft: =0
+                      PaddingRight: =0
+                      FillPortions: =1
+                      Height: =36
+                      LayoutMinWidth: =120
+                      Size: =12
+                      Color: =ColorValue("#8A8A94")
+                      VerticalAlign: =VerticalAlign.Middle
+                - nvEffacer:
+                    Control: Classic/Button@2.2.0
+                    Properties:
+                      Text: ="Effacer"
+                      Width: =120
+                      Height: =36
+                      LayoutMinWidth: =120
+                      Size: =12
+                      FontWeight: =FontWeight.Semibold
+                      OnSelect: |-
+                        =ResetForm(Form1);
+                        NewForm(Form1);
+                        Set(varMsgNv, false)
+                      BorderStyle: =BorderStyle.Solid
+                      BorderThickness: =1
+                      RadiusTopLeft: =8
+                      RadiusTopRight: =8
+                      RadiusBottomLeft: =8
+                      RadiusBottomRight: =8
+                      Fill: =ColorValue("#FFFFFF")
+                      Color: =ColorValue("#001E62")
+                      BorderColor: =ColorValue("#D1D5DB")
+                      HoverFill: =ColorValue("#F3F5F9")
+                      HoverColor: =ColorValue("#001E62")
+                      HoverBorderColor: =ColorValue("#001E62")
+                      PressedFill: =ColorValue("#E8EDF7")
+                - nvEnvoyer:
+                    Control: Classic/Button@2.2.0
+                    Properties:
+                      Text: ="Envoyer le ticket"
+                      Width: =170
+                      Height: =36
+                      LayoutMinWidth: =170
+                      Size: =12
+                      FontWeight: =FontWeight.Semibold
+                      OnSelect: =SubmitForm(Form1)
+                      BorderStyle: =BorderStyle.Solid
+                      BorderThickness: =1
+                      RadiusTopLeft: =8
+                      RadiusTopRight: =8
+                      RadiusBottomLeft: =8
+                      RadiusBottomRight: =8
+                      Fill: =ColorValue("#001E62")
+                      Color: =ColorValue("#FFFFFF")
+                      BorderColor: =ColorValue("#001E62")
+                      HoverFill: =ColorValue("#0B2E7A")
+                      HoverColor: =ColorValue("#FFFFFF")
+                      HoverBorderColor: =ColorValue("#0B2E7A")
+                      PressedFill: =ColorValue("#00164A")
+                      DisplayMode: =If(Form1.Valid, DisplayMode.Edit, DisplayMode.Disabled)
+                      DisabledFill: =ColorValue("#C7CFDF")
+                      DisabledColor: =ColorValue("#FFFFFF")
+                      DisabledBorderColor: =ColorValue("#C7CFDF")
