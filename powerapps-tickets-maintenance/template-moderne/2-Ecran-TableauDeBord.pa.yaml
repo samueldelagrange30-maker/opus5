@@ -1,0 +1,892 @@
+Screens:
+  scrTableauBord:
+    Properties:
+      Fill: =ColorValue("#F5F6F8")
+      OnVisible: |-
+        =ClearCollect(colDbTickets, 'Ticket dépannage');
+        Set(varDbTotal, CountRows(colDbTickets));
+        ClearCollect(
+            colDbStatut,
+            {Libelle: "Ouverts", Nombre: CountRows(Filter(colDbTickets, 'Ticket clôturer'.Value = "Non")), Couleur: "#0F6CBD"},
+            {Libelle: "En cours", Nombre: CountRows(Filter(colDbTickets, 'Ticket clôturer'.Value = "En cours")), Couleur: "#F7A600"},
+            {Libelle: "Clôturés", Nombre: CountRows(Filter(colDbTickets, 'Ticket clôturer'.Value = "Oui")), Couleur: "#107C10"}
+        );
+        ClearCollect(
+            colDbUrgence,
+            ForAll(
+                Distinct(colDbTickets, 'Statut Urgence'.Value) As U,
+                {
+                    Libelle: Coalesce(U.Value, "Non renseigné"),
+                    Nombre: CountRows(Filter(colDbTickets, 'Statut Urgence'.Value = U.Value)),
+                    Couleur: If(StartsWith(U.Value, "High"), "#D13438", StartsWith(U.Value, "Medium"), "#F7A600", "#13A10E")
+                }
+            )
+        );
+        ClearCollect(
+            colDbSecteur,
+            Sort(
+                ForAll(
+                    Distinct(colDbTickets, 'Secteur demandeur'.Value) As S,
+                    {
+                        Libelle: Coalesce(S.Value, "Non renseigné"),
+                        Nombre: CountRows(Filter(colDbTickets, 'Secteur demandeur'.Value = S.Value)),
+                        Couleur: "#001E62"
+                    }
+                ),
+                Nombre,
+                SortOrder.Descending
+            )
+        );
+        ClearCollect(
+            colDbEquipement,
+            FirstN(
+                Sort(
+                    ForAll(
+                        Distinct(colDbTickets, 'Intervention sur équipement'.Value) As E,
+                        {
+                            Libelle: Coalesce(E.Value, "Non renseigné"),
+                            Nombre: CountRows(Filter(colDbTickets, 'Intervention sur équipement'.Value = E.Value)),
+                            Couleur: "#4F6BED"
+                        }
+                    ),
+                    Nombre,
+                    SortOrder.Descending
+                ),
+                6
+            )
+        )
+    Children:
+    - dbRacine:
+        Control: GroupContainer@1.5.0
+        Variant: AutoLayout
+        Properties:
+          LayoutDirection: =LayoutDirection.Vertical
+          DropShadow: =DropShadow.None
+          LayoutMinHeight: =0
+          LayoutMinWidth: =0
+          X: =0
+          Y: =0
+          Width: =Parent.Width
+          Height: =Parent.Height
+          Fill: =ColorValue("#F5F6F8")
+          LayoutGap: =0
+        Children:
+        - dbEntete:
+            Control: GroupContainer@1.5.0
+            Variant: AutoLayout
+            Properties:
+              LayoutDirection: =LayoutDirection.Horizontal
+              DropShadow: =DropShadow.None
+              LayoutMinHeight: =0
+              LayoutMinWidth: =0
+              Fill: =ColorValue("#FFFFFF")
+              Height: =64
+              FillPortions: =0
+              AlignInContainer: =AlignInContainer.Stretch
+              LayoutAlignItems: =LayoutAlignItems.Center
+              LayoutGap: =8
+              PaddingLeft: =24
+              PaddingRight: =24
+            Children:
+            - dbLogo:
+                Control: Label@2.5.1
+                Properties:
+                  Text: ="ASICS"
+                  Font: =Font.'Segoe UI'
+                  PaddingTop: =0
+                  PaddingBottom: =0
+                  PaddingLeft: =0
+                  PaddingRight: =0
+                  Width: =82
+                  Height: =40
+                  LayoutMinWidth: =82
+                  Size: =20
+                  FontWeight: =FontWeight.Bold
+                  Italic: =true
+                  Color: =ColorValue("#001E62")
+                  VerticalAlign: =VerticalAlign.Middle
+            - dbNomApp:
+                Control: Label@2.5.1
+                Properties:
+                  Text: ="Ticket de maintenance"
+                  Font: =Font.'Segoe UI'
+                  PaddingTop: =0
+                  PaddingBottom: =0
+                  PaddingLeft: =0
+                  PaddingRight: =0
+                  Width: =210
+                  Height: =40
+                  LayoutMinWidth: =160
+                  Size: =14
+                  FontWeight: =FontWeight.Semibold
+                  Color: =ColorValue("#1B1B1F")
+                  VerticalAlign: =VerticalAlign.Middle
+            - dbEspace:
+                Control: GroupContainer@1.5.0
+                Variant: AutoLayout
+                Properties:
+                  LayoutDirection: =LayoutDirection.Horizontal
+                  DropShadow: =DropShadow.None
+                  LayoutMinHeight: =0
+                  LayoutMinWidth: =0
+                  FillPortions: =1
+                  Height: =10
+            - dbNav1:
+                Control: Classic/Button@2.2.0
+                Properties:
+                  Text: ="Tickets"
+                  Width: =110
+                  Height: =36
+                  LayoutMinWidth: =110
+                  Size: =12
+                  FontWeight: =FontWeight.Semibold
+                  Fill: =RGBA(0, 0, 0, 0)
+                  Color: =ColorValue("#5C5C66")
+                  BorderStyle: =BorderStyle.None
+                  BorderColor: =RGBA(0, 0, 0, 0)
+                  HoverBorderColor: =RGBA(0, 0, 0, 0)
+                  PressedBorderColor: =RGBA(0, 0, 0, 0)
+                  HoverFill: =ColorValue("#EEF1F7")
+                  HoverColor: =ColorValue("#001E62")
+                  PressedFill: =ColorValue("#E3E9F5")
+                  PressedColor: =ColorValue("#001E62")
+                  RadiusTopLeft: =8
+                  RadiusTopRight: =8
+                  RadiusBottomLeft: =8
+                  RadiusBottomRight: =8
+                  OnSelect: =Navigate(scrTickets, ScreenTransition.Fade)
+            - dbNav2:
+                Control: Classic/Button@2.2.0
+                Properties:
+                  Text: ="Nouveau ticket"
+                  Width: =140
+                  Height: =36
+                  LayoutMinWidth: =140
+                  Size: =12
+                  FontWeight: =FontWeight.Semibold
+                  Fill: =RGBA(0, 0, 0, 0)
+                  Color: =ColorValue("#5C5C66")
+                  BorderStyle: =BorderStyle.None
+                  BorderColor: =RGBA(0, 0, 0, 0)
+                  HoverBorderColor: =RGBA(0, 0, 0, 0)
+                  PressedBorderColor: =RGBA(0, 0, 0, 0)
+                  HoverFill: =ColorValue("#EEF1F7")
+                  HoverColor: =ColorValue("#001E62")
+                  PressedFill: =ColorValue("#E3E9F5")
+                  PressedColor: =ColorValue("#001E62")
+                  RadiusTopLeft: =8
+                  RadiusTopRight: =8
+                  RadiusBottomLeft: =8
+                  RadiusBottomRight: =8
+                  OnSelect: |-
+                    =NewForm(Form1);
+                    Navigate('Nouveau Ticket', ScreenTransition.Fade)
+            - dbNav3:
+                Control: Classic/Button@2.2.0
+                Properties:
+                  Text: ="Tableau de bord"
+                  Width: =150
+                  Height: =36
+                  LayoutMinWidth: =150
+                  Size: =12
+                  FontWeight: =FontWeight.Semibold
+                  Fill: =ColorValue("#E8EDF7")
+                  Color: =ColorValue("#001E62")
+                  BorderStyle: =BorderStyle.None
+                  BorderColor: =RGBA(0, 0, 0, 0)
+                  HoverBorderColor: =RGBA(0, 0, 0, 0)
+                  PressedBorderColor: =RGBA(0, 0, 0, 0)
+                  HoverFill: =ColorValue("#EEF1F7")
+                  HoverColor: =ColorValue("#001E62")
+                  PressedFill: =ColorValue("#E3E9F5")
+                  PressedColor: =ColorValue("#001E62")
+                  RadiusTopLeft: =8
+                  RadiusTopRight: =8
+                  RadiusBottomLeft: =8
+                  RadiusBottomRight: =8
+                  OnSelect: =Navigate(scrTableauBord, ScreenTransition.Fade)
+            - dbUtilisateur:
+                Control: Label@2.5.1
+                Properties:
+                  Text: =User().FullName
+                  Font: =Font.'Segoe UI'
+                  PaddingTop: =0
+                  PaddingBottom: =0
+                  PaddingLeft: =0
+                  PaddingRight: =0
+                  Width: =170
+                  Height: =40
+                  LayoutMinWidth: =120
+                  Size: =12
+                  Color: =ColorValue("#5C5C66")
+                  Align: =Align.Right
+                  VerticalAlign: =VerticalAlign.Middle
+        - dbSeparateur:
+            Control: Rectangle@2.3.0
+            Properties:
+              Fill: =ColorValue("#E6E8EB")
+              Height: =1
+              AlignInContainer: =AlignInContainer.Stretch
+        - dbCorps:
+            Control: GroupContainer@1.5.0
+            Variant: AutoLayout
+            Properties:
+              LayoutDirection: =LayoutDirection.Vertical
+              DropShadow: =DropShadow.None
+              LayoutMinHeight: =0
+              LayoutMinWidth: =0
+              FillPortions: =1
+              AlignInContainer: =AlignInContainer.Stretch
+              Fill: =ColorValue("#F5F6F8")
+              LayoutGap: =16
+              PaddingTop: =20
+              PaddingBottom: =24
+              PaddingLeft: =24
+              PaddingRight: =24
+            Children:
+            - dbTitre:
+                Control: Label@2.5.1
+                Properties:
+                  Text: ="Tableau de bord"
+                  Font: =Font.'Segoe UI'
+                  PaddingTop: =0
+                  PaddingBottom: =0
+                  PaddingLeft: =0
+                  PaddingRight: =0
+                  Height: =32
+                  AlignInContainer: =AlignInContainer.Stretch
+                  Size: =20
+                  FontWeight: =FontWeight.Bold
+                  Color: =ColorValue("#1B1B1F")
+                  VerticalAlign: =VerticalAlign.Middle
+            - dbSousTitre:
+                Control: Label@2.5.1
+                Properties:
+                  Text: ="Vue d'ensemble des tickets de maintenance"
+                  Font: =Font.'Segoe UI'
+                  PaddingTop: =0
+                  PaddingBottom: =0
+                  PaddingLeft: =0
+                  PaddingRight: =0
+                  Height: =20
+                  AlignInContainer: =AlignInContainer.Stretch
+                  Size: =12
+                  Color: =ColorValue("#5C5C66")
+                  VerticalAlign: =VerticalAlign.Middle
+            - dbKpis:
+                Control: GroupContainer@1.5.0
+                Variant: AutoLayout
+                Properties:
+                  LayoutDirection: =LayoutDirection.Horizontal
+                  DropShadow: =DropShadow.None
+                  LayoutMinHeight: =0
+                  LayoutMinWidth: =0
+                  Height: =92
+                  FillPortions: =0
+                  AlignInContainer: =AlignInContainer.Stretch
+                  LayoutGap: =12
+                Children:
+                - dbKpiTotal:
+                    Control: GroupContainer@1.5.0
+                    Variant: ManualLayout
+                    Properties:
+                      DropShadow: =DropShadow.Light
+                      FillPortions: =1
+                      LayoutMinWidth: =130
+                      AlignInContainer: =AlignInContainer.Stretch
+                      Fill: =If(false, ColorFade(ColorValue("#001E62"), 0.93), ColorValue("#FFFFFF"))
+                      BorderColor: =If(false, ColorValue("#001E62"), ColorValue("#E6E8EB"))
+                      BorderThickness: =If(false, 2, 1)
+                      RadiusTopLeft: =12
+                      RadiusTopRight: =12
+                      RadiusBottomLeft: =12
+                      RadiusBottomRight: =12
+                    Children:
+                    - dbKpiTotalPastille:
+                        Control: GroupContainer@1.5.0
+                        Variant: ManualLayout
+                        Properties:
+                          DropShadow: =DropShadow.None
+                          X: =16
+                          Y: =(Parent.Height - 44) / 2
+                          Width: =44
+                          Height: =44
+                          Fill: =ColorFade(ColorValue("#001E62"), 0.85)
+                          RadiusTopLeft: =22
+                          RadiusTopRight: =22
+                          RadiusBottomLeft: =22
+                          RadiusBottomRight: =22
+                        Children:
+                        - dbKpiTotalEmoji:
+                            Control: Label@2.5.1
+                            Properties:
+                              Text: ="📊"
+                              Font: =Font.'Segoe UI'
+                              PaddingTop: =0
+                              PaddingBottom: =0
+                              PaddingLeft: =0
+                              PaddingRight: =0
+                              X: =0
+                              Y: =0
+                              Width: =44
+                              Height: =44
+                              Size: =18
+                              Align: =Align.Center
+                              VerticalAlign: =VerticalAlign.Middle
+                    - dbKpiTotalValeur:
+                        Control: Label@2.5.1
+                        Properties:
+                          Text: =varDbTotal
+                          Font: =Font.'Segoe UI'
+                          PaddingTop: =0
+                          PaddingBottom: =0
+                          PaddingLeft: =0
+                          PaddingRight: =0
+                          X: =72
+                          Y: =Parent.Height / 2 - 28
+                          Width: =Parent.Width - 84
+                          Height: =32
+                          Size: =22
+                          FontWeight: =FontWeight.Bold
+                          Color: =ColorValue("#001E62")
+                          VerticalAlign: =VerticalAlign.Middle
+                    - dbKpiTotalTitre:
+                        Control: Label@2.5.1
+                        Properties:
+                          Text: ="Tickets au total"
+                          Font: =Font.'Segoe UI'
+                          PaddingTop: =0
+                          PaddingBottom: =0
+                          PaddingLeft: =0
+                          PaddingRight: =0
+                          X: =72
+                          Y: =Parent.Height / 2 + 4
+                          Width: =Parent.Width - 84
+                          Height: =20
+                          Size: =12
+                          FontWeight: =FontWeight.Semibold
+                          Color: =ColorValue("#5C5C66")
+                          Wrap: =false
+                          VerticalAlign: =VerticalAlign.Middle
+                - dbKpiOuverts:
+                    Control: GroupContainer@1.5.0
+                    Variant: ManualLayout
+                    Properties:
+                      DropShadow: =DropShadow.Light
+                      FillPortions: =1
+                      LayoutMinWidth: =130
+                      AlignInContainer: =AlignInContainer.Stretch
+                      Fill: =If(false, ColorFade(ColorValue("#0F6CBD"), 0.93), ColorValue("#FFFFFF"))
+                      BorderColor: =If(false, ColorValue("#0F6CBD"), ColorValue("#E6E8EB"))
+                      BorderThickness: =If(false, 2, 1)
+                      RadiusTopLeft: =12
+                      RadiusTopRight: =12
+                      RadiusBottomLeft: =12
+                      RadiusBottomRight: =12
+                    Children:
+                    - dbKpiOuvertsPastille:
+                        Control: GroupContainer@1.5.0
+                        Variant: ManualLayout
+                        Properties:
+                          DropShadow: =DropShadow.None
+                          X: =16
+                          Y: =(Parent.Height - 44) / 2
+                          Width: =44
+                          Height: =44
+                          Fill: =ColorFade(ColorValue("#0F6CBD"), 0.85)
+                          RadiusTopLeft: =22
+                          RadiusTopRight: =22
+                          RadiusBottomLeft: =22
+                          RadiusBottomRight: =22
+                        Children:
+                        - dbKpiOuvertsEmoji:
+                            Control: Label@2.5.1
+                            Properties:
+                              Text: ="📋"
+                              Font: =Font.'Segoe UI'
+                              PaddingTop: =0
+                              PaddingBottom: =0
+                              PaddingLeft: =0
+                              PaddingRight: =0
+                              X: =0
+                              Y: =0
+                              Width: =44
+                              Height: =44
+                              Size: =18
+                              Align: =Align.Center
+                              VerticalAlign: =VerticalAlign.Middle
+                    - dbKpiOuvertsValeur:
+                        Control: Label@2.5.1
+                        Properties:
+                          Text: =Coalesce(LookUp(colDbStatut, Libelle = "Ouverts").Nombre, 0)
+                          Font: =Font.'Segoe UI'
+                          PaddingTop: =0
+                          PaddingBottom: =0
+                          PaddingLeft: =0
+                          PaddingRight: =0
+                          X: =72
+                          Y: =Parent.Height / 2 - 28
+                          Width: =Parent.Width - 84
+                          Height: =32
+                          Size: =22
+                          FontWeight: =FontWeight.Bold
+                          Color: =ColorValue("#0F6CBD")
+                          VerticalAlign: =VerticalAlign.Middle
+                    - dbKpiOuvertsTitre:
+                        Control: Label@2.5.1
+                        Properties:
+                          Text: ="Ouverts"
+                          Font: =Font.'Segoe UI'
+                          PaddingTop: =0
+                          PaddingBottom: =0
+                          PaddingLeft: =0
+                          PaddingRight: =0
+                          X: =72
+                          Y: =Parent.Height / 2 + 4
+                          Width: =Parent.Width - 84
+                          Height: =20
+                          Size: =12
+                          FontWeight: =FontWeight.Semibold
+                          Color: =ColorValue("#5C5C66")
+                          Wrap: =false
+                          VerticalAlign: =VerticalAlign.Middle
+                - dbKpiEnCours:
+                    Control: GroupContainer@1.5.0
+                    Variant: ManualLayout
+                    Properties:
+                      DropShadow: =DropShadow.Light
+                      FillPortions: =1
+                      LayoutMinWidth: =130
+                      AlignInContainer: =AlignInContainer.Stretch
+                      Fill: =If(false, ColorFade(ColorValue("#B97A00"), 0.93), ColorValue("#FFFFFF"))
+                      BorderColor: =If(false, ColorValue("#B97A00"), ColorValue("#E6E8EB"))
+                      BorderThickness: =If(false, 2, 1)
+                      RadiusTopLeft: =12
+                      RadiusTopRight: =12
+                      RadiusBottomLeft: =12
+                      RadiusBottomRight: =12
+                    Children:
+                    - dbKpiEnCoursPastille:
+                        Control: GroupContainer@1.5.0
+                        Variant: ManualLayout
+                        Properties:
+                          DropShadow: =DropShadow.None
+                          X: =16
+                          Y: =(Parent.Height - 44) / 2
+                          Width: =44
+                          Height: =44
+                          Fill: =ColorFade(ColorValue("#B97A00"), 0.85)
+                          RadiusTopLeft: =22
+                          RadiusTopRight: =22
+                          RadiusBottomLeft: =22
+                          RadiusBottomRight: =22
+                        Children:
+                        - dbKpiEnCoursEmoji:
+                            Control: Label@2.5.1
+                            Properties:
+                              Text: ="⏳"
+                              Font: =Font.'Segoe UI'
+                              PaddingTop: =0
+                              PaddingBottom: =0
+                              PaddingLeft: =0
+                              PaddingRight: =0
+                              X: =0
+                              Y: =0
+                              Width: =44
+                              Height: =44
+                              Size: =18
+                              Align: =Align.Center
+                              VerticalAlign: =VerticalAlign.Middle
+                    - dbKpiEnCoursValeur:
+                        Control: Label@2.5.1
+                        Properties:
+                          Text: =Coalesce(LookUp(colDbStatut, Libelle = "En cours").Nombre, 0)
+                          Font: =Font.'Segoe UI'
+                          PaddingTop: =0
+                          PaddingBottom: =0
+                          PaddingLeft: =0
+                          PaddingRight: =0
+                          X: =72
+                          Y: =Parent.Height / 2 - 28
+                          Width: =Parent.Width - 84
+                          Height: =32
+                          Size: =22
+                          FontWeight: =FontWeight.Bold
+                          Color: =ColorValue("#B97A00")
+                          VerticalAlign: =VerticalAlign.Middle
+                    - dbKpiEnCoursTitre:
+                        Control: Label@2.5.1
+                        Properties:
+                          Text: ="En cours"
+                          Font: =Font.'Segoe UI'
+                          PaddingTop: =0
+                          PaddingBottom: =0
+                          PaddingLeft: =0
+                          PaddingRight: =0
+                          X: =72
+                          Y: =Parent.Height / 2 + 4
+                          Width: =Parent.Width - 84
+                          Height: =20
+                          Size: =12
+                          FontWeight: =FontWeight.Semibold
+                          Color: =ColorValue("#5C5C66")
+                          Wrap: =false
+                          VerticalAlign: =VerticalAlign.Middle
+                - dbKpiTaux:
+                    Control: GroupContainer@1.5.0
+                    Variant: ManualLayout
+                    Properties:
+                      DropShadow: =DropShadow.Light
+                      FillPortions: =1
+                      LayoutMinWidth: =130
+                      AlignInContainer: =AlignInContainer.Stretch
+                      Fill: =If(false, ColorFade(ColorValue("#107C10"), 0.93), ColorValue("#FFFFFF"))
+                      BorderColor: =If(false, ColorValue("#107C10"), ColorValue("#E6E8EB"))
+                      BorderThickness: =If(false, 2, 1)
+                      RadiusTopLeft: =12
+                      RadiusTopRight: =12
+                      RadiusBottomLeft: =12
+                      RadiusBottomRight: =12
+                    Children:
+                    - dbKpiTauxPastille:
+                        Control: GroupContainer@1.5.0
+                        Variant: ManualLayout
+                        Properties:
+                          DropShadow: =DropShadow.None
+                          X: =16
+                          Y: =(Parent.Height - 44) / 2
+                          Width: =44
+                          Height: =44
+                          Fill: =ColorFade(ColorValue("#107C10"), 0.85)
+                          RadiusTopLeft: =22
+                          RadiusTopRight: =22
+                          RadiusBottomLeft: =22
+                          RadiusBottomRight: =22
+                        Children:
+                        - dbKpiTauxEmoji:
+                            Control: Label@2.5.1
+                            Properties:
+                              Text: ="✅"
+                              Font: =Font.'Segoe UI'
+                              PaddingTop: =0
+                              PaddingBottom: =0
+                              PaddingLeft: =0
+                              PaddingRight: =0
+                              X: =0
+                              Y: =0
+                              Width: =44
+                              Height: =44
+                              Size: =18
+                              Align: =Align.Center
+                              VerticalAlign: =VerticalAlign.Middle
+                    - dbKpiTauxValeur:
+                        Control: Label@2.5.1
+                        Properties:
+                          Text: =If(varDbTotal = 0, "—", Round(Coalesce(LookUp(colDbStatut, Libelle = "Clôturés").Nombre, 0) / varDbTotal * 100, 0) & " %")
+                          Font: =Font.'Segoe UI'
+                          PaddingTop: =0
+                          PaddingBottom: =0
+                          PaddingLeft: =0
+                          PaddingRight: =0
+                          X: =72
+                          Y: =Parent.Height / 2 - 28
+                          Width: =Parent.Width - 84
+                          Height: =32
+                          Size: =22
+                          FontWeight: =FontWeight.Bold
+                          Color: =ColorValue("#107C10")
+                          VerticalAlign: =VerticalAlign.Middle
+                    - dbKpiTauxTitre:
+                        Control: Label@2.5.1
+                        Properties:
+                          Text: ="Taux de clôture"
+                          Font: =Font.'Segoe UI'
+                          PaddingTop: =0
+                          PaddingBottom: =0
+                          PaddingLeft: =0
+                          PaddingRight: =0
+                          X: =72
+                          Y: =Parent.Height / 2 + 4
+                          Width: =Parent.Width - 84
+                          Height: =20
+                          Size: =12
+                          FontWeight: =FontWeight.Semibold
+                          Color: =ColorValue("#5C5C66")
+                          Wrap: =false
+                          VerticalAlign: =VerticalAlign.Middle
+            - dbLigne1:
+                Control: GroupContainer@1.5.0
+                Variant: AutoLayout
+                Properties:
+                  LayoutDirection: =LayoutDirection.Horizontal
+                  DropShadow: =DropShadow.None
+                  LayoutMinHeight: =0
+                  LayoutMinWidth: =0
+                  FillPortions: =1
+                  AlignInContainer: =AlignInContainer.Stretch
+                  LayoutGap: =16
+                Children:
+                - dbGraphStatut:
+                    Control: GroupContainer@1.5.0
+                    Variant: AutoLayout
+                    Properties:
+                      LayoutDirection: =LayoutDirection.Vertical
+                      DropShadow: =DropShadow.Light
+                      LayoutMinHeight: =0
+                      LayoutMinWidth: =260
+                      FillPortions: =1
+                      AlignInContainer: =AlignInContainer.Stretch
+                      Fill: =ColorValue("#FFFFFF")
+                      BorderColor: =ColorValue("#E6E8EB")
+                      BorderThickness: =1
+                      LayoutGap: =6
+                      PaddingTop: =16
+                      PaddingBottom: =16
+                      PaddingLeft: =18
+                      PaddingRight: =18
+                      RadiusTopLeft: =12
+                      RadiusTopRight: =12
+                      RadiusBottomLeft: =12
+                      RadiusBottomRight: =12
+                    Children:
+                    - dbGraphStatutTitre:
+                        Control: Label@2.5.1
+                        Properties:
+                          Text: ="Tickets par statut"
+                          Font: =Font.'Segoe UI'
+                          PaddingTop: =0
+                          PaddingBottom: =0
+                          PaddingLeft: =0
+                          PaddingRight: =0
+                          Height: =24
+                          AlignInContainer: =AlignInContainer.Stretch
+                          Size: =14
+                          FontWeight: =FontWeight.Semibold
+                          Color: =ColorValue("#1B1B1F")
+                          VerticalAlign: =VerticalAlign.Middle
+                    - dbGraphStatutBarres:
+                        Control: HtmlViewer@2.1.0
+                        Properties:
+                          HtmlText: |-
+                            =With(
+                                {m: Max(Coalesce(Max(colDbStatut, Nombre), 0), 1)},
+                                "<div style='font-family:Segoe UI,sans-serif;font-size:12px'>" &
+                                Concat(
+                                    colDbStatut,
+                                    "<table style='width:100%;border-collapse:collapse;margin-top:12px'><tr>" &
+                                    "<td style='color:#424242'>" & Libelle & "</td>" &
+                                    "<td style='text-align:right;font-weight:600;color:#1B1B1F'>" & Nombre & "</td></tr></table>" &
+                                    "<div style='background:#EEF1F5;border-radius:6px;height:10px;margin-top:4px'>" &
+                                    "<div style='width:" & Round(Nombre / m * 100, 0) & "%;min-width:4px;background:" & Couleur &
+                                    ";height:10px;border-radius:6px'></div></div>"
+                                ) &
+                                If(CountRows(colDbStatut) = 0, "<div style='color:#8A8A94;padding:12px 0'>Aucune donnée</div>", "") &
+                                "</div>"
+                            )
+                          AutoHeight: =false
+                          FillPortions: =1
+                          LayoutMinHeight: =80
+                          AlignInContainer: =AlignInContainer.Stretch
+                          Width: =Parent.Width
+                          Height: =200
+                - dbGraphUrgence:
+                    Control: GroupContainer@1.5.0
+                    Variant: AutoLayout
+                    Properties:
+                      LayoutDirection: =LayoutDirection.Vertical
+                      DropShadow: =DropShadow.Light
+                      LayoutMinHeight: =0
+                      LayoutMinWidth: =260
+                      FillPortions: =1
+                      AlignInContainer: =AlignInContainer.Stretch
+                      Fill: =ColorValue("#FFFFFF")
+                      BorderColor: =ColorValue("#E6E8EB")
+                      BorderThickness: =1
+                      LayoutGap: =6
+                      PaddingTop: =16
+                      PaddingBottom: =16
+                      PaddingLeft: =18
+                      PaddingRight: =18
+                      RadiusTopLeft: =12
+                      RadiusTopRight: =12
+                      RadiusBottomLeft: =12
+                      RadiusBottomRight: =12
+                    Children:
+                    - dbGraphUrgenceTitre:
+                        Control: Label@2.5.1
+                        Properties:
+                          Text: ="Tickets par urgence"
+                          Font: =Font.'Segoe UI'
+                          PaddingTop: =0
+                          PaddingBottom: =0
+                          PaddingLeft: =0
+                          PaddingRight: =0
+                          Height: =24
+                          AlignInContainer: =AlignInContainer.Stretch
+                          Size: =14
+                          FontWeight: =FontWeight.Semibold
+                          Color: =ColorValue("#1B1B1F")
+                          VerticalAlign: =VerticalAlign.Middle
+                    - dbGraphUrgenceBarres:
+                        Control: HtmlViewer@2.1.0
+                        Properties:
+                          HtmlText: |-
+                            =With(
+                                {m: Max(Coalesce(Max(colDbUrgence, Nombre), 0), 1)},
+                                "<div style='font-family:Segoe UI,sans-serif;font-size:12px'>" &
+                                Concat(
+                                    colDbUrgence,
+                                    "<table style='width:100%;border-collapse:collapse;margin-top:12px'><tr>" &
+                                    "<td style='color:#424242'>" & Libelle & "</td>" &
+                                    "<td style='text-align:right;font-weight:600;color:#1B1B1F'>" & Nombre & "</td></tr></table>" &
+                                    "<div style='background:#EEF1F5;border-radius:6px;height:10px;margin-top:4px'>" &
+                                    "<div style='width:" & Round(Nombre / m * 100, 0) & "%;min-width:4px;background:" & Couleur &
+                                    ";height:10px;border-radius:6px'></div></div>"
+                                ) &
+                                If(CountRows(colDbUrgence) = 0, "<div style='color:#8A8A94;padding:12px 0'>Aucune donnée</div>", "") &
+                                "</div>"
+                            )
+                          AutoHeight: =false
+                          FillPortions: =1
+                          LayoutMinHeight: =80
+                          AlignInContainer: =AlignInContainer.Stretch
+                          Width: =Parent.Width
+                          Height: =200
+            - dbLigne2:
+                Control: GroupContainer@1.5.0
+                Variant: AutoLayout
+                Properties:
+                  LayoutDirection: =LayoutDirection.Horizontal
+                  DropShadow: =DropShadow.None
+                  LayoutMinHeight: =0
+                  LayoutMinWidth: =0
+                  FillPortions: =1
+                  AlignInContainer: =AlignInContainer.Stretch
+                  LayoutGap: =16
+                Children:
+                - dbGraphSecteur:
+                    Control: GroupContainer@1.5.0
+                    Variant: AutoLayout
+                    Properties:
+                      LayoutDirection: =LayoutDirection.Vertical
+                      DropShadow: =DropShadow.Light
+                      LayoutMinHeight: =0
+                      LayoutMinWidth: =260
+                      FillPortions: =1
+                      AlignInContainer: =AlignInContainer.Stretch
+                      Fill: =ColorValue("#FFFFFF")
+                      BorderColor: =ColorValue("#E6E8EB")
+                      BorderThickness: =1
+                      LayoutGap: =6
+                      PaddingTop: =16
+                      PaddingBottom: =16
+                      PaddingLeft: =18
+                      PaddingRight: =18
+                      RadiusTopLeft: =12
+                      RadiusTopRight: =12
+                      RadiusBottomLeft: =12
+                      RadiusBottomRight: =12
+                    Children:
+                    - dbGraphSecteurTitre:
+                        Control: Label@2.5.1
+                        Properties:
+                          Text: ="Tickets par secteur demandeur"
+                          Font: =Font.'Segoe UI'
+                          PaddingTop: =0
+                          PaddingBottom: =0
+                          PaddingLeft: =0
+                          PaddingRight: =0
+                          Height: =24
+                          AlignInContainer: =AlignInContainer.Stretch
+                          Size: =14
+                          FontWeight: =FontWeight.Semibold
+                          Color: =ColorValue("#1B1B1F")
+                          VerticalAlign: =VerticalAlign.Middle
+                    - dbGraphSecteurBarres:
+                        Control: HtmlViewer@2.1.0
+                        Properties:
+                          HtmlText: |-
+                            =With(
+                                {m: Max(Coalesce(Max(colDbSecteur, Nombre), 0), 1)},
+                                "<div style='font-family:Segoe UI,sans-serif;font-size:12px'>" &
+                                Concat(
+                                    colDbSecteur,
+                                    "<table style='width:100%;border-collapse:collapse;margin-top:12px'><tr>" &
+                                    "<td style='color:#424242'>" & Libelle & "</td>" &
+                                    "<td style='text-align:right;font-weight:600;color:#1B1B1F'>" & Nombre & "</td></tr></table>" &
+                                    "<div style='background:#EEF1F5;border-radius:6px;height:10px;margin-top:4px'>" &
+                                    "<div style='width:" & Round(Nombre / m * 100, 0) & "%;min-width:4px;background:" & Couleur &
+                                    ";height:10px;border-radius:6px'></div></div>"
+                                ) &
+                                If(CountRows(colDbSecteur) = 0, "<div style='color:#8A8A94;padding:12px 0'>Aucune donnée</div>", "") &
+                                "</div>"
+                            )
+                          AutoHeight: =false
+                          FillPortions: =1
+                          LayoutMinHeight: =80
+                          AlignInContainer: =AlignInContainer.Stretch
+                          Width: =Parent.Width
+                          Height: =200
+                - dbGraphEquipement:
+                    Control: GroupContainer@1.5.0
+                    Variant: AutoLayout
+                    Properties:
+                      LayoutDirection: =LayoutDirection.Vertical
+                      DropShadow: =DropShadow.Light
+                      LayoutMinHeight: =0
+                      LayoutMinWidth: =260
+                      FillPortions: =1
+                      AlignInContainer: =AlignInContainer.Stretch
+                      Fill: =ColorValue("#FFFFFF")
+                      BorderColor: =ColorValue("#E6E8EB")
+                      BorderThickness: =1
+                      LayoutGap: =6
+                      PaddingTop: =16
+                      PaddingBottom: =16
+                      PaddingLeft: =18
+                      PaddingRight: =18
+                      RadiusTopLeft: =12
+                      RadiusTopRight: =12
+                      RadiusBottomLeft: =12
+                      RadiusBottomRight: =12
+                    Children:
+                    - dbGraphEquipementTitre:
+                        Control: Label@2.5.1
+                        Properties:
+                          Text: ="Équipements les plus concernés"
+                          Font: =Font.'Segoe UI'
+                          PaddingTop: =0
+                          PaddingBottom: =0
+                          PaddingLeft: =0
+                          PaddingRight: =0
+                          Height: =24
+                          AlignInContainer: =AlignInContainer.Stretch
+                          Size: =14
+                          FontWeight: =FontWeight.Semibold
+                          Color: =ColorValue("#1B1B1F")
+                          VerticalAlign: =VerticalAlign.Middle
+                    - dbGraphEquipementBarres:
+                        Control: HtmlViewer@2.1.0
+                        Properties:
+                          HtmlText: |-
+                            =With(
+                                {m: Max(Coalesce(Max(colDbEquipement, Nombre), 0), 1)},
+                                "<div style='font-family:Segoe UI,sans-serif;font-size:12px'>" &
+                                Concat(
+                                    colDbEquipement,
+                                    "<table style='width:100%;border-collapse:collapse;margin-top:12px'><tr>" &
+                                    "<td style='color:#424242'>" & Libelle & "</td>" &
+                                    "<td style='text-align:right;font-weight:600;color:#1B1B1F'>" & Nombre & "</td></tr></table>" &
+                                    "<div style='background:#EEF1F5;border-radius:6px;height:10px;margin-top:4px'>" &
+                                    "<div style='width:" & Round(Nombre / m * 100, 0) & "%;min-width:4px;background:" & Couleur &
+                                    ";height:10px;border-radius:6px'></div></div>"
+                                ) &
+                                If(CountRows(colDbEquipement) = 0, "<div style='color:#8A8A94;padding:12px 0'>Aucune donnée</div>", "") &
+                                "</div>"
+                            )
+                          AutoHeight: =false
+                          FillPortions: =1
+                          LayoutMinHeight: =80
+                          AlignInContainer: =AlignInContainer.Stretch
+                          Width: =Parent.Width
+                          Height: =200

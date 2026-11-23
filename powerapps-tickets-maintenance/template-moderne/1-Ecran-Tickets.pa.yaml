@@ -1,0 +1,1228 @@
+Screens:
+  scrTickets:
+    Properties:
+      Fill: =ColorValue("#F5F6F8")
+      OnVisible: =Refresh('Ticket dépannage')
+    Children:
+    - tkRacine:
+        Control: GroupContainer@1.5.0
+        Variant: AutoLayout
+        Properties:
+          LayoutDirection: =LayoutDirection.Vertical
+          DropShadow: =DropShadow.None
+          LayoutMinHeight: =0
+          LayoutMinWidth: =0
+          X: =0
+          Y: =0
+          Width: =Parent.Width
+          Height: =Parent.Height
+          Fill: =ColorValue("#F5F6F8")
+          LayoutGap: =0
+        Children:
+        - tkEntete:
+            Control: GroupContainer@1.5.0
+            Variant: AutoLayout
+            Properties:
+              LayoutDirection: =LayoutDirection.Horizontal
+              DropShadow: =DropShadow.None
+              LayoutMinHeight: =0
+              LayoutMinWidth: =0
+              Fill: =ColorValue("#FFFFFF")
+              Height: =64
+              FillPortions: =0
+              AlignInContainer: =AlignInContainer.Stretch
+              LayoutAlignItems: =LayoutAlignItems.Center
+              LayoutGap: =8
+              PaddingLeft: =24
+              PaddingRight: =24
+            Children:
+            - tkLogo:
+                Control: Label@2.5.1
+                Properties:
+                  Text: ="ASICS"
+                  Font: =Font.'Segoe UI'
+                  PaddingTop: =0
+                  PaddingBottom: =0
+                  PaddingLeft: =0
+                  PaddingRight: =0
+                  Width: =82
+                  Height: =40
+                  LayoutMinWidth: =82
+                  Size: =20
+                  FontWeight: =FontWeight.Bold
+                  Italic: =true
+                  Color: =ColorValue("#001E62")
+                  VerticalAlign: =VerticalAlign.Middle
+            - tkNomApp:
+                Control: Label@2.5.1
+                Properties:
+                  Text: ="Ticket de maintenance"
+                  Font: =Font.'Segoe UI'
+                  PaddingTop: =0
+                  PaddingBottom: =0
+                  PaddingLeft: =0
+                  PaddingRight: =0
+                  Width: =210
+                  Height: =40
+                  LayoutMinWidth: =160
+                  Size: =14
+                  FontWeight: =FontWeight.Semibold
+                  Color: =ColorValue("#1B1B1F")
+                  VerticalAlign: =VerticalAlign.Middle
+            - tkEspace:
+                Control: GroupContainer@1.5.0
+                Variant: AutoLayout
+                Properties:
+                  LayoutDirection: =LayoutDirection.Horizontal
+                  DropShadow: =DropShadow.None
+                  LayoutMinHeight: =0
+                  LayoutMinWidth: =0
+                  FillPortions: =1
+                  Height: =10
+            - tkNav1:
+                Control: Classic/Button@2.2.0
+                Properties:
+                  Text: ="Tickets"
+                  Width: =110
+                  Height: =36
+                  LayoutMinWidth: =110
+                  Size: =12
+                  FontWeight: =FontWeight.Semibold
+                  Fill: =ColorValue("#E8EDF7")
+                  Color: =ColorValue("#001E62")
+                  BorderStyle: =BorderStyle.None
+                  BorderColor: =RGBA(0, 0, 0, 0)
+                  HoverBorderColor: =RGBA(0, 0, 0, 0)
+                  PressedBorderColor: =RGBA(0, 0, 0, 0)
+                  HoverFill: =ColorValue("#EEF1F7")
+                  HoverColor: =ColorValue("#001E62")
+                  PressedFill: =ColorValue("#E3E9F5")
+                  PressedColor: =ColorValue("#001E62")
+                  RadiusTopLeft: =8
+                  RadiusTopRight: =8
+                  RadiusBottomLeft: =8
+                  RadiusBottomRight: =8
+                  OnSelect: =Navigate(scrTickets, ScreenTransition.Fade)
+            - tkNav2:
+                Control: Classic/Button@2.2.0
+                Properties:
+                  Text: ="Nouveau ticket"
+                  Width: =140
+                  Height: =36
+                  LayoutMinWidth: =140
+                  Size: =12
+                  FontWeight: =FontWeight.Semibold
+                  Fill: =RGBA(0, 0, 0, 0)
+                  Color: =ColorValue("#5C5C66")
+                  BorderStyle: =BorderStyle.None
+                  BorderColor: =RGBA(0, 0, 0, 0)
+                  HoverBorderColor: =RGBA(0, 0, 0, 0)
+                  PressedBorderColor: =RGBA(0, 0, 0, 0)
+                  HoverFill: =ColorValue("#EEF1F7")
+                  HoverColor: =ColorValue("#001E62")
+                  PressedFill: =ColorValue("#E3E9F5")
+                  PressedColor: =ColorValue("#001E62")
+                  RadiusTopLeft: =8
+                  RadiusTopRight: =8
+                  RadiusBottomLeft: =8
+                  RadiusBottomRight: =8
+                  OnSelect: |-
+                    =NewForm(Form1);
+                    Navigate('Nouveau Ticket', ScreenTransition.Fade)
+            - tkNav3:
+                Control: Classic/Button@2.2.0
+                Properties:
+                  Text: ="Tableau de bord"
+                  Width: =150
+                  Height: =36
+                  LayoutMinWidth: =150
+                  Size: =12
+                  FontWeight: =FontWeight.Semibold
+                  Fill: =RGBA(0, 0, 0, 0)
+                  Color: =ColorValue("#5C5C66")
+                  BorderStyle: =BorderStyle.None
+                  BorderColor: =RGBA(0, 0, 0, 0)
+                  HoverBorderColor: =RGBA(0, 0, 0, 0)
+                  PressedBorderColor: =RGBA(0, 0, 0, 0)
+                  HoverFill: =ColorValue("#EEF1F7")
+                  HoverColor: =ColorValue("#001E62")
+                  PressedFill: =ColorValue("#E3E9F5")
+                  PressedColor: =ColorValue("#001E62")
+                  RadiusTopLeft: =8
+                  RadiusTopRight: =8
+                  RadiusBottomLeft: =8
+                  RadiusBottomRight: =8
+                  OnSelect: =Navigate(scrTableauBord, ScreenTransition.Fade)
+            - tkUtilisateur:
+                Control: Label@2.5.1
+                Properties:
+                  Text: =User().FullName
+                  Font: =Font.'Segoe UI'
+                  PaddingTop: =0
+                  PaddingBottom: =0
+                  PaddingLeft: =0
+                  PaddingRight: =0
+                  Width: =170
+                  Height: =40
+                  LayoutMinWidth: =120
+                  Size: =12
+                  Color: =ColorValue("#5C5C66")
+                  Align: =Align.Right
+                  VerticalAlign: =VerticalAlign.Middle
+        - tkSeparateur:
+            Control: Rectangle@2.3.0
+            Properties:
+              Fill: =ColorValue("#E6E8EB")
+              Height: =1
+              AlignInContainer: =AlignInContainer.Stretch
+        - tkCorps:
+            Control: GroupContainer@1.5.0
+            Variant: AutoLayout
+            Properties:
+              LayoutDirection: =LayoutDirection.Horizontal
+              DropShadow: =DropShadow.None
+              LayoutMinHeight: =0
+              LayoutMinWidth: =0
+              FillPortions: =1
+              AlignInContainer: =AlignInContainer.Stretch
+              Fill: =ColorValue("#F5F6F8")
+              LayoutGap: =16
+              PaddingTop: =20
+              PaddingBottom: =20
+              PaddingLeft: =24
+              PaddingRight: =24
+            Children:
+            - tkColonneListe:
+                Control: GroupContainer@1.5.0
+                Variant: AutoLayout
+                Properties:
+                  LayoutDirection: =LayoutDirection.Vertical
+                  DropShadow: =DropShadow.None
+                  LayoutMinHeight: =0
+                  LayoutMinWidth: =360
+                  FillPortions: =3
+                  AlignInContainer: =AlignInContainer.Stretch
+                  LayoutGap: =14
+                Children:
+                - tkKpis:
+                    Control: GroupContainer@1.5.0
+                    Variant: AutoLayout
+                    Properties:
+                      LayoutDirection: =LayoutDirection.Horizontal
+                      DropShadow: =DropShadow.None
+                      LayoutMinHeight: =0
+                      LayoutMinWidth: =0
+                      Height: =92
+                      FillPortions: =0
+                      AlignInContainer: =AlignInContainer.Stretch
+                      LayoutGap: =12
+                    Children:
+                    - tkKpiTotal:
+                        Control: GroupContainer@1.5.0
+                        Variant: ManualLayout
+                        Properties:
+                          DropShadow: =DropShadow.Light
+                          FillPortions: =1
+                          LayoutMinWidth: =130
+                          AlignInContainer: =AlignInContainer.Stretch
+                          Fill: =If(IsBlank(varKpi), ColorFade(ColorValue("#001E62"), 0.93), ColorValue("#FFFFFF"))
+                          BorderColor: =If(IsBlank(varKpi), ColorValue("#001E62"), ColorValue("#E6E8EB"))
+                          BorderThickness: =If(IsBlank(varKpi), 2, 1)
+                          RadiusTopLeft: =12
+                          RadiusTopRight: =12
+                          RadiusBottomLeft: =12
+                          RadiusBottomRight: =12
+                        Children:
+                        - tkKpiTotalPastille:
+                            Control: GroupContainer@1.5.0
+                            Variant: ManualLayout
+                            Properties:
+                              DropShadow: =DropShadow.None
+                              X: =16
+                              Y: =(Parent.Height - 44) / 2
+                              Width: =44
+                              Height: =44
+                              Fill: =ColorFade(ColorValue("#001E62"), 0.85)
+                              RadiusTopLeft: =22
+                              RadiusTopRight: =22
+                              RadiusBottomLeft: =22
+                              RadiusBottomRight: =22
+                            Children:
+                            - tkKpiTotalEmoji:
+                                Control: Label@2.5.1
+                                Properties:
+                                  Text: ="📊"
+                                  Font: =Font.'Segoe UI'
+                                  PaddingTop: =0
+                                  PaddingBottom: =0
+                                  PaddingLeft: =0
+                                  PaddingRight: =0
+                                  X: =0
+                                  Y: =0
+                                  Width: =44
+                                  Height: =44
+                                  Size: =18
+                                  Align: =Align.Center
+                                  VerticalAlign: =VerticalAlign.Middle
+                        - tkKpiTotalValeur:
+                            Control: Label@2.5.1
+                            Properties:
+                              Text: =CountRows('Ticket dépannage')
+                              Font: =Font.'Segoe UI'
+                              PaddingTop: =0
+                              PaddingBottom: =0
+                              PaddingLeft: =0
+                              PaddingRight: =0
+                              X: =72
+                              Y: =Parent.Height / 2 - 28
+                              Width: =Parent.Width - 84
+                              Height: =32
+                              Size: =22
+                              FontWeight: =FontWeight.Bold
+                              Color: =ColorValue("#001E62")
+                              VerticalAlign: =VerticalAlign.Middle
+                        - tkKpiTotalTitre:
+                            Control: Label@2.5.1
+                            Properties:
+                              Text: ="Tous les tickets"
+                              Font: =Font.'Segoe UI'
+                              PaddingTop: =0
+                              PaddingBottom: =0
+                              PaddingLeft: =0
+                              PaddingRight: =0
+                              X: =72
+                              Y: =Parent.Height / 2 + 4
+                              Width: =Parent.Width - 84
+                              Height: =20
+                              Size: =12
+                              FontWeight: =FontWeight.Semibold
+                              Color: =ColorValue("#5C5C66")
+                              Wrap: =false
+                              VerticalAlign: =VerticalAlign.Middle
+                        - tkKpiTotalClic:
+                            Control: Classic/Button@2.2.0
+                            Properties:
+                              Text: =""
+                              Fill: =RGBA(0, 0, 0, 0)
+                              Color: =RGBA(0, 0, 0, 0)
+                              BorderColor: =RGBA(0, 0, 0, 0)
+                              BorderStyle: =BorderStyle.None
+                              HoverFill: =RGBA(0, 0, 0, 0.03)
+                              HoverColor: =RGBA(0, 0, 0, 0)
+                              HoverBorderColor: =RGBA(0, 0, 0, 0)
+                              PressedFill: =RGBA(0, 0, 0, 0.06)
+                              PressedColor: =RGBA(0, 0, 0, 0)
+                              PressedBorderColor: =RGBA(0, 0, 0, 0)
+                              X: =0
+                              Y: =0
+                              Width: =Parent.Width
+                              Height: =Parent.Height
+                              OnSelect: =Set(varKpi, Blank())
+                              RadiusTopLeft: =12
+                              RadiusTopRight: =12
+                              RadiusBottomLeft: =12
+                              RadiusBottomRight: =12
+                    - tkKpiOuverts:
+                        Control: GroupContainer@1.5.0
+                        Variant: ManualLayout
+                        Properties:
+                          DropShadow: =DropShadow.Light
+                          FillPortions: =1
+                          LayoutMinWidth: =130
+                          AlignInContainer: =AlignInContainer.Stretch
+                          Fill: =If(varKpi = "Non", ColorFade(ColorValue("#0F6CBD"), 0.93), ColorValue("#FFFFFF"))
+                          BorderColor: =If(varKpi = "Non", ColorValue("#0F6CBD"), ColorValue("#E6E8EB"))
+                          BorderThickness: =If(varKpi = "Non", 2, 1)
+                          RadiusTopLeft: =12
+                          RadiusTopRight: =12
+                          RadiusBottomLeft: =12
+                          RadiusBottomRight: =12
+                        Children:
+                        - tkKpiOuvertsPastille:
+                            Control: GroupContainer@1.5.0
+                            Variant: ManualLayout
+                            Properties:
+                              DropShadow: =DropShadow.None
+                              X: =16
+                              Y: =(Parent.Height - 44) / 2
+                              Width: =44
+                              Height: =44
+                              Fill: =ColorFade(ColorValue("#0F6CBD"), 0.85)
+                              RadiusTopLeft: =22
+                              RadiusTopRight: =22
+                              RadiusBottomLeft: =22
+                              RadiusBottomRight: =22
+                            Children:
+                            - tkKpiOuvertsEmoji:
+                                Control: Label@2.5.1
+                                Properties:
+                                  Text: ="📋"
+                                  Font: =Font.'Segoe UI'
+                                  PaddingTop: =0
+                                  PaddingBottom: =0
+                                  PaddingLeft: =0
+                                  PaddingRight: =0
+                                  X: =0
+                                  Y: =0
+                                  Width: =44
+                                  Height: =44
+                                  Size: =18
+                                  Align: =Align.Center
+                                  VerticalAlign: =VerticalAlign.Middle
+                        - tkKpiOuvertsValeur:
+                            Control: Label@2.5.1
+                            Properties:
+                              Text: =CountRows(Filter('Ticket dépannage', 'Ticket clôturer'.Value = "Non"))
+                              Font: =Font.'Segoe UI'
+                              PaddingTop: =0
+                              PaddingBottom: =0
+                              PaddingLeft: =0
+                              PaddingRight: =0
+                              X: =72
+                              Y: =Parent.Height / 2 - 28
+                              Width: =Parent.Width - 84
+                              Height: =32
+                              Size: =22
+                              FontWeight: =FontWeight.Bold
+                              Color: =ColorValue("#0F6CBD")
+                              VerticalAlign: =VerticalAlign.Middle
+                        - tkKpiOuvertsTitre:
+                            Control: Label@2.5.1
+                            Properties:
+                              Text: ="Ouverts"
+                              Font: =Font.'Segoe UI'
+                              PaddingTop: =0
+                              PaddingBottom: =0
+                              PaddingLeft: =0
+                              PaddingRight: =0
+                              X: =72
+                              Y: =Parent.Height / 2 + 4
+                              Width: =Parent.Width - 84
+                              Height: =20
+                              Size: =12
+                              FontWeight: =FontWeight.Semibold
+                              Color: =ColorValue("#5C5C66")
+                              Wrap: =false
+                              VerticalAlign: =VerticalAlign.Middle
+                        - tkKpiOuvertsClic:
+                            Control: Classic/Button@2.2.0
+                            Properties:
+                              Text: =""
+                              Fill: =RGBA(0, 0, 0, 0)
+                              Color: =RGBA(0, 0, 0, 0)
+                              BorderColor: =RGBA(0, 0, 0, 0)
+                              BorderStyle: =BorderStyle.None
+                              HoverFill: =RGBA(0, 0, 0, 0.03)
+                              HoverColor: =RGBA(0, 0, 0, 0)
+                              HoverBorderColor: =RGBA(0, 0, 0, 0)
+                              PressedFill: =RGBA(0, 0, 0, 0.06)
+                              PressedColor: =RGBA(0, 0, 0, 0)
+                              PressedBorderColor: =RGBA(0, 0, 0, 0)
+                              X: =0
+                              Y: =0
+                              Width: =Parent.Width
+                              Height: =Parent.Height
+                              OnSelect: =Set(varKpi, If(varKpi = "Non", Blank(), "Non"))
+                              RadiusTopLeft: =12
+                              RadiusTopRight: =12
+                              RadiusBottomLeft: =12
+                              RadiusBottomRight: =12
+                    - tkKpiEnCours:
+                        Control: GroupContainer@1.5.0
+                        Variant: ManualLayout
+                        Properties:
+                          DropShadow: =DropShadow.Light
+                          FillPortions: =1
+                          LayoutMinWidth: =130
+                          AlignInContainer: =AlignInContainer.Stretch
+                          Fill: =If(varKpi = "En cours", ColorFade(ColorValue("#B97A00"), 0.93), ColorValue("#FFFFFF"))
+                          BorderColor: =If(varKpi = "En cours", ColorValue("#B97A00"), ColorValue("#E6E8EB"))
+                          BorderThickness: =If(varKpi = "En cours", 2, 1)
+                          RadiusTopLeft: =12
+                          RadiusTopRight: =12
+                          RadiusBottomLeft: =12
+                          RadiusBottomRight: =12
+                        Children:
+                        - tkKpiEnCoursPastille:
+                            Control: GroupContainer@1.5.0
+                            Variant: ManualLayout
+                            Properties:
+                              DropShadow: =DropShadow.None
+                              X: =16
+                              Y: =(Parent.Height - 44) / 2
+                              Width: =44
+                              Height: =44
+                              Fill: =ColorFade(ColorValue("#B97A00"), 0.85)
+                              RadiusTopLeft: =22
+                              RadiusTopRight: =22
+                              RadiusBottomLeft: =22
+                              RadiusBottomRight: =22
+                            Children:
+                            - tkKpiEnCoursEmoji:
+                                Control: Label@2.5.1
+                                Properties:
+                                  Text: ="⏳"
+                                  Font: =Font.'Segoe UI'
+                                  PaddingTop: =0
+                                  PaddingBottom: =0
+                                  PaddingLeft: =0
+                                  PaddingRight: =0
+                                  X: =0
+                                  Y: =0
+                                  Width: =44
+                                  Height: =44
+                                  Size: =18
+                                  Align: =Align.Center
+                                  VerticalAlign: =VerticalAlign.Middle
+                        - tkKpiEnCoursValeur:
+                            Control: Label@2.5.1
+                            Properties:
+                              Text: =CountRows(Filter('Ticket dépannage', 'Ticket clôturer'.Value = "En cours"))
+                              Font: =Font.'Segoe UI'
+                              PaddingTop: =0
+                              PaddingBottom: =0
+                              PaddingLeft: =0
+                              PaddingRight: =0
+                              X: =72
+                              Y: =Parent.Height / 2 - 28
+                              Width: =Parent.Width - 84
+                              Height: =32
+                              Size: =22
+                              FontWeight: =FontWeight.Bold
+                              Color: =ColorValue("#B97A00")
+                              VerticalAlign: =VerticalAlign.Middle
+                        - tkKpiEnCoursTitre:
+                            Control: Label@2.5.1
+                            Properties:
+                              Text: ="En cours"
+                              Font: =Font.'Segoe UI'
+                              PaddingTop: =0
+                              PaddingBottom: =0
+                              PaddingLeft: =0
+                              PaddingRight: =0
+                              X: =72
+                              Y: =Parent.Height / 2 + 4
+                              Width: =Parent.Width - 84
+                              Height: =20
+                              Size: =12
+                              FontWeight: =FontWeight.Semibold
+                              Color: =ColorValue("#5C5C66")
+                              Wrap: =false
+                              VerticalAlign: =VerticalAlign.Middle
+                        - tkKpiEnCoursClic:
+                            Control: Classic/Button@2.2.0
+                            Properties:
+                              Text: =""
+                              Fill: =RGBA(0, 0, 0, 0)
+                              Color: =RGBA(0, 0, 0, 0)
+                              BorderColor: =RGBA(0, 0, 0, 0)
+                              BorderStyle: =BorderStyle.None
+                              HoverFill: =RGBA(0, 0, 0, 0.03)
+                              HoverColor: =RGBA(0, 0, 0, 0)
+                              HoverBorderColor: =RGBA(0, 0, 0, 0)
+                              PressedFill: =RGBA(0, 0, 0, 0.06)
+                              PressedColor: =RGBA(0, 0, 0, 0)
+                              PressedBorderColor: =RGBA(0, 0, 0, 0)
+                              X: =0
+                              Y: =0
+                              Width: =Parent.Width
+                              Height: =Parent.Height
+                              OnSelect: =Set(varKpi, If(varKpi = "En cours", Blank(), "En cours"))
+                              RadiusTopLeft: =12
+                              RadiusTopRight: =12
+                              RadiusBottomLeft: =12
+                              RadiusBottomRight: =12
+                    - tkKpiClotures:
+                        Control: GroupContainer@1.5.0
+                        Variant: ManualLayout
+                        Properties:
+                          DropShadow: =DropShadow.Light
+                          FillPortions: =1
+                          LayoutMinWidth: =130
+                          AlignInContainer: =AlignInContainer.Stretch
+                          Fill: =If(varKpi = "Oui", ColorFade(ColorValue("#107C10"), 0.93), ColorValue("#FFFFFF"))
+                          BorderColor: =If(varKpi = "Oui", ColorValue("#107C10"), ColorValue("#E6E8EB"))
+                          BorderThickness: =If(varKpi = "Oui", 2, 1)
+                          RadiusTopLeft: =12
+                          RadiusTopRight: =12
+                          RadiusBottomLeft: =12
+                          RadiusBottomRight: =12
+                        Children:
+                        - tkKpiCloturesPastille:
+                            Control: GroupContainer@1.5.0
+                            Variant: ManualLayout
+                            Properties:
+                              DropShadow: =DropShadow.None
+                              X: =16
+                              Y: =(Parent.Height - 44) / 2
+                              Width: =44
+                              Height: =44
+                              Fill: =ColorFade(ColorValue("#107C10"), 0.85)
+                              RadiusTopLeft: =22
+                              RadiusTopRight: =22
+                              RadiusBottomLeft: =22
+                              RadiusBottomRight: =22
+                            Children:
+                            - tkKpiCloturesEmoji:
+                                Control: Label@2.5.1
+                                Properties:
+                                  Text: ="✅"
+                                  Font: =Font.'Segoe UI'
+                                  PaddingTop: =0
+                                  PaddingBottom: =0
+                                  PaddingLeft: =0
+                                  PaddingRight: =0
+                                  X: =0
+                                  Y: =0
+                                  Width: =44
+                                  Height: =44
+                                  Size: =18
+                                  Align: =Align.Center
+                                  VerticalAlign: =VerticalAlign.Middle
+                        - tkKpiCloturesValeur:
+                            Control: Label@2.5.1
+                            Properties:
+                              Text: =CountRows(Filter('Ticket dépannage', 'Ticket clôturer'.Value = "Oui"))
+                              Font: =Font.'Segoe UI'
+                              PaddingTop: =0
+                              PaddingBottom: =0
+                              PaddingLeft: =0
+                              PaddingRight: =0
+                              X: =72
+                              Y: =Parent.Height / 2 - 28
+                              Width: =Parent.Width - 84
+                              Height: =32
+                              Size: =22
+                              FontWeight: =FontWeight.Bold
+                              Color: =ColorValue("#107C10")
+                              VerticalAlign: =VerticalAlign.Middle
+                        - tkKpiCloturesTitre:
+                            Control: Label@2.5.1
+                            Properties:
+                              Text: ="Clôturés"
+                              Font: =Font.'Segoe UI'
+                              PaddingTop: =0
+                              PaddingBottom: =0
+                              PaddingLeft: =0
+                              PaddingRight: =0
+                              X: =72
+                              Y: =Parent.Height / 2 + 4
+                              Width: =Parent.Width - 84
+                              Height: =20
+                              Size: =12
+                              FontWeight: =FontWeight.Semibold
+                              Color: =ColorValue("#5C5C66")
+                              Wrap: =false
+                              VerticalAlign: =VerticalAlign.Middle
+                        - tkKpiCloturesClic:
+                            Control: Classic/Button@2.2.0
+                            Properties:
+                              Text: =""
+                              Fill: =RGBA(0, 0, 0, 0)
+                              Color: =RGBA(0, 0, 0, 0)
+                              BorderColor: =RGBA(0, 0, 0, 0)
+                              BorderStyle: =BorderStyle.None
+                              HoverFill: =RGBA(0, 0, 0, 0.03)
+                              HoverColor: =RGBA(0, 0, 0, 0)
+                              HoverBorderColor: =RGBA(0, 0, 0, 0)
+                              PressedFill: =RGBA(0, 0, 0, 0.06)
+                              PressedColor: =RGBA(0, 0, 0, 0)
+                              PressedBorderColor: =RGBA(0, 0, 0, 0)
+                              X: =0
+                              Y: =0
+                              Width: =Parent.Width
+                              Height: =Parent.Height
+                              OnSelect: =Set(varKpi, If(varKpi = "Oui", Blank(), "Oui"))
+                              RadiusTopLeft: =12
+                              RadiusTopRight: =12
+                              RadiusBottomLeft: =12
+                              RadiusBottomRight: =12
+                - tkFiltres:
+                    Control: GroupContainer@1.5.0
+                    Variant: AutoLayout
+                    Properties:
+                      LayoutDirection: =LayoutDirection.Horizontal
+                      DropShadow: =DropShadow.None
+                      LayoutMinHeight: =0
+                      LayoutMinWidth: =0
+                      Fill: =ColorValue("#FFFFFF")
+                      Height: =58
+                      FillPortions: =0
+                      AlignInContainer: =AlignInContainer.Stretch
+                      LayoutAlignItems: =LayoutAlignItems.Center
+                      LayoutGap: =10
+                      PaddingLeft: =12
+                      PaddingRight: =12
+                      BorderColor: =ColorValue("#E6E8EB")
+                      BorderThickness: =1
+                      RadiusTopLeft: =12
+                      RadiusTopRight: =12
+                      RadiusBottomLeft: =12
+                      RadiusBottomRight: =12
+                    Children:
+                    - tkRecherche:
+                        Control: Classic/TextInput
+                        Properties:
+                          Default: =""
+                          HintText: ="🔍  Rechercher un ticket, un équipement, un n°…"
+                          DelayOutput: =true
+                          Height: =36
+                          FillPortions: =1
+                          LayoutMinWidth: =160
+                          Size: =12
+                          Fill: =ColorValue("#F7F8FA")
+                          Color: =ColorValue("#1B1B1F")
+                          BorderColor: =ColorValue("#E6E8EB")
+                          BorderThickness: =1
+                          HoverBorderColor: =ColorValue("#C3C8D0")
+                          FocusedBorderColor: =ColorValue("#001E62")
+                          PaddingLeft: =12
+                          RadiusTopLeft: =8
+                          RadiusTopRight: =8
+                          RadiusBottomLeft: =8
+                          RadiusBottomRight: =8
+                    - tkFiltreUrgence:
+                        Control: ModernCombobox@1.1.1
+                        Properties:
+                          Items: =Choices('Ticket dépannage'.'Statut Urgence')
+                          ItemDisplayText: =ThisItem.Value
+                          SelectMultiple: =false
+                          IsSearchable: =false
+                          Appearance: =Appearance.Outline
+                          Width: =200
+                          Height: =36
+                          Size: =12
+                          LayoutMinWidth: =150
+                    - tkFiltreSecteur:
+                        Control: ModernCombobox@1.1.1
+                        Properties:
+                          Items: =Choices('Ticket dépannage'.'Secteur demandeur')
+                          ItemDisplayText: =ThisItem.Value
+                          SelectMultiple: =false
+                          IsSearchable: =false
+                          Appearance: =Appearance.Outline
+                          Width: =180
+                          Height: =36
+                          Size: =12
+                          LayoutMinWidth: =140
+                    - tkReinitialiser:
+                        Control: Classic/Button@2.2.0
+                        Properties:
+                          Text: ="Réinitialiser"
+                          Width: =120
+                          Height: =36
+                          LayoutMinWidth: =120
+                          Size: =12
+                          FontWeight: =FontWeight.Semibold
+                          OnSelect: |-
+                            =Reset(tkRecherche);
+                            Reset(tkFiltreUrgence);
+                            Reset(tkFiltreSecteur);
+                            Set(varKpi, Blank())
+                          BorderStyle: =BorderStyle.Solid
+                          BorderThickness: =1
+                          RadiusTopLeft: =8
+                          RadiusTopRight: =8
+                          RadiusBottomLeft: =8
+                          RadiusBottomRight: =8
+                          Fill: =ColorValue("#FFFFFF")
+                          Color: =ColorValue("#001E62")
+                          BorderColor: =ColorValue("#D1D5DB")
+                          HoverFill: =ColorValue("#F3F5F9")
+                          HoverColor: =ColorValue("#001E62")
+                          HoverBorderColor: =ColorValue("#001E62")
+                          PressedFill: =ColorValue("#E8EDF7")
+                - tkAucunTicket:
+                    Control: Label@2.5.1
+                    Properties:
+                      Text: ="Aucun ticket ne correspond à votre recherche."
+                      Font: =Font.'Segoe UI'
+                      PaddingTop: =0
+                      PaddingBottom: =0
+                      PaddingLeft: =0
+                      PaddingRight: =0
+                      Height: =60
+                      AlignInContainer: =AlignInContainer.Stretch
+                      Align: =Align.Center
+                      Size: =13
+                      Color: =ColorValue("#8A8A94")
+                      Visible: =CountRows(tkGalerie.AllItems) = 0
+                      VerticalAlign: =VerticalAlign.Middle
+                - tkGalerie:
+                    Control: Gallery@2.15.0
+                    Variant: Vertical
+                    Properties:
+                      Items: |-
+                        =SortByColumns(
+                            Filter(
+                                'Ticket dépannage',
+                                (IsBlank(varKpi) || 'Ticket clôturer'.Value = varKpi) &&
+                                (IsBlank(tkFiltreUrgence.Selected.Value) || 'Statut Urgence'.Value = tkFiltreUrgence.Selected.Value) &&
+                                (IsBlank(tkFiltreSecteur.Selected.Value) || 'Secteur demandeur'.Value = tkFiltreSecteur.Selected.Value) &&
+                                (
+                                    IsBlank(tkRecherche.Text) ||
+                                    tkRecherche.Text in Title ||
+                                    tkRecherche.Text in Description ||
+                                    tkRecherche.Text in 'Intervention sur équipement'.Value ||
+                                    tkRecherche.Text in 'Secteur demandeur'.Value ||
+                                    tkRecherche.Text in Text(ID)
+                                )
+                            ),
+                            "Created",
+                            SortOrder.Descending
+                        )
+                      TemplateSize: =122
+                      TemplatePadding: =0
+                      ShowScrollbar: =true
+                      FillPortions: =1
+                      LayoutMinHeight: =0
+                      AlignInContainer: =AlignInContainer.Stretch
+                      Width: =Parent.Width
+                      Height: =Parent.Height
+                      LoadingSpinner: =LoadingSpinner.Data
+                    Children:
+                    - tkCarte:
+                        Control: GroupContainer@1.5.0
+                        Variant: ManualLayout
+                        Properties:
+                          DropShadow: =DropShadow.Light
+                          X: =0
+                          Y: =0
+                          Width: =Parent.TemplateWidth - 12
+                          Height: =Parent.TemplateHeight - 10
+                          Fill: =ColorValue("#FFFFFF")
+                          BorderColor: =If(varDetail && ThisItem.ID = varTicket.ID, ColorValue("#001E62"), ColorValue("#E6E8EB"))
+                          BorderThickness: =If(varDetail && ThisItem.ID = varTicket.ID, 2, 1)
+                          RadiusTopLeft: =12
+                          RadiusTopRight: =12
+                          RadiusBottomLeft: =12
+                          RadiusBottomRight: =12
+                        Children:
+                        - tkCarteBarre:
+                            Control: Rectangle@2.3.0
+                            Properties:
+                              X: =0
+                              Y: =0
+                              Width: =5
+                              Height: =Parent.Height
+                              Fill: =ColorValue(Switch(First(Split(Coalesce(ThisItem.'Statut Urgence'.Value, ""), " ")).Value, "High", "#D13438", "Medium", "#F7A600", "Low", "#13A10E", "#C8CCD2"))
+                        - tkCarteNum:
+                            Control: Label@2.5.1
+                            Properties:
+                              Text: ="#" & ThisItem.ID & "  ·  " & Text(ThisItem.'Date de la demande', "dd/mm/yyyy") & " " & ThisItem.'Heure ticket'
+                              Font: =Font.'Segoe UI'
+                              PaddingTop: =0
+                              PaddingBottom: =0
+                              PaddingLeft: =0
+                              PaddingRight: =0
+                              X: =20
+                              Y: =12
+                              Width: =Parent.Width - 170
+                              Height: =18
+                              Size: =11
+                              Color: =ColorValue("#8A8A94")
+                              Wrap: =false
+                        - tkCarteTitre:
+                            Control: Label@2.5.1
+                            Properties:
+                              Text: =ThisItem.Title
+                              Font: =Font.'Segoe UI'
+                              PaddingTop: =0
+                              PaddingBottom: =0
+                              PaddingLeft: =0
+                              PaddingRight: =0
+                              X: =20
+                              Y: =32
+                              Width: =Parent.Width - 170
+                              Height: =26
+                              Size: =15
+                              FontWeight: =FontWeight.Semibold
+                              Color: =ColorValue("#1B1B1F")
+                              Wrap: =false
+                        - tkCarteInfos:
+                            Control: Label@2.5.1
+                            Properties:
+                              Text: =Coalesce(ThisItem.'Secteur demandeur'.Value, "—") & "  ·  " & Coalesce(ThisItem.'Intervention sur équipement'.Value, "—") & "  ·  " & Coalesce(ThisItem.'Dans quelle cellule devons nous intervenir ?'.Value, "—")
+                              Font: =Font.'Segoe UI'
+                              PaddingTop: =0
+                              PaddingBottom: =0
+                              PaddingLeft: =0
+                              PaddingRight: =0
+                              X: =20
+                              Y: =60
+                              Width: =Parent.Width - 170
+                              Height: =20
+                              Size: =12
+                              Color: =ColorValue("#5C5C66")
+                              Wrap: =false
+                        - tkCarteAuteur:
+                            Control: Label@2.5.1
+                            Properties:
+                              Text: ="Par " & ThisItem.Author.DisplayName & If(IsBlank(ThisItem.'Prise en charge'.DisplayName), "", "  ·  Pris en charge par " & ThisItem.'Prise en charge'.DisplayName)
+                              Font: =Font.'Segoe UI'
+                              PaddingTop: =0
+                              PaddingBottom: =0
+                              PaddingLeft: =0
+                              PaddingRight: =0
+                              X: =20
+                              Y: =82
+                              Width: =Parent.Width - 170
+                              Height: =18
+                              Size: =11
+                              Color: =ColorValue("#8A8A94")
+                              Wrap: =false
+                        - tkCarteStatut:
+                            Control: GroupContainer@1.5.0
+                            Variant: ManualLayout
+                            Properties:
+                              DropShadow: =DropShadow.None
+                              Width: =128
+                              Height: =26
+                              LayoutMinWidth: =128
+                              Fill: =ColorValue(Switch(ThisItem.'Ticket clôturer'.Value, "Oui", "#DFF6DD", "En cours", "#FFF4CE", "#E5F0FB"))
+                              RadiusTopLeft: =13
+                              RadiusTopRight: =13
+                              RadiusBottomLeft: =13
+                              RadiusBottomRight: =13
+                              X: =Parent.Width - 144
+                              Y: =14
+                            Children:
+                            - tkCarteStatutTxt:
+                                Control: Label@2.5.1
+                                Properties:
+                                  Text: =Switch(ThisItem.'Ticket clôturer'.Value, "Oui", "Clôturé", "En cours", "En cours", "Ouvert")
+                                  Font: =Font.'Segoe UI'
+                                  PaddingTop: =0
+                                  PaddingBottom: =0
+                                  PaddingLeft: =0
+                                  PaddingRight: =0
+                                  X: =0
+                                  Y: =0
+                                  Width: =Parent.Width
+                                  Height: =Parent.Height
+                                  Size: =11
+                                  FontWeight: =FontWeight.Semibold
+                                  Color: =ColorValue(Switch(ThisItem.'Ticket clôturer'.Value, "Oui", "#107C10", "En cours", "#8A6100", "#0F6CBD"))
+                                  Align: =Align.Center
+                                  VerticalAlign: =VerticalAlign.Middle
+                        - tkCarteUrgence:
+                            Control: GroupContainer@1.5.0
+                            Variant: ManualLayout
+                            Properties:
+                              DropShadow: =DropShadow.None
+                              Width: =128
+                              Height: =26
+                              LayoutMinWidth: =128
+                              Fill: =ColorValue(Switch(First(Split(Coalesce(ThisItem.'Statut Urgence'.Value, ""), " ")).Value, "High", "#FDE7E9", "Medium", "#FFF4CE", "Low", "#DFF6DD", "#F0F0F3"))
+                              RadiusTopLeft: =13
+                              RadiusTopRight: =13
+                              RadiusBottomLeft: =13
+                              RadiusBottomRight: =13
+                              X: =Parent.Width - 144
+                              Y: =48
+                            Children:
+                            - tkCarteUrgenceTxt:
+                                Control: Label@2.5.1
+                                Properties:
+                                  Text: =Switch(First(Split(Coalesce(ThisItem.'Statut Urgence'.Value, ""), " ")).Value, "High", "Urgence haute", "Medium", "Urgence moyenne", "Low", "Urgence basse", "Sans urgence")
+                                  Font: =Font.'Segoe UI'
+                                  PaddingTop: =0
+                                  PaddingBottom: =0
+                                  PaddingLeft: =0
+                                  PaddingRight: =0
+                                  X: =0
+                                  Y: =0
+                                  Width: =Parent.Width
+                                  Height: =Parent.Height
+                                  Size: =11
+                                  FontWeight: =FontWeight.Semibold
+                                  Color: =ColorValue(Switch(First(Split(Coalesce(ThisItem.'Statut Urgence'.Value, ""), " ")).Value, "High", "#A4262C", "Medium", "#8A6100", "Low", "#107C10", "#5C5C66"))
+                                  Align: =Align.Center
+                                  VerticalAlign: =VerticalAlign.Middle
+                        - tkCarteClic:
+                            Control: Classic/Button@2.2.0
+                            Properties:
+                              Text: =""
+                              Fill: =RGBA(0, 0, 0, 0)
+                              Color: =RGBA(0, 0, 0, 0)
+                              BorderColor: =RGBA(0, 0, 0, 0)
+                              BorderStyle: =BorderStyle.None
+                              HoverFill: =RGBA(0, 0, 0, 0.03)
+                              HoverColor: =RGBA(0, 0, 0, 0)
+                              HoverBorderColor: =RGBA(0, 0, 0, 0)
+                              PressedFill: =RGBA(0, 0, 0, 0.06)
+                              PressedColor: =RGBA(0, 0, 0, 0)
+                              PressedBorderColor: =RGBA(0, 0, 0, 0)
+                              X: =0
+                              Y: =0
+                              Width: =Parent.Width
+                              Height: =Parent.Height
+                              OnSelect: |-
+                                =Set(varTicket, ThisItem);
+                                Set(varDetail, true)
+                              RadiusTopLeft: =12
+                              RadiusTopRight: =12
+                              RadiusBottomLeft: =12
+                              RadiusBottomRight: =12
+            - tkDetail:
+                Control: GroupContainer@1.5.0
+                Variant: AutoLayout
+                Properties:
+                  LayoutDirection: =LayoutDirection.Vertical
+                  DropShadow: =DropShadow.Light
+                  LayoutMinHeight: =0
+                  LayoutMinWidth: =340
+                  FillPortions: =2
+                  AlignInContainer: =AlignInContainer.Stretch
+                  Visible: =varDetail
+                  Fill: =ColorValue("#FFFFFF")
+                  BorderColor: =ColorValue("#E6E8EB")
+                  BorderThickness: =1
+                  PaddingTop: =20
+                  PaddingBottom: =20
+                  PaddingLeft: =20
+                  PaddingRight: =20
+                  LayoutGap: =12
+                  RadiusTopLeft: =12
+                  RadiusTopRight: =12
+                  RadiusBottomLeft: =12
+                  RadiusBottomRight: =12
+                Children:
+                - tkDetailEntete:
+                    Control: GroupContainer@1.5.0
+                    Variant: AutoLayout
+                    Properties:
+                      LayoutDirection: =LayoutDirection.Horizontal
+                      DropShadow: =DropShadow.None
+                      LayoutMinHeight: =0
+                      LayoutMinWidth: =0
+                      Height: =32
+                      FillPortions: =0
+                      AlignInContainer: =AlignInContainer.Stretch
+                      LayoutAlignItems: =LayoutAlignItems.Center
+                    Children:
+                    - tkDetailNumero:
+                        Control: Label@2.5.1
+                        Properties:
+                          Text: ="TICKET N° " & varTicket.ID
+                          Font: =Font.'Segoe UI'
+                          PaddingTop: =0
+                          PaddingBottom: =0
+                          PaddingLeft: =0
+                          PaddingRight: =0
+                          FillPortions: =1
+                          Height: =28
+                          Size: =11
+                          FontWeight: =FontWeight.Semibold
+                          Color: =ColorValue("#001E62")
+                          VerticalAlign: =VerticalAlign.Middle
+                    - tkDetailFermer:
+                        Control: Classic/Button@2.2.0
+                        Properties:
+                          Text: ="✕"
+                          Width: =32
+                          Height: =32
+                          LayoutMinWidth: =32
+                          Size: =13
+                          Fill: =RGBA(0, 0, 0, 0)
+                          Color: =ColorValue("#5C5C66")
+                          BorderStyle: =BorderStyle.None
+                          BorderColor: =RGBA(0, 0, 0, 0)
+                          HoverFill: =ColorValue("#F0F0F3")
+                          HoverColor: =ColorValue("#1B1B1F")
+                          HoverBorderColor: =RGBA(0, 0, 0, 0)
+                          PressedFill: =ColorValue("#E6E8EB")
+                          PressedColor: =ColorValue("#1B1B1F")
+                          PressedBorderColor: =RGBA(0, 0, 0, 0)
+                          OnSelect: =Set(varDetail, false)
+                          RadiusTopLeft: =16
+                          RadiusTopRight: =16
+                          RadiusBottomLeft: =16
+                          RadiusBottomRight: =16
+                - tkDetailTitre:
+                    Control: Label@2.5.1
+                    Properties:
+                      Text: =varTicket.Title
+                      Font: =Font.'Segoe UI'
+                      PaddingTop: =0
+                      PaddingBottom: =0
+                      PaddingLeft: =0
+                      PaddingRight: =0
+                      Height: =54
+                      AlignInContainer: =AlignInContainer.Stretch
+                      Size: =18
+                      FontWeight: =FontWeight.Bold
+                      Color: =ColorValue("#1B1B1F")
+                      VerticalAlign: =VerticalAlign.Top
+                - tkDetailBadges:
+                    Control: GroupContainer@1.5.0
+                    Variant: AutoLayout
+                    Properties:
+                      LayoutDirection: =LayoutDirection.Horizontal
+                      DropShadow: =DropShadow.None
+                      LayoutMinHeight: =0
+                      LayoutMinWidth: =0
+                      Height: =26
+                      FillPortions: =0
+                      AlignInContainer: =AlignInContainer.Stretch
+                      LayoutGap: =8
+                    Children:
+                    - tkDetailStatut:
+                        Control: GroupContainer@1.5.0
+                        Variant: ManualLayout
+                        Properties:
+                          DropShadow: =DropShadow.None
+                          Width: =120
+                          Height: =26
+                          LayoutMinWidth: =120
+                          Fill: =ColorValue(Switch(varTicket.'Ticket clôturer'.Value, "Oui", "#DFF6DD", "En cours", "#FFF4CE", "#E5F0FB"))
+                          RadiusTopLeft: =13
+                          RadiusTopRight: =13
+                          RadiusBottomLeft: =13
+                          RadiusBottomRight: =13
+                        Children:
+                        - tkDetailStatutTxt:
+                            Control: Label@2.5.1
+                            Properties:
+                              Text: =Switch(varTicket.'Ticket clôturer'.Value, "Oui", "Clôturé", "En cours", "En cours", "Ouvert")
+                              Font: =Font.'Segoe UI'
+                              PaddingTop: =0
+                              PaddingBottom: =0
+                              PaddingLeft: =0
+                              PaddingRight: =0
+                              X: =0
+                              Y: =0
+                              Width: =Parent.Width
+                              Height: =Parent.Height
+                              Size: =11
+                              FontWeight: =FontWeight.Semibold
+                              Color: =ColorValue(Switch(varTicket.'Ticket clôturer'.Value, "Oui", "#107C10", "En cours", "#8A6100", "#0F6CBD"))
+                              Align: =Align.Center
+                              VerticalAlign: =VerticalAlign.Middle
+                    - tkDetailUrgence:
+                        Control: GroupContainer@1.5.0
+                        Variant: ManualLayout
+                        Properties:
+                          DropShadow: =DropShadow.None
+                          Width: =140
+                          Height: =26
+                          LayoutMinWidth: =140
+                          Fill: =ColorValue(Switch(First(Split(Coalesce(varTicket.'Statut Urgence'.Value, ""), " ")).Value, "High", "#FDE7E9", "Medium", "#FFF4CE", "Low", "#DFF6DD", "#F0F0F3"))
+                          RadiusTopLeft: =13
+                          RadiusTopRight: =13
+                          RadiusBottomLeft: =13
+                          RadiusBottomRight: =13
+                        Children:
+                        - tkDetailUrgenceTxt:
+                            Control: Label@2.5.1
+                            Properties:
+                              Text: =Switch(First(Split(Coalesce(varTicket.'Statut Urgence'.Value, ""), " ")).Value, "High", "Urgence haute", "Medium", "Urgence moyenne", "Low", "Urgence basse", "Sans urgence")
+                              Font: =Font.'Segoe UI'
+                              PaddingTop: =0
+                              PaddingBottom: =0
+                              PaddingLeft: =0
+                              PaddingRight: =0
+                              X: =0
+                              Y: =0
+                              Width: =Parent.Width
+                              Height: =Parent.Height
+                              Size: =11
+                              FontWeight: =FontWeight.Semibold
+                              Color: =ColorValue(Switch(First(Split(Coalesce(varTicket.'Statut Urgence'.Value, ""), " ")).Value, "High", "#A4262C", "Medium", "#8A6100", "Low", "#107C10", "#5C5C66"))
+                              Align: =Align.Center
+                              VerticalAlign: =VerticalAlign.Middle
+                - tkDetailPhotos:
+                    Control: GroupContainer@1.5.0
+                    Variant: AutoLayout
+                    Properties:
+                      LayoutDirection: =LayoutDirection.Horizontal
+                      DropShadow: =DropShadow.None
+                      LayoutMinHeight: =0
+                      LayoutMinWidth: =0
+                      Height: =130
+                      FillPortions: =0
+                      AlignInContainer: =AlignInContainer.Stretch
+                      LayoutGap: =8
+                      Visible: =!IsBlank(varTicket.'Photo 1') || !IsBlank(varTicket.'Photo 2') || !IsBlank(varTicket.'Photo 3')
+                    Children:
+                    - tkPhoto1:
+                        Control: Image@2.2.3
+                        Properties:
+                          Image: =varTicket.'Photo 1'.Full
+                          ImagePosition: =ImagePosition.Fill
+                          FillPortions: =1
+                          LayoutMinWidth: =60
+                          AlignInContainer: =AlignInContainer.Stretch
+                          Visible: =!IsBlank(varTicket.'Photo 1')
+                          OnSelect: =Launch(varTicket.'Photo 1'.Full)
+                          BorderColor: =ColorValue("#E6E8EB")
+                          BorderThickness: =1
+                    - tkPhoto2:
+                        Control: Image@2.2.3
+                        Properties:
+                          Image: =varTicket.'Photo 2'.Full
+                          ImagePosition: =ImagePosition.Fill
+                          FillPortions: =1
+                          LayoutMinWidth: =60
+                          AlignInContainer: =AlignInContainer.Stretch
+                          Visible: =!IsBlank(varTicket.'Photo 2')
+                          OnSelect: =Launch(varTicket.'Photo 2'.Full)
+                          BorderColor: =ColorValue("#E6E8EB")
+                          BorderThickness: =1
+                    - tkPhoto3:
+                        Control: Image@2.2.3
+                        Properties:
+                          Image: =varTicket.'Photo 3'.Full
+                          ImagePosition: =ImagePosition.Fill
+                          FillPortions: =1
+                          LayoutMinWidth: =60
+                          AlignInContainer: =AlignInContainer.Stretch
+                          Visible: =!IsBlank(varTicket.'Photo 3')
+                          OnSelect: =Launch(varTicket.'Photo 3'.Full)
+                          BorderColor: =ColorValue("#E6E8EB")
+                          BorderThickness: =1
+                - tkDetailInfos:
+                    Control: HtmlViewer@2.1.0
+                    Properties:
+                      HtmlText: |-
+                        =With(
+                            {t: varTicket},
+                            "<div style='font-family:Segoe UI,sans-serif;font-size:13px;color:#1B1B1F'>" &
+                            "<table style='width:100%;border-collapse:collapse'>" &
+                            Concat(
+                                Table(
+                                    {k: "Demandeur", v: t.Author.DisplayName},
+                                    {k: "Date de la demande", v: Text(t.'Date de la demande', "dd/mm/yyyy") & " " & t.'Heure ticket'},
+                                    {k: "Secteur", v: t.'Secteur demandeur'.Value},
+                                    {k: "Cellule", v: t.'Dans quelle cellule devons nous intervenir ?'.Value},
+                                    {k: "Équipement", v: t.'Intervention sur équipement'.Value},
+                                    {k: "Urgence", v: t.'Statut Urgence'.Value},
+                                    {k: "Pris en charge par", v: t.'Prise en charge'.DisplayName},
+                                    {k: "Heure de clôture", v: t.'Heure cloture du ticket'}
+                                ),
+                                "<tr><td style='color:#8A8A94;padding:8px 12px 8px 0;width:40%;border-bottom:1px solid #F0F0F3;vertical-align:top'>" & k &
+                                "</td><td style='padding:8px 0;border-bottom:1px solid #F0F0F3;font-weight:600'>" & Coalesce(v, "—") & "</td></tr>"
+                            ) &
+                            "</table>" &
+                            Concat(
+                                Table(
+                                    {k: "Description", v: t.Description},
+                                    {k: "Plan B en attendant l'intervention", v: t.'Plan B en attendant l''intervention'},
+                                    {k: "Résolution de l'intervention", v: t.'Résolution de l''intervention'}
+                                ),
+                                If(
+                                    IsBlank(v),
+                                    "",
+                                    "<div style='margin-top:16px'><div style='color:#8A8A94;font-size:12px;margin-bottom:6px'>" & k & "</div>" &
+                                    "<div style='background:#F7F8FA;border:1px solid #EEF0F3;border-radius:8px;padding:10px 12px;line-height:1.5'>" &
+                                    Substitute(Substitute(Substitute(v, "&", "&amp;"), "<", "&lt;"), Char(10), "<br>") & "</div></div>"
+                                )
+                            ) &
+                            "</div>"
+                        )
+                      AutoHeight: =false
+                      FillPortions: =1
+                      LayoutMinHeight: =120
+                      AlignInContainer: =AlignInContainer.Stretch
+                      Width: =Parent.Width
+                      Height: =300
