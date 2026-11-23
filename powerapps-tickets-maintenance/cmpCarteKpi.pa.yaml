@@ -30,9 +30,9 @@ ComponentDefinitions:
       Couleur:
         PropertyKind: Input
         DisplayName: Couleur
-        Description: Couleur d'accent de la carte (nombre, pastille, bordure active).
-        DataType: Color
-        Default: =ColorValue("#001E62")
+        Description: Couleur d'accent au format hexadécimal (ex. "#D13438").
+        DataType: Text
+        Default: ="#001E62"
       Selectionne:
         PropertyKind: Input
         DisplayName: Selectionne
@@ -46,7 +46,6 @@ ComponentDefinitions:
         ReturnType: None
         Default: =false
     Properties:
-      Fill: =RGBA(0, 0, 0, 0)
       Height: =120
       Width: =260
     Children:
@@ -54,10 +53,10 @@ ComponentDefinitions:
           Control: GroupContainer@1.5.0
           Variant: ManualLayout
           Properties:
-            BorderColor: =If(cmpCarteKpi.Selectionne, cmpCarteKpi.Couleur, ColorValue("#E6E8EB"))
+            BorderColor: =If(cmpCarteKpi.Selectionne, ColorValue(cmpCarteKpi.Couleur), ColorValue("#E6E8EB"))
             BorderThickness: =If(cmpCarteKpi.Selectionne, 2, 1)
             DropShadow: =DropShadow.Light
-            Fill: =If(cmpCarteKpi.Selectionne, ColorFade(cmpCarteKpi.Couleur, 0.94), ColorValue("#FFFFFF"))
+            Fill: =If(cmpCarteKpi.Selectionne, ColorFade(ColorValue(cmpCarteKpi.Couleur), 0.94), ColorValue("#FFFFFF"))
             Height: =Parent.Height
             RadiusBottomLeft: =12
             RadiusBottomRight: =12
@@ -72,7 +71,7 @@ ComponentDefinitions:
                 Variant: ManualLayout
                 Properties:
                   DropShadow: =DropShadow.None
-                  Fill: =ColorFade(cmpCarteKpi.Couleur, 0.85)
+                  Fill: =ColorFade(ColorValue(cmpCarteKpi.Couleur), 0.85)
                   Height: =44
                   RadiusBottomLeft: =22
                   RadiusBottomRight: =22
@@ -100,7 +99,7 @@ ComponentDefinitions:
             - lblValeur:
                 Control: Label@2.5.1
                 Properties:
-                  Color: =cmpCarteKpi.Couleur
+                  Color: =ColorValue(cmpCarteKpi.Couleur)
                   Font: =Font.'Segoe UI'
                   FontWeight: =FontWeight.Bold
                   Height: =36
@@ -153,8 +152,6 @@ ComponentDefinitions:
             - btnCarteKpi:
                 Control: Classic/Button@2.2.0
                 Properties:
-                  AccessibleLabel: |-
-                    =cmpCarteKpi.Titre & " : " & cmpCarteKpi.Valeur
                   BorderColor: =RGBA(0, 0, 0, 0)
                   BorderStyle: =BorderStyle.None
                   Color: =RGBA(0, 0, 0, 0)
