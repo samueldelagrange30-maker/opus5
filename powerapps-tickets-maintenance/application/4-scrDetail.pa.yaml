@@ -1,0 +1,1188 @@
+Screens:
+  scrDetail:
+    Properties:
+      Fill: =ColorValue("#F5F6F8")
+      OnVisible: |-
+        =Set(varTicket, LookUp('Ticket dépannage', ID = varTicket.ID));
+        Reset(deDescription);
+        Reset(dePriorite);
+        Reset(deStatut);
+        Reset(deResponsable);
+        Reset(deResolution)
+    Children:
+    - deRacine:
+        Control: GroupContainer@1.5.0
+        Variant: AutoLayout
+        Properties:
+          LayoutDirection: =LayoutDirection.Vertical
+          DropShadow: =DropShadow.None
+          LayoutMinHeight: =0
+          LayoutMinWidth: =0
+          X: =0
+          Y: =0
+          Width: =Parent.Width
+          Height: =Parent.Height
+          Fill: =ColorValue("#F5F6F8")
+          LayoutGap: =0
+        Children:
+        - deCorps:
+            Control: GroupContainer@1.5.0
+            Variant: AutoLayout
+            Properties:
+              LayoutDirection: =LayoutDirection.Horizontal
+              DropShadow: =DropShadow.None
+              LayoutMinHeight: =0
+              LayoutMinWidth: =0
+              FillPortions: =1
+              AlignInContainer: =AlignInContainer.Stretch
+              Fill: =ColorValue("#F5F6F8")
+            Children:
+            - deNav:
+                Control: GroupContainer@1.5.0
+                Variant: AutoLayout
+                Properties:
+                  LayoutDirection: =LayoutDirection.Vertical
+                  DropShadow: =DropShadow.None
+                  LayoutMinHeight: =0
+                  LayoutMinWidth: =If(App.Width < 1100, 76, 232)
+                  Width: =If(App.Width < 1100, 76, 232)
+                  FillPortions: =0
+                  AlignInContainer: =AlignInContainer.Stretch
+                  Visible: =!(App.Width < 700)
+                  Fill: =ColorValue("#001E62")
+                  LayoutGap: =6
+                  PaddingTop: =12
+                  PaddingBottom: =12
+                  PaddingLeft: =12
+                  PaddingRight: =12
+                Children:
+                - deNavLogo:
+                    Control: Label@2.5.1
+                    Properties:
+                      Text: ="ASICS"
+                      Font: =Font.'Segoe UI'
+                      PaddingTop: =0
+                      PaddingBottom: =0
+                      PaddingLeft: =If(App.Width < 1100, 0, 8)
+                      PaddingRight: =0
+                      Height: =40
+                      AlignInContainer: =AlignInContainer.Stretch
+                      Size: =If(App.Width < 1100, 13, 22)
+                      FontWeight: =FontWeight.Bold
+                      Italic: =true
+                      Color: =ColorValue("#FFFFFF")
+                      Align: =If(App.Width < 1100, Align.Center, Align.Left)
+                      VerticalAlign: =VerticalAlign.Middle
+                - deNavSousTitre:
+                    Control: Label@2.5.1
+                    Properties:
+                      Text: ="Gestion de la maintenance"
+                      Font: =Font.'Segoe UI'
+                      PaddingTop: =0
+                      PaddingBottom: =0
+                      PaddingLeft: =8
+                      PaddingRight: =0
+                      Height: =20
+                      AlignInContainer: =AlignInContainer.Stretch
+                      Size: =11
+                      Color: =ColorValue("#9FB3DE")
+                      Visible: =!(App.Width < 1100)
+                      Wrap: =false
+                - deNavTrait:
+                    Control: Rectangle@2.3.0
+                    Properties:
+                      Height: =1
+                      Fill: =RGBA(255, 255, 255, 0.14)
+                      AlignInContainer: =AlignInContainer.Stretch
+                - deNav1:
+                    Control: Classic/Button@2.2.0
+                    Properties:
+                      Text: =If(App.Width < 1100, "📊", "📊   Tableau de bord")
+                      Height: =44
+                      Size: =12
+                      FontWeight: =FontWeight.Semibold
+                      Fill: =RGBA(0, 0, 0, 0)
+                      Color: =ColorValue("#C9D3EA")
+                      BorderStyle: =BorderStyle.None
+                      BorderColor: =RGBA(0, 0, 0, 0)
+                      HoverBorderColor: =RGBA(0, 0, 0, 0)
+                      PressedBorderColor: =RGBA(0, 0, 0, 0)
+                      HoverFill: =RGBA(255, 255, 255, 0.10)
+                      HoverColor: =ColorValue("#FFFFFF")
+                      PressedFill: =RGBA(255, 255, 255, 0.18)
+                      PressedColor: =ColorValue("#FFFFFF")
+                      RadiusTopLeft: =8
+                      RadiusTopRight: =8
+                      RadiusBottomLeft: =8
+                      RadiusBottomRight: =8
+                      OnSelect: =Navigate(scrAccueil, ScreenTransition.Fade)
+                      AlignInContainer: =AlignInContainer.Stretch
+                - deNav2:
+                    Control: Classic/Button@2.2.0
+                    Properties:
+                      Text: =If(App.Width < 1100, "📋", "📋   Tickets")
+                      Height: =44
+                      Size: =12
+                      FontWeight: =FontWeight.Semibold
+                      Fill: =RGBA(255, 255, 255, 0.14)
+                      Color: =ColorValue("#FFFFFF")
+                      BorderStyle: =BorderStyle.None
+                      BorderColor: =RGBA(0, 0, 0, 0)
+                      HoverBorderColor: =RGBA(0, 0, 0, 0)
+                      PressedBorderColor: =RGBA(0, 0, 0, 0)
+                      HoverFill: =RGBA(255, 255, 255, 0.10)
+                      HoverColor: =ColorValue("#FFFFFF")
+                      PressedFill: =RGBA(255, 255, 255, 0.18)
+                      PressedColor: =ColorValue("#FFFFFF")
+                      RadiusTopLeft: =8
+                      RadiusTopRight: =8
+                      RadiusBottomLeft: =8
+                      RadiusBottomRight: =8
+                      OnSelect: =Navigate(scrListe, ScreenTransition.Fade)
+                      AlignInContainer: =AlignInContainer.Stretch
+                - deNav3:
+                    Control: Classic/Button@2.2.0
+                    Properties:
+                      Text: =If(App.Width < 1100, "➕", "➕   Nouveau ticket")
+                      Height: =44
+                      Size: =12
+                      FontWeight: =FontWeight.Semibold
+                      Fill: =RGBA(0, 0, 0, 0)
+                      Color: =ColorValue("#C9D3EA")
+                      BorderStyle: =BorderStyle.None
+                      BorderColor: =RGBA(0, 0, 0, 0)
+                      HoverBorderColor: =RGBA(0, 0, 0, 0)
+                      PressedBorderColor: =RGBA(0, 0, 0, 0)
+                      HoverFill: =RGBA(255, 255, 255, 0.10)
+                      HoverColor: =ColorValue("#FFFFFF")
+                      PressedFill: =RGBA(255, 255, 255, 0.18)
+                      PressedColor: =ColorValue("#FFFFFF")
+                      RadiusTopLeft: =8
+                      RadiusTopRight: =8
+                      RadiusBottomLeft: =8
+                      RadiusBottomRight: =8
+                      OnSelect: |-
+                        =NewForm(Form1);
+                        Navigate(scrCreer, ScreenTransition.Fade)
+                      AlignInContainer: =AlignInContainer.Stretch
+                - deNavEspace:
+                    Control: GroupContainer@1.5.0
+                    Variant: AutoLayout
+                    Properties:
+                      LayoutDirection: =LayoutDirection.Vertical
+                      DropShadow: =DropShadow.None
+                      LayoutMinHeight: =0
+                      LayoutMinWidth: =0
+                      FillPortions: =1
+                      AlignInContainer: =AlignInContainer.Stretch
+                - deNavUtilisateur:
+                    Control: Label@2.5.1
+                    Properties:
+                      Text: ="👤  " & User().FullName
+                      Font: =Font.'Segoe UI'
+                      PaddingTop: =0
+                      PaddingBottom: =0
+                      PaddingLeft: =8
+                      PaddingRight: =0
+                      Height: =36
+                      AlignInContainer: =AlignInContainer.Stretch
+                      Size: =11
+                      Color: =ColorValue("#C9D3EA")
+                      Visible: =!(App.Width < 1100)
+                      VerticalAlign: =VerticalAlign.Middle
+            - deContenu:
+                Control: GroupContainer@1.5.0
+                Variant: AutoLayout
+                Properties:
+                  LayoutDirection: =LayoutDirection.Vertical
+                  DropShadow: =DropShadow.None
+                  LayoutMinHeight: =0
+                  LayoutMinWidth: =0
+                  FillPortions: =1
+                  AlignInContainer: =AlignInContainer.Stretch
+                  Fill: =ColorValue("#F5F6F8")
+                  LayoutGap: =If(App.Width < 700, 12, 16)
+                  PaddingTop: =If(App.Width < 700, 12, 22)
+                  PaddingBottom: =If(App.Width < 700, 12, 22)
+                  PaddingLeft: =If(App.Width < 700, 12, 26)
+                  PaddingRight: =If(App.Width < 700, 12, 26)
+                  LayoutOverflowY: =LayoutOverflow.Scroll
+                Children:
+                - deEnTete:
+                    Control: GroupContainer@1.5.0
+                    Variant: AutoLayout
+                    Properties:
+                      LayoutDirection: =LayoutDirection.Horizontal
+                      DropShadow: =DropShadow.None
+                      LayoutMinHeight: =0
+                      LayoutMinWidth: =0
+                      Height: =58
+                      FillPortions: =0
+                      AlignInContainer: =AlignInContainer.Stretch
+                      LayoutAlignItems: =LayoutAlignItems.Center
+                      LayoutGap: =8
+                    Children:
+                    - deEnTeteTextes:
+                        Control: GroupContainer@1.5.0
+                        Variant: AutoLayout
+                        Properties:
+                          LayoutDirection: =LayoutDirection.Vertical
+                          DropShadow: =DropShadow.None
+                          LayoutMinHeight: =0
+                          LayoutMinWidth: =0
+                          FillPortions: =1
+                          AlignInContainer: =AlignInContainer.Center
+                          Height: =54
+                        Children:
+                        - deTitre:
+                            Control: Label@2.5.1
+                            Properties:
+                              Text: ="Détail du ticket"
+                              Font: =Font.'Segoe UI'
+                              PaddingTop: =0
+                              PaddingBottom: =0
+                              PaddingLeft: =0
+                              PaddingRight: =0
+                              Height: =32
+                              AlignInContainer: =AlignInContainer.Stretch
+                              Size: =If(App.Width < 700, 18, 22)
+                              FontWeight: =FontWeight.Bold
+                              Color: =ColorValue("#1B1B1F")
+                              VerticalAlign: =VerticalAlign.Middle
+                        - deSousTitre:
+                            Control: Label@2.5.1
+                            Properties:
+                              Text: ="Ticket n° " & varTicket.ID & "  ·  " & Coalesce(varTicket.Title, varTicket.Description, "Ticket sans description")
+                              Font: =Font.'Segoe UI'
+                              PaddingTop: =0
+                              PaddingBottom: =0
+                              PaddingLeft: =0
+                              PaddingRight: =0
+                              Height: =20
+                              AlignInContainer: =AlignInContainer.Stretch
+                              Size: =12
+                              Color: =ColorValue("#5C5C66")
+                              VerticalAlign: =VerticalAlign.Middle
+                              Wrap: =false
+                    - deRetour:
+                        Control: Classic/Button@2.2.0
+                        Properties:
+                          Text: ="← Retour"
+                          Width: =If(App.Width < 700, 80, 110)
+                          Height: =36
+                          LayoutMinWidth: =If(App.Width < 700, 80, 110)
+                          Size: =12
+                          FontWeight: =FontWeight.Semibold
+                          OnSelect: =Navigate(scrListe, ScreenTransition.Fade)
+                          BorderStyle: =BorderStyle.Solid
+                          BorderThickness: =1
+                          RadiusTopLeft: =8
+                          RadiusTopRight: =8
+                          RadiusBottomLeft: =8
+                          RadiusBottomRight: =8
+                          Fill: =ColorValue("#FFFFFF")
+                          Color: =ColorValue("#001E62")
+                          BorderColor: =ColorValue("#D1D5DB")
+                          HoverFill: =ColorValue("#F3F5F9")
+                          HoverColor: =ColorValue("#001E62")
+                          HoverBorderColor: =ColorValue("#001E62")
+                          PressedFill: =ColorValue("#E8EDF7")
+                - deActions:
+                    Control: GroupContainer@1.5.0
+                    Variant: AutoLayout
+                    Properties:
+                      LayoutDirection: =LayoutDirection.Horizontal
+                      DropShadow: =DropShadow.None
+                      LayoutMinHeight: =0
+                      LayoutMinWidth: =0
+                      Height: =48
+                      FillPortions: =0
+                      AlignInContainer: =AlignInContainer.Stretch
+                      LayoutGap: =8
+                      LayoutAlignItems: =LayoutAlignItems.Center
+                      LayoutOverflowX: =LayoutOverflow.Scroll
+                    Children:
+                    - deBadgeStatut:
+                        Control: GroupContainer@1.5.0
+                        Variant: ManualLayout
+                        Properties:
+                          DropShadow: =DropShadow.None
+                          Width: =110
+                          Height: =24
+                          LayoutMinWidth: =110
+                          Fill: =ColorValue(Switch(varTicket.'Ticket clôturer'.Value, "Oui", "#DFF6DD", "En cours", "#FFF1D6", "#EDEEF0"))
+                          RadiusTopLeft: =12
+                          RadiusTopRight: =12
+                          RadiusBottomLeft: =12
+                          RadiusBottomRight: =12
+                          AlignInContainer: =AlignInContainer.Center
+                        Children:
+                        - deBadgeStatutTxt:
+                            Control: Label@2.5.1
+                            Properties:
+                              Text: =Switch(varTicket.'Ticket clôturer'.Value, "Oui", "Clôturé", "En cours", "En cours", "Non démarré")
+                              Font: =Font.'Segoe UI'
+                              PaddingTop: =0
+                              PaddingBottom: =0
+                              PaddingLeft: =0
+                              PaddingRight: =0
+                              X: =0
+                              Y: =0
+                              Width: =Parent.Width
+                              Height: =Parent.Height
+                              Size: =11
+                              FontWeight: =FontWeight.Semibold
+                              Color: =ColorValue(Switch(varTicket.'Ticket clôturer'.Value, "Oui", "#0E700E", "En cours", "#8A5A00", "#4B5059"))
+                              Align: =Align.Center
+                              VerticalAlign: =VerticalAlign.Middle
+                    - deBadgePriorite:
+                        Control: GroupContainer@1.5.0
+                        Variant: ManualLayout
+                        Properties:
+                          DropShadow: =DropShadow.None
+                          Width: =140
+                          Height: =24
+                          LayoutMinWidth: =140
+                          Fill: =ColorValue(Switch(First(Split(Coalesce(varTicket.'Statut Urgence'.Value, ""), " ")).Value, "High", "#FDE7E9", "Medium", "#FFF1D6", "Low", "#DFF6DD", "#EDEEF0"))
+                          RadiusTopLeft: =12
+                          RadiusTopRight: =12
+                          RadiusBottomLeft: =12
+                          RadiusBottomRight: =12
+                          AlignInContainer: =AlignInContainer.Center
+                        Children:
+                        - deBadgePrioriteTxt:
+                            Control: Label@2.5.1
+                            Properties:
+                              Text: ="Priorité " & Switch(First(Split(Coalesce(varTicket.'Statut Urgence'.Value, ""), " ")).Value, "High", "Haute", "Medium", "Moyenne", "Low", "Basse", "—")
+                              Font: =Font.'Segoe UI'
+                              PaddingTop: =0
+                              PaddingBottom: =0
+                              PaddingLeft: =0
+                              PaddingRight: =0
+                              X: =0
+                              Y: =0
+                              Width: =Parent.Width
+                              Height: =Parent.Height
+                              Size: =11
+                              FontWeight: =FontWeight.Semibold
+                              Color: =ColorValue(Switch(First(Split(Coalesce(varTicket.'Statut Urgence'.Value, ""), " ")).Value, "High", "#A4262C", "Medium", "#8A5A00", "Low", "#0E700E", "#4B5059"))
+                              Align: =Align.Center
+                              VerticalAlign: =VerticalAlign.Middle
+                    - deActionsEspace:
+                        Control: GroupContainer@1.5.0
+                        Variant: AutoLayout
+                        Properties:
+                          LayoutDirection: =LayoutDirection.Horizontal
+                          DropShadow: =DropShadow.None
+                          LayoutMinHeight: =0
+                          LayoutMinWidth: =0
+                          FillPortions: =1
+                          Height: =10
+                          Visible: =!(App.Width < 700)
+                    - deEnCours:
+                        Control: Classic/Button@2.2.0
+                        Properties:
+                          Text: ="▶  Passer en cours"
+                          Width: =160
+                          Height: =36
+                          LayoutMinWidth: =160
+                          Size: =12
+                          FontWeight: =FontWeight.Semibold
+                          OnSelect: |-
+                            =With(
+                                {moi: {Claims: "i:0#.f|membership|" & Lower(User().Email), DisplayName: User().FullName, Email: User().Email, Department: "", JobTitle: "", Picture: ""}},
+                                Set(
+                                    varTicket,
+                                    Patch(
+                                        'Ticket dépannage',
+                                        LookUp('Ticket dépannage', ID = varTicket.ID),
+                                        {'Ticket clôturer': {Value: "En cours"}, 'Prise en charge': If(IsBlank(varTicket.'Prise en charge'.Email), moi, varTicket.'Prise en charge')}
+                                    )
+                                )
+                            );
+                            If(
+                                IsEmpty(Errors('Ticket dépannage')),
+                                ClearCollect(colTickets, 'Ticket dépannage');
+                                Reset(deDescription);
+                                Reset(dePriorite);
+                                Reset(deStatut);
+                                Reset(deResponsable);
+                                Reset(deResolution);
+                                Notify("Ticket passé en cours", NotificationType.Success),
+                                Notify("Erreur : " & First(Errors('Ticket dépannage')).Message, NotificationType.Error)
+                            )
+                          BorderStyle: =BorderStyle.Solid
+                          BorderThickness: =1
+                          RadiusTopLeft: =8
+                          RadiusTopRight: =8
+                          RadiusBottomLeft: =8
+                          RadiusBottomRight: =8
+                          Fill: =ColorValue("#001E62")
+                          Color: =ColorValue("#FFFFFF")
+                          BorderColor: =ColorValue("#001E62")
+                          HoverFill: =ColorValue("#0B2E7A")
+                          HoverColor: =ColorValue("#FFFFFF")
+                          HoverBorderColor: =ColorValue("#0B2E7A")
+                          PressedFill: =ColorValue("#00164A")
+                          Visible: =varTicket.'Ticket clôturer'.Value <> "En cours" && varTicket.'Ticket clôturer'.Value <> "Oui"
+                          AlignInContainer: =AlignInContainer.Center
+                    - deCloturer:
+                        Control: Classic/Button@2.2.0
+                        Properties:
+                          Text: ="✔  Clôturer"
+                          Width: =130
+                          Height: =36
+                          LayoutMinWidth: =130
+                          Size: =12
+                          FontWeight: =FontWeight.Semibold
+                          OnSelect: |-
+                            =With(
+                                {moi: {Claims: "i:0#.f|membership|" & Lower(User().Email), DisplayName: User().FullName, Email: User().Email, Department: "", JobTitle: "", Picture: ""}},
+                                Set(
+                                    varTicket,
+                                    Patch(
+                                        'Ticket dépannage',
+                                        LookUp('Ticket dépannage', ID = varTicket.ID),
+                                        {'Ticket clôturer': {Value: "Oui"}, 'Heure cloture du ticket': Text(Now(), "hh:mm"), 'Résolution de l''intervention': deResolution.Text, 'Prise en charge': If(IsBlank(varTicket.'Prise en charge'.Email), moi, varTicket.'Prise en charge')}
+                                    )
+                                )
+                            );
+                            If(
+                                IsEmpty(Errors('Ticket dépannage')),
+                                ClearCollect(colTickets, 'Ticket dépannage');
+                                Reset(deDescription);
+                                Reset(dePriorite);
+                                Reset(deStatut);
+                                Reset(deResponsable);
+                                Reset(deResolution);
+                                Notify("Ticket clôturé", NotificationType.Success),
+                                Notify("Erreur : " & First(Errors('Ticket dépannage')).Message, NotificationType.Error)
+                            )
+                          BorderStyle: =BorderStyle.Solid
+                          BorderThickness: =1
+                          RadiusTopLeft: =8
+                          RadiusTopRight: =8
+                          RadiusBottomLeft: =8
+                          RadiusBottomRight: =8
+                          Fill: =ColorValue("#107C10")
+                          Color: =ColorValue("#FFFFFF")
+                          BorderColor: =ColorValue("#107C10")
+                          HoverFill: =ColorValue("#0B5A0B")
+                          HoverColor: =ColorValue("#FFFFFF")
+                          HoverBorderColor: =ColorValue("#0B5A0B")
+                          PressedFill: =ColorValue("#094A09")
+                          Visible: =varTicket.'Ticket clôturer'.Value <> "Oui"
+                          DisplayMode: =If(IsBlank(deResolution.Text), DisplayMode.Disabled, DisplayMode.Edit)
+                          DisabledFill: =ColorValue("#BFD9BF")
+                          DisabledColor: =ColorValue("#FFFFFF")
+                          DisabledBorderColor: =ColorValue("#BFD9BF")
+                          AlignInContainer: =AlignInContainer.Center
+                    - deRouvrir:
+                        Control: Classic/Button@2.2.0
+                        Properties:
+                          Text: ="↺  Rouvrir"
+                          Width: =120
+                          Height: =36
+                          LayoutMinWidth: =120
+                          Size: =12
+                          FontWeight: =FontWeight.Semibold
+                          OnSelect: |-
+                            =With(
+                                {moi: {Claims: "i:0#.f|membership|" & Lower(User().Email), DisplayName: User().FullName, Email: User().Email, Department: "", JobTitle: "", Picture: ""}},
+                                Set(
+                                    varTicket,
+                                    Patch(
+                                        'Ticket dépannage',
+                                        LookUp('Ticket dépannage', ID = varTicket.ID),
+                                        {'Ticket clôturer': {Value: "En cours"}, 'Heure cloture du ticket': ""}
+                                    )
+                                )
+                            );
+                            If(
+                                IsEmpty(Errors('Ticket dépannage')),
+                                ClearCollect(colTickets, 'Ticket dépannage');
+                                Reset(deDescription);
+                                Reset(dePriorite);
+                                Reset(deStatut);
+                                Reset(deResponsable);
+                                Reset(deResolution);
+                                Notify("Ticket rouvert", NotificationType.Success),
+                                Notify("Erreur : " & First(Errors('Ticket dépannage')).Message, NotificationType.Error)
+                            )
+                          BorderStyle: =BorderStyle.Solid
+                          BorderThickness: =1
+                          RadiusTopLeft: =8
+                          RadiusTopRight: =8
+                          RadiusBottomLeft: =8
+                          RadiusBottomRight: =8
+                          Fill: =ColorValue("#FFFFFF")
+                          Color: =ColorValue("#001E62")
+                          BorderColor: =ColorValue("#D1D5DB")
+                          HoverFill: =ColorValue("#F3F5F9")
+                          HoverColor: =ColorValue("#001E62")
+                          HoverBorderColor: =ColorValue("#001E62")
+                          PressedFill: =ColorValue("#E8EDF7")
+                          Visible: =varTicket.'Ticket clôturer'.Value = "Oui"
+                          AlignInContainer: =AlignInContainer.Center
+                - deAideCloture:
+                    Control: Label@2.5.1
+                    Properties:
+                      Text: ="💡 Pour clôturer, renseignez d'abord les informations de résolution."
+                      Font: =Font.'Segoe UI'
+                      PaddingTop: =0
+                      PaddingBottom: =0
+                      PaddingLeft: =0
+                      PaddingRight: =0
+                      Height: =18
+                      AlignInContainer: =AlignInContainer.Stretch
+                      Size: =11
+                      Color: =ColorValue("#8A8A94")
+                      Visible: =varTicket.'Ticket clôturer'.Value <> "Oui" && IsBlank(deResolution.Text)
+                - deZone:
+                    Control: GroupContainer@1.5.0
+                    Variant: AutoLayout
+                    Properties:
+                      LayoutDirection: =If(App.Width < 700, LayoutDirection.Vertical, LayoutDirection.Horizontal)
+                      DropShadow: =DropShadow.None
+                      LayoutMinHeight: =0
+                      LayoutMinWidth: =0
+                      Height: =If(App.Width < 700, 1260, 640)
+                      FillPortions: =0
+                      AlignInContainer: =AlignInContainer.Stretch
+                      LayoutGap: =16
+                    Children:
+                    - deInfos:
+                        Control: GroupContainer@1.5.0
+                        Variant: AutoLayout
+                        Properties:
+                          LayoutDirection: =LayoutDirection.Vertical
+                          DropShadow: =DropShadow.None
+                          LayoutMinHeight: =0
+                          LayoutMinWidth: =0
+                          FillPortions: =1
+                          AlignInContainer: =AlignInContainer.Stretch
+                          LayoutGap: =10
+                          Fill: =ColorValue("#FFFFFF")
+                          BorderColor: =ColorValue("#E6E8EB")
+                          BorderThickness: =1
+                          RadiusTopLeft: =12
+                          RadiusTopRight: =12
+                          RadiusBottomLeft: =12
+                          RadiusBottomRight: =12
+                          PaddingTop: =18
+                          PaddingBottom: =18
+                          PaddingLeft: =18
+                          PaddingRight: =18
+                        Children:
+                        - deInfosTitre:
+                            Control: Label@2.5.1
+                            Properties:
+                              Text: ="📄  Informations"
+                              Font: =Font.'Segoe UI'
+                              PaddingTop: =0
+                              PaddingBottom: =0
+                              PaddingLeft: =0
+                              PaddingRight: =0
+                              Height: =24
+                              AlignInContainer: =AlignInContainer.Stretch
+                              Size: =14
+                              FontWeight: =FontWeight.Semibold
+                              Color: =ColorValue("#1B1B1F")
+                              VerticalAlign: =VerticalAlign.Middle
+                        - dePhotos:
+                            Control: GroupContainer@1.5.0
+                            Variant: AutoLayout
+                            Properties:
+                              LayoutDirection: =LayoutDirection.Horizontal
+                              DropShadow: =DropShadow.None
+                              LayoutMinHeight: =0
+                              LayoutMinWidth: =0
+                              Height: =120
+                              FillPortions: =0
+                              AlignInContainer: =AlignInContainer.Stretch
+                              LayoutGap: =8
+                              Visible: =!IsBlank(varTicket.'Photo 1') || !IsBlank(varTicket.'Photo 2') || !IsBlank(varTicket.'Photo 3')
+                            Children:
+                            - dePhoto1:
+                                Control: Image@2.2.3
+                                Properties:
+                                  Image: =varTicket.'Photo 1'.Full
+                                  ImagePosition: =ImagePosition.Fill
+                                  FillPortions: =1
+                                  LayoutMinWidth: =60
+                                  AlignInContainer: =AlignInContainer.Stretch
+                                  Visible: =!IsBlank(varTicket.'Photo 1')
+                                  OnSelect: =Launch(varTicket.'Photo 1'.Full)
+                                  BorderColor: =ColorValue("#E6E8EB")
+                                  BorderThickness: =1
+                            - dePhoto2:
+                                Control: Image@2.2.3
+                                Properties:
+                                  Image: =varTicket.'Photo 2'.Full
+                                  ImagePosition: =ImagePosition.Fill
+                                  FillPortions: =1
+                                  LayoutMinWidth: =60
+                                  AlignInContainer: =AlignInContainer.Stretch
+                                  Visible: =!IsBlank(varTicket.'Photo 2')
+                                  OnSelect: =Launch(varTicket.'Photo 2'.Full)
+                                  BorderColor: =ColorValue("#E6E8EB")
+                                  BorderThickness: =1
+                            - dePhoto3:
+                                Control: Image@2.2.3
+                                Properties:
+                                  Image: =varTicket.'Photo 3'.Full
+                                  ImagePosition: =ImagePosition.Fill
+                                  FillPortions: =1
+                                  LayoutMinWidth: =60
+                                  AlignInContainer: =AlignInContainer.Stretch
+                                  Visible: =!IsBlank(varTicket.'Photo 3')
+                                  OnSelect: =Launch(varTicket.'Photo 3'.Full)
+                                  BorderColor: =ColorValue("#E6E8EB")
+                                  BorderThickness: =1
+                        - deInfosDetail:
+                            Control: HtmlViewer@2.1.0
+                            Properties:
+                              HtmlText: |-
+                                =With(
+                                    {t: varTicket},
+                                    "<div style='font-family:Segoe UI,sans-serif;font-size:13px;color:#1B1B1F'>" &
+                                    "<table style='width:100%;border-collapse:collapse'>" &
+                                    Concat(
+                                        Table(
+                                            {k: "Demandeur", v: t.Author.DisplayName},
+                                            {k: "Créé le", v: Text(t.Created, "dd/mm/yyyy hh:mm")},
+                                            {k: "Date de la demande", v: Text(t.'Date de la demande', "dd/mm/yyyy") & " " & t.'Heure ticket'},
+                                            {k: "Secteur", v: t.'Secteur demandeur'.Value},
+                                            {k: "Cellule", v: t.'Dans quelle cellule devons nous intervenir ?'.Value},
+                                            {k: "Équipement", v: t.'Intervention sur équipement'.Value},
+                                            {k: "Responsable", v: t.'Prise en charge'.DisplayName},
+                                            {k: "Clôturé le", v: If(t.'Ticket clôturer'.Value = "Oui", Text(t.Modified, "dd/mm/yyyy") & " " & t.'Heure cloture du ticket', "")}
+                                        ),
+                                        "<tr><td style='color:#8A8A94;padding:8px 12px 8px 0;width:42%;border-bottom:1px solid #F0F0F3;vertical-align:top'>" & k &
+                                        "</td><td style='padding:8px 0;border-bottom:1px solid #F0F0F3;font-weight:600'>" & Coalesce(v, "—") & "</td></tr>"
+                                    ) &
+                                    "</table>" &
+                                    If(
+                                        IsBlank(t.'Plan B en attendant l''intervention'),
+                                        "",
+                                        "<div style='margin-top:16px'><div style='color:#8A8A94;font-size:12px;margin-bottom:6px'>Plan B en attendant l'intervention</div>" &
+                                        "<div style='background:#FFF8EC;border:1px solid #FBE3B5;border-radius:8px;padding:10px 12px;line-height:1.5'>" &
+                                        Substitute(Substitute(Substitute(t.'Plan B en attendant l''intervention', "&", "&amp;"), "<", "&lt;"), Char(10), "<br>") &
+                                        "</div></div>"
+                                    ) &
+                                    "</div>"
+                                )
+                              AutoHeight: =false
+                              FillPortions: =1
+                              LayoutMinHeight: =120
+                              AlignInContainer: =AlignInContainer.Stretch
+                    - deSuivi:
+                        Control: GroupContainer@1.5.0
+                        Variant: AutoLayout
+                        Properties:
+                          LayoutDirection: =LayoutDirection.Vertical
+                          DropShadow: =DropShadow.None
+                          LayoutMinHeight: =0
+                          LayoutMinWidth: =0
+                          FillPortions: =1
+                          AlignInContainer: =AlignInContainer.Stretch
+                          LayoutGap: =8
+                          Fill: =ColorValue("#FFFFFF")
+                          BorderColor: =ColorValue("#E6E8EB")
+                          BorderThickness: =1
+                          RadiusTopLeft: =12
+                          RadiusTopRight: =12
+                          RadiusBottomLeft: =12
+                          RadiusBottomRight: =12
+                          PaddingTop: =18
+                          PaddingBottom: =18
+                          PaddingLeft: =18
+                          PaddingRight: =18
+                        Children:
+                        - deSuiviTitre:
+                            Control: Label@2.5.1
+                            Properties:
+                              Text: ="✏️  Suivi et modification"
+                              Font: =Font.'Segoe UI'
+                              PaddingTop: =0
+                              PaddingBottom: =0
+                              PaddingLeft: =0
+                              PaddingRight: =0
+                              Height: =24
+                              AlignInContainer: =AlignInContainer.Stretch
+                              Size: =14
+                              FontWeight: =FontWeight.Semibold
+                              Color: =ColorValue("#1B1B1F")
+                              VerticalAlign: =VerticalAlign.Middle
+                        - deLblDescription:
+                            Control: Label@2.5.1
+                            Properties:
+                              Text: ="Description du problème"
+                              Font: =Font.'Segoe UI'
+                              PaddingTop: =0
+                              PaddingBottom: =0
+                              PaddingLeft: =0
+                              PaddingRight: =0
+                              Height: =20
+                              AlignInContainer: =AlignInContainer.Stretch
+                              Size: =12
+                              FontWeight: =FontWeight.Semibold
+                              Color: =ColorValue("#5C5C66")
+                              VerticalAlign: =VerticalAlign.Middle
+                        - deDescription:
+                            Control: Classic/TextInput
+                            Properties:
+                              Default: =varTicket.Description
+                              Mode: =TextMode.MultiLine
+                              Height: =90
+                              Fill: =ColorValue("#F7F8FA")
+                              Color: =ColorValue("#1B1B1F")
+                              BorderColor: =ColorValue("#E6E8EB")
+                              BorderThickness: =1
+                              HoverBorderColor: =ColorValue("#C3C8D0")
+                              FocusedBorderColor: =ColorValue("#001E62")
+                              Size: =12
+                              PaddingLeft: =10
+                              RadiusTopLeft: =8
+                              RadiusTopRight: =8
+                              RadiusBottomLeft: =8
+                              RadiusBottomRight: =8
+                              AlignInContainer: =AlignInContainer.Stretch
+                        - deLigneChoix:
+                            Control: GroupContainer@1.5.0
+                            Variant: AutoLayout
+                            Properties:
+                              LayoutDirection: =If(App.Width < 700, LayoutDirection.Vertical, LayoutDirection.Horizontal)
+                              DropShadow: =DropShadow.None
+                              LayoutMinHeight: =0
+                              LayoutMinWidth: =0
+                              Height: =If(App.Width < 700, 132, 62)
+                              FillPortions: =0
+                              AlignInContainer: =AlignInContainer.Stretch
+                              LayoutGap: =12
+                            Children:
+                            - deBlocPriorite:
+                                Control: GroupContainer@1.5.0
+                                Variant: AutoLayout
+                                Properties:
+                                  LayoutDirection: =LayoutDirection.Vertical
+                                  DropShadow: =DropShadow.None
+                                  LayoutMinHeight: =0
+                                  LayoutMinWidth: =0
+                                  FillPortions: =1
+                                  Height: =62
+                                  LayoutGap: =4
+                                  AlignInContainer: =AlignInContainer.Stretch
+                                Children:
+                                - deLblPriorite:
+                                    Control: Label@2.5.1
+                                    Properties:
+                                      Text: ="Priorité"
+                                      Font: =Font.'Segoe UI'
+                                      PaddingTop: =0
+                                      PaddingBottom: =0
+                                      PaddingLeft: =0
+                                      PaddingRight: =0
+                                      Height: =20
+                                      AlignInContainer: =AlignInContainer.Stretch
+                                      Size: =12
+                                      FontWeight: =FontWeight.Semibold
+                                      Color: =ColorValue("#5C5C66")
+                                      VerticalAlign: =VerticalAlign.Middle
+                                - dePriorite:
+                                    Control: ModernCombobox@1.1.1
+                                    Properties:
+                                      Items: =Choices('Ticket dépannage'.'Statut Urgence')
+                                      ItemDisplayText: =ThisItem.Value
+                                      SelectMultiple: =false
+                                      IsSearchable: =false
+                                      Appearance: =Appearance.Outline
+                                      Width: =150
+                                      Height: =36
+                                      Size: =12
+                                      LayoutMinWidth: =150
+                                      AlignInContainer: =AlignInContainer.Stretch
+                                      DefaultSelectedItems: =Table(varTicket.'Statut Urgence')
+                            - deBlocStatut:
+                                Control: GroupContainer@1.5.0
+                                Variant: AutoLayout
+                                Properties:
+                                  LayoutDirection: =LayoutDirection.Vertical
+                                  DropShadow: =DropShadow.None
+                                  LayoutMinHeight: =0
+                                  LayoutMinWidth: =0
+                                  FillPortions: =1
+                                  Height: =62
+                                  LayoutGap: =4
+                                  AlignInContainer: =AlignInContainer.Stretch
+                                Children:
+                                - deLblStatut:
+                                    Control: Label@2.5.1
+                                    Properties:
+                                      Text: ="Statut (Ticket clôturer)"
+                                      Font: =Font.'Segoe UI'
+                                      PaddingTop: =0
+                                      PaddingBottom: =0
+                                      PaddingLeft: =0
+                                      PaddingRight: =0
+                                      Height: =20
+                                      AlignInContainer: =AlignInContainer.Stretch
+                                      Size: =12
+                                      FontWeight: =FontWeight.Semibold
+                                      Color: =ColorValue("#5C5C66")
+                                      VerticalAlign: =VerticalAlign.Middle
+                                - deStatut:
+                                    Control: ModernCombobox@1.1.1
+                                    Properties:
+                                      Items: =Choices('Ticket dépannage'.'Ticket clôturer')
+                                      ItemDisplayText: =ThisItem.Value
+                                      SelectMultiple: =false
+                                      IsSearchable: =false
+                                      Appearance: =Appearance.Outline
+                                      Width: =150
+                                      Height: =36
+                                      Size: =12
+                                      LayoutMinWidth: =150
+                                      AlignInContainer: =AlignInContainer.Stretch
+                                      DefaultSelectedItems: =Table(varTicket.'Ticket clôturer')
+                        - deLblResponsable:
+                            Control: Label@2.5.1
+                            Properties:
+                              Text: ="Responsable de l'intervention"
+                              Font: =Font.'Segoe UI'
+                              PaddingTop: =0
+                              PaddingBottom: =0
+                              PaddingLeft: =0
+                              PaddingRight: =0
+                              Height: =20
+                              AlignInContainer: =AlignInContainer.Stretch
+                              Size: =12
+                              FontWeight: =FontWeight.Semibold
+                              Color: =ColorValue("#5C5C66")
+                              VerticalAlign: =VerticalAlign.Middle
+                        - deLigneResponsable:
+                            Control: GroupContainer@1.5.0
+                            Variant: AutoLayout
+                            Properties:
+                              LayoutDirection: =LayoutDirection.Horizontal
+                              DropShadow: =DropShadow.None
+                              LayoutMinHeight: =0
+                              LayoutMinWidth: =0
+                              Height: =40
+                              FillPortions: =0
+                              AlignInContainer: =AlignInContainer.Stretch
+                              LayoutGap: =8
+                            Children:
+                            - deResponsable:
+                                Control: Classic/ComboBox
+                                Properties:
+                                  Items: =Choices('Ticket dépannage'.'Prise en charge')
+                                  DefaultSelectedItems: =If(IsBlank(varTicket.'Prise en charge'.Email), Blank(), Table(varTicket.'Prise en charge'))
+                                  SelectMultiple: =false
+                                  IsSearchable: =true
+                                  SearchFields: =["DisplayName", "Email"]
+                                  DisplayFields: =["DisplayName"]
+                                  InputTextPlaceholder: ="Rechercher une personne…"
+                                  FillPortions: =1
+                                  Height: =36
+                                  LayoutMinWidth: =120
+                                  AlignInContainer: =AlignInContainer.Center
+                            - deMAssigner:
+                                Control: Classic/Button@2.2.0
+                                Properties:
+                                  Text: ="M'assigner"
+                                  Width: =110
+                                  Height: =36
+                                  LayoutMinWidth: =110
+                                  Size: =12
+                                  FontWeight: =FontWeight.Semibold
+                                  OnSelect: |-
+                                    =With(
+                                        {moi: {Claims: "i:0#.f|membership|" & Lower(User().Email), DisplayName: User().FullName, Email: User().Email, Department: "", JobTitle: "", Picture: ""}},
+                                        Set(
+                                            varTicket,
+                                            Patch(
+                                                'Ticket dépannage',
+                                                LookUp('Ticket dépannage', ID = varTicket.ID),
+                                                {'Prise en charge': moi}
+                                            )
+                                        )
+                                    );
+                                    If(
+                                        IsEmpty(Errors('Ticket dépannage')),
+                                        ClearCollect(colTickets, 'Ticket dépannage');
+                                        Reset(deDescription);
+                                        Reset(dePriorite);
+                                        Reset(deStatut);
+                                        Reset(deResponsable);
+                                        Reset(deResolution);
+                                        Notify("Ticket assigné à vous", NotificationType.Success),
+                                        Notify("Erreur : " & First(Errors('Ticket dépannage')).Message, NotificationType.Error)
+                                    )
+                                  BorderStyle: =BorderStyle.Solid
+                                  BorderThickness: =1
+                                  RadiusTopLeft: =8
+                                  RadiusTopRight: =8
+                                  RadiusBottomLeft: =8
+                                  RadiusBottomRight: =8
+                                  Fill: =ColorValue("#FFFFFF")
+                                  Color: =ColorValue("#001E62")
+                                  BorderColor: =ColorValue("#D1D5DB")
+                                  HoverFill: =ColorValue("#F3F5F9")
+                                  HoverColor: =ColorValue("#001E62")
+                                  HoverBorderColor: =ColorValue("#001E62")
+                                  PressedFill: =ColorValue("#E8EDF7")
+                                  AlignInContainer: =AlignInContainer.Center
+                        - deLblResolution:
+                            Control: Label@2.5.1
+                            Properties:
+                              Text: ="Informations de suivi / résolution (255 caractères max.)"
+                              Font: =Font.'Segoe UI'
+                              PaddingTop: =0
+                              PaddingBottom: =0
+                              PaddingLeft: =0
+                              PaddingRight: =0
+                              Height: =20
+                              AlignInContainer: =AlignInContainer.Stretch
+                              Size: =12
+                              FontWeight: =FontWeight.Semibold
+                              Color: =ColorValue("#5C5C66")
+                              VerticalAlign: =VerticalAlign.Middle
+                        - deResolution:
+                            Control: Classic/TextInput
+                            Properties:
+                              Default: =varTicket.'Résolution de l''intervention'
+                              Mode: =TextMode.MultiLine
+                              MaxLength: =255
+                              Height: =80
+                              Fill: =ColorValue("#F7F8FA")
+                              Color: =ColorValue("#1B1B1F")
+                              BorderColor: =ColorValue("#E6E8EB")
+                              BorderThickness: =1
+                              HoverBorderColor: =ColorValue("#C3C8D0")
+                              FocusedBorderColor: =ColorValue("#001E62")
+                              Size: =12
+                              PaddingLeft: =10
+                              RadiusTopLeft: =8
+                              RadiusTopRight: =8
+                              RadiusBottomLeft: =8
+                              RadiusBottomRight: =8
+                              AlignInContainer: =AlignInContainer.Stretch
+                        - deCompteur:
+                            Control: Label@2.5.1
+                            Properties:
+                              Text: =Len(deResolution.Text) & " / 255"
+                              Font: =Font.'Segoe UI'
+                              PaddingTop: =0
+                              PaddingBottom: =0
+                              PaddingLeft: =0
+                              PaddingRight: =0
+                              Height: =16
+                              AlignInContainer: =AlignInContainer.Stretch
+                              Size: =10
+                              Color: =ColorValue("#8A8A94")
+                              Align: =Align.Right
+                        - deBoutons:
+                            Control: GroupContainer@1.5.0
+                            Variant: AutoLayout
+                            Properties:
+                              LayoutDirection: =LayoutDirection.Horizontal
+                              DropShadow: =DropShadow.None
+                              LayoutMinHeight: =0
+                              LayoutMinWidth: =0
+                              Height: =44
+                              FillPortions: =0
+                              AlignInContainer: =AlignInContainer.Stretch
+                              LayoutGap: =8
+                              LayoutAlignItems: =LayoutAlignItems.Center
+                            Children:
+                            - deBoutonsEspace:
+                                Control: GroupContainer@1.5.0
+                                Variant: AutoLayout
+                                Properties:
+                                  LayoutDirection: =LayoutDirection.Horizontal
+                                  DropShadow: =DropShadow.None
+                                  LayoutMinHeight: =0
+                                  LayoutMinWidth: =0
+                                  FillPortions: =1
+                                  Height: =10
+                            - deAnnuler:
+                                Control: Classic/Button@2.2.0
+                                Properties:
+                                  Text: ="Annuler"
+                                  Width: =100
+                                  Height: =36
+                                  LayoutMinWidth: =100
+                                  Size: =12
+                                  FontWeight: =FontWeight.Semibold
+                                  OnSelect: |-
+                                    =Reset(deDescription);
+                                    Reset(dePriorite);
+                                    Reset(deStatut);
+                                    Reset(deResponsable);
+                                    Reset(deResolution)
+                                  BorderStyle: =BorderStyle.Solid
+                                  BorderThickness: =1
+                                  RadiusTopLeft: =8
+                                  RadiusTopRight: =8
+                                  RadiusBottomLeft: =8
+                                  RadiusBottomRight: =8
+                                  Fill: =ColorValue("#FFFFFF")
+                                  Color: =ColorValue("#001E62")
+                                  BorderColor: =ColorValue("#D1D5DB")
+                                  HoverFill: =ColorValue("#F3F5F9")
+                                  HoverColor: =ColorValue("#001E62")
+                                  HoverBorderColor: =ColorValue("#001E62")
+                                  PressedFill: =ColorValue("#E8EDF7")
+                            - deEnregistrer:
+                                Control: Classic/Button@2.2.0
+                                Properties:
+                                  Text: ="💾  Enregistrer"
+                                  Width: =150
+                                  Height: =36
+                                  LayoutMinWidth: =150
+                                  Size: =12
+                                  FontWeight: =FontWeight.Semibold
+                                  OnSelect: |-
+                                    =With(
+                                        {moi: {Claims: "i:0#.f|membership|" & Lower(User().Email), DisplayName: User().FullName, Email: User().Email, Department: "", JobTitle: "", Picture: ""}},
+                                        Set(
+                                            varTicket,
+                                            Patch(
+                                                'Ticket dépannage',
+                                                LookUp('Ticket dépannage', ID = varTicket.ID),
+                                                {
+                                                    Description: deDescription.Text,
+                                                    'Statut Urgence': dePriorite.Selected,
+                                                    'Ticket clôturer': deStatut.Selected,
+                                                    'Prise en charge': deResponsable.Selected,
+                                                    'Résolution de l''intervention': deResolution.Text,
+                                                    'Heure cloture du ticket': If(deStatut.Selected.Value = "Oui", Coalesce(varTicket.'Heure cloture du ticket', Text(Now(), "hh:mm")), "")
+                                                }
+                                            )
+                                        )
+                                    );
+                                    If(
+                                        IsEmpty(Errors('Ticket dépannage')),
+                                        ClearCollect(colTickets, 'Ticket dépannage');
+                                        Reset(deDescription);
+                                        Reset(dePriorite);
+                                        Reset(deStatut);
+                                        Reset(deResponsable);
+                                        Reset(deResolution);
+                                        Notify("Modifications enregistrées", NotificationType.Success),
+                                        Notify("Erreur : " & First(Errors('Ticket dépannage')).Message, NotificationType.Error)
+                                    )
+                                  BorderStyle: =BorderStyle.Solid
+                                  BorderThickness: =1
+                                  RadiusTopLeft: =8
+                                  RadiusTopRight: =8
+                                  RadiusBottomLeft: =8
+                                  RadiusBottomRight: =8
+                                  Fill: =ColorValue("#001E62")
+                                  Color: =ColorValue("#FFFFFF")
+                                  BorderColor: =ColorValue("#001E62")
+                                  HoverFill: =ColorValue("#0B2E7A")
+                                  HoverColor: =ColorValue("#FFFFFF")
+                                  HoverBorderColor: =ColorValue("#0B2E7A")
+                                  PressedFill: =ColorValue("#00164A")
+                                  DisplayMode: =If(IsBlank(deDescription.Text), DisplayMode.Disabled, DisplayMode.Edit)
+                                  DisabledFill: =ColorValue("#C7CFDF")
+                                  DisabledColor: =ColorValue("#FFFFFF")
+                                  DisabledBorderColor: =ColorValue("#C7CFDF")
+        - deNavBas:
+            Control: GroupContainer@1.5.0
+            Variant: AutoLayout
+            Properties:
+              LayoutDirection: =LayoutDirection.Horizontal
+              DropShadow: =DropShadow.None
+              LayoutMinHeight: =0
+              LayoutMinWidth: =0
+              Height: =66
+              FillPortions: =0
+              AlignInContainer: =AlignInContainer.Stretch
+              Visible: =App.Width < 700
+              Fill: =ColorValue("#FFFFFF")
+              BorderColor: =ColorValue("#E6E8EB")
+              BorderThickness: =1
+              LayoutAlignItems: =LayoutAlignItems.Center
+              LayoutGap: =4
+              PaddingTop: =6
+              PaddingBottom: =6
+              PaddingLeft: =6
+              PaddingRight: =6
+            Children:
+            - deBas1:
+                Control: Classic/Button@2.2.0
+                Properties:
+                  Text: ="📊" & Char(10) & "Accueil"
+                  FillPortions: =1
+                  Height: =54
+                  Size: =10
+                  FontWeight: =FontWeight.Semibold
+                  Fill: =RGBA(0, 0, 0, 0)
+                  Color: =ColorValue("#5C5C66")
+                  BorderStyle: =BorderStyle.None
+                  BorderColor: =RGBA(0, 0, 0, 0)
+                  HoverBorderColor: =RGBA(0, 0, 0, 0)
+                  PressedBorderColor: =RGBA(0, 0, 0, 0)
+                  HoverFill: =ColorValue("#F0F3F9")
+                  HoverColor: =ColorValue("#001E62")
+                  PressedFill: =ColorValue("#E3E9F5")
+                  PressedColor: =ColorValue("#001E62")
+                  RadiusTopLeft: =10
+                  RadiusTopRight: =10
+                  RadiusBottomLeft: =10
+                  RadiusBottomRight: =10
+                  OnSelect: =Navigate(scrAccueil, ScreenTransition.Fade)
+                  AlignInContainer: =AlignInContainer.Center
+            - deBas2:
+                Control: Classic/Button@2.2.0
+                Properties:
+                  Text: ="📋" & Char(10) & "Tickets"
+                  FillPortions: =1
+                  Height: =54
+                  Size: =10
+                  FontWeight: =FontWeight.Semibold
+                  Fill: =ColorValue("#E8EDF7")
+                  Color: =ColorValue("#001E62")
+                  BorderStyle: =BorderStyle.None
+                  BorderColor: =RGBA(0, 0, 0, 0)
+                  HoverBorderColor: =RGBA(0, 0, 0, 0)
+                  PressedBorderColor: =RGBA(0, 0, 0, 0)
+                  HoverFill: =ColorValue("#F0F3F9")
+                  HoverColor: =ColorValue("#001E62")
+                  PressedFill: =ColorValue("#E3E9F5")
+                  PressedColor: =ColorValue("#001E62")
+                  RadiusTopLeft: =10
+                  RadiusTopRight: =10
+                  RadiusBottomLeft: =10
+                  RadiusBottomRight: =10
+                  OnSelect: =Navigate(scrListe, ScreenTransition.Fade)
+                  AlignInContainer: =AlignInContainer.Center
+            - deBas3:
+                Control: Classic/Button@2.2.0
+                Properties:
+                  Text: ="➕" & Char(10) & "Créer"
+                  FillPortions: =1
+                  Height: =54
+                  Size: =10
+                  FontWeight: =FontWeight.Semibold
+                  Fill: =RGBA(0, 0, 0, 0)
+                  Color: =ColorValue("#5C5C66")
+                  BorderStyle: =BorderStyle.None
+                  BorderColor: =RGBA(0, 0, 0, 0)
+                  HoverBorderColor: =RGBA(0, 0, 0, 0)
+                  PressedBorderColor: =RGBA(0, 0, 0, 0)
+                  HoverFill: =ColorValue("#F0F3F9")
+                  HoverColor: =ColorValue("#001E62")
+                  PressedFill: =ColorValue("#E3E9F5")
+                  PressedColor: =ColorValue("#001E62")
+                  RadiusTopLeft: =10
+                  RadiusTopRight: =10
+                  RadiusBottomLeft: =10
+                  RadiusBottomRight: =10
+                  OnSelect: |-
+                    =NewForm(Form1);
+                    Navigate(scrCreer, ScreenTransition.Fade)
+                  AlignInContainer: =AlignInContainer.Center

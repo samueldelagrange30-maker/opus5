@@ -1,0 +1,1414 @@
+Screens:
+  scrAccueil:
+    Properties:
+      Fill: =ColorValue("#F5F6F8")
+      OnVisible: =Select(acActualiser)
+    Children:
+    - acRacine:
+        Control: GroupContainer@1.5.0
+        Variant: AutoLayout
+        Properties:
+          LayoutDirection: =LayoutDirection.Vertical
+          DropShadow: =DropShadow.None
+          LayoutMinHeight: =0
+          LayoutMinWidth: =0
+          X: =0
+          Y: =0
+          Width: =Parent.Width
+          Height: =Parent.Height
+          Fill: =ColorValue("#F5F6F8")
+          LayoutGap: =0
+        Children:
+        - acCorps:
+            Control: GroupContainer@1.5.0
+            Variant: AutoLayout
+            Properties:
+              LayoutDirection: =LayoutDirection.Horizontal
+              DropShadow: =DropShadow.None
+              LayoutMinHeight: =0
+              LayoutMinWidth: =0
+              FillPortions: =1
+              AlignInContainer: =AlignInContainer.Stretch
+              Fill: =ColorValue("#F5F6F8")
+            Children:
+            - acNav:
+                Control: GroupContainer@1.5.0
+                Variant: AutoLayout
+                Properties:
+                  LayoutDirection: =LayoutDirection.Vertical
+                  DropShadow: =DropShadow.None
+                  LayoutMinHeight: =0
+                  LayoutMinWidth: =If(App.Width < 1100, 76, 232)
+                  Width: =If(App.Width < 1100, 76, 232)
+                  FillPortions: =0
+                  AlignInContainer: =AlignInContainer.Stretch
+                  Visible: =!(App.Width < 700)
+                  Fill: =ColorValue("#001E62")
+                  LayoutGap: =6
+                  PaddingTop: =12
+                  PaddingBottom: =12
+                  PaddingLeft: =12
+                  PaddingRight: =12
+                Children:
+                - acNavLogo:
+                    Control: Label@2.5.1
+                    Properties:
+                      Text: ="ASICS"
+                      Font: =Font.'Segoe UI'
+                      PaddingTop: =0
+                      PaddingBottom: =0
+                      PaddingLeft: =If(App.Width < 1100, 0, 8)
+                      PaddingRight: =0
+                      Height: =40
+                      AlignInContainer: =AlignInContainer.Stretch
+                      Size: =If(App.Width < 1100, 13, 22)
+                      FontWeight: =FontWeight.Bold
+                      Italic: =true
+                      Color: =ColorValue("#FFFFFF")
+                      Align: =If(App.Width < 1100, Align.Center, Align.Left)
+                      VerticalAlign: =VerticalAlign.Middle
+                - acNavSousTitre:
+                    Control: Label@2.5.1
+                    Properties:
+                      Text: ="Gestion de la maintenance"
+                      Font: =Font.'Segoe UI'
+                      PaddingTop: =0
+                      PaddingBottom: =0
+                      PaddingLeft: =8
+                      PaddingRight: =0
+                      Height: =20
+                      AlignInContainer: =AlignInContainer.Stretch
+                      Size: =11
+                      Color: =ColorValue("#9FB3DE")
+                      Visible: =!(App.Width < 1100)
+                      Wrap: =false
+                - acNavTrait:
+                    Control: Rectangle@2.3.0
+                    Properties:
+                      Height: =1
+                      Fill: =RGBA(255, 255, 255, 0.14)
+                      AlignInContainer: =AlignInContainer.Stretch
+                - acNav1:
+                    Control: Classic/Button@2.2.0
+                    Properties:
+                      Text: =If(App.Width < 1100, "📊", "📊   Tableau de bord")
+                      Height: =44
+                      Size: =12
+                      FontWeight: =FontWeight.Semibold
+                      Fill: =RGBA(255, 255, 255, 0.14)
+                      Color: =ColorValue("#FFFFFF")
+                      BorderStyle: =BorderStyle.None
+                      BorderColor: =RGBA(0, 0, 0, 0)
+                      HoverBorderColor: =RGBA(0, 0, 0, 0)
+                      PressedBorderColor: =RGBA(0, 0, 0, 0)
+                      HoverFill: =RGBA(255, 255, 255, 0.10)
+                      HoverColor: =ColorValue("#FFFFFF")
+                      PressedFill: =RGBA(255, 255, 255, 0.18)
+                      PressedColor: =ColorValue("#FFFFFF")
+                      RadiusTopLeft: =8
+                      RadiusTopRight: =8
+                      RadiusBottomLeft: =8
+                      RadiusBottomRight: =8
+                      OnSelect: =Navigate(scrAccueil, ScreenTransition.Fade)
+                      AlignInContainer: =AlignInContainer.Stretch
+                - acNav2:
+                    Control: Classic/Button@2.2.0
+                    Properties:
+                      Text: =If(App.Width < 1100, "📋", "📋   Tickets")
+                      Height: =44
+                      Size: =12
+                      FontWeight: =FontWeight.Semibold
+                      Fill: =RGBA(0, 0, 0, 0)
+                      Color: =ColorValue("#C9D3EA")
+                      BorderStyle: =BorderStyle.None
+                      BorderColor: =RGBA(0, 0, 0, 0)
+                      HoverBorderColor: =RGBA(0, 0, 0, 0)
+                      PressedBorderColor: =RGBA(0, 0, 0, 0)
+                      HoverFill: =RGBA(255, 255, 255, 0.10)
+                      HoverColor: =ColorValue("#FFFFFF")
+                      PressedFill: =RGBA(255, 255, 255, 0.18)
+                      PressedColor: =ColorValue("#FFFFFF")
+                      RadiusTopLeft: =8
+                      RadiusTopRight: =8
+                      RadiusBottomLeft: =8
+                      RadiusBottomRight: =8
+                      OnSelect: =Navigate(scrListe, ScreenTransition.Fade)
+                      AlignInContainer: =AlignInContainer.Stretch
+                - acNav3:
+                    Control: Classic/Button@2.2.0
+                    Properties:
+                      Text: =If(App.Width < 1100, "➕", "➕   Nouveau ticket")
+                      Height: =44
+                      Size: =12
+                      FontWeight: =FontWeight.Semibold
+                      Fill: =RGBA(0, 0, 0, 0)
+                      Color: =ColorValue("#C9D3EA")
+                      BorderStyle: =BorderStyle.None
+                      BorderColor: =RGBA(0, 0, 0, 0)
+                      HoverBorderColor: =RGBA(0, 0, 0, 0)
+                      PressedBorderColor: =RGBA(0, 0, 0, 0)
+                      HoverFill: =RGBA(255, 255, 255, 0.10)
+                      HoverColor: =ColorValue("#FFFFFF")
+                      PressedFill: =RGBA(255, 255, 255, 0.18)
+                      PressedColor: =ColorValue("#FFFFFF")
+                      RadiusTopLeft: =8
+                      RadiusTopRight: =8
+                      RadiusBottomLeft: =8
+                      RadiusBottomRight: =8
+                      OnSelect: |-
+                        =NewForm(Form1);
+                        Navigate(scrCreer, ScreenTransition.Fade)
+                      AlignInContainer: =AlignInContainer.Stretch
+                - acNavEspace:
+                    Control: GroupContainer@1.5.0
+                    Variant: AutoLayout
+                    Properties:
+                      LayoutDirection: =LayoutDirection.Vertical
+                      DropShadow: =DropShadow.None
+                      LayoutMinHeight: =0
+                      LayoutMinWidth: =0
+                      FillPortions: =1
+                      AlignInContainer: =AlignInContainer.Stretch
+                - acNavUtilisateur:
+                    Control: Label@2.5.1
+                    Properties:
+                      Text: ="👤  " & User().FullName
+                      Font: =Font.'Segoe UI'
+                      PaddingTop: =0
+                      PaddingBottom: =0
+                      PaddingLeft: =8
+                      PaddingRight: =0
+                      Height: =36
+                      AlignInContainer: =AlignInContainer.Stretch
+                      Size: =11
+                      Color: =ColorValue("#C9D3EA")
+                      Visible: =!(App.Width < 1100)
+                      VerticalAlign: =VerticalAlign.Middle
+            - acContenu:
+                Control: GroupContainer@1.5.0
+                Variant: AutoLayout
+                Properties:
+                  LayoutDirection: =LayoutDirection.Vertical
+                  DropShadow: =DropShadow.None
+                  LayoutMinHeight: =0
+                  LayoutMinWidth: =0
+                  FillPortions: =1
+                  AlignInContainer: =AlignInContainer.Stretch
+                  Fill: =ColorValue("#F5F6F8")
+                  LayoutGap: =If(App.Width < 700, 12, 16)
+                  PaddingTop: =If(App.Width < 700, 12, 22)
+                  PaddingBottom: =If(App.Width < 700, 12, 22)
+                  PaddingLeft: =If(App.Width < 700, 12, 26)
+                  PaddingRight: =If(App.Width < 700, 12, 26)
+                  LayoutOverflowY: =LayoutOverflow.Scroll
+                Children:
+                - acEnTete:
+                    Control: GroupContainer@1.5.0
+                    Variant: AutoLayout
+                    Properties:
+                      LayoutDirection: =LayoutDirection.Horizontal
+                      DropShadow: =DropShadow.None
+                      LayoutMinHeight: =0
+                      LayoutMinWidth: =0
+                      Height: =58
+                      FillPortions: =0
+                      AlignInContainer: =AlignInContainer.Stretch
+                      LayoutAlignItems: =LayoutAlignItems.Center
+                      LayoutGap: =8
+                    Children:
+                    - acEnTeteTextes:
+                        Control: GroupContainer@1.5.0
+                        Variant: AutoLayout
+                        Properties:
+                          LayoutDirection: =LayoutDirection.Vertical
+                          DropShadow: =DropShadow.None
+                          LayoutMinHeight: =0
+                          LayoutMinWidth: =0
+                          FillPortions: =1
+                          AlignInContainer: =AlignInContainer.Center
+                          Height: =54
+                        Children:
+                        - acTitre:
+                            Control: Label@2.5.1
+                            Properties:
+                              Text: ="Tableau de bord"
+                              Font: =Font.'Segoe UI'
+                              PaddingTop: =0
+                              PaddingBottom: =0
+                              PaddingLeft: =0
+                              PaddingRight: =0
+                              Height: =32
+                              AlignInContainer: =AlignInContainer.Stretch
+                              Size: =If(App.Width < 700, 18, 22)
+                              FontWeight: =FontWeight.Bold
+                              Color: =ColorValue("#1B1B1F")
+                              VerticalAlign: =VerticalAlign.Middle
+                        - acSousTitre:
+                            Control: Label@2.5.1
+                            Properties:
+                              Text: ="Vue d'ensemble de la maintenance  ·  mise à jour à " & Text(varMaj, "hh:mm")
+                              Font: =Font.'Segoe UI'
+                              PaddingTop: =0
+                              PaddingBottom: =0
+                              PaddingLeft: =0
+                              PaddingRight: =0
+                              Height: =20
+                              AlignInContainer: =AlignInContainer.Stretch
+                              Size: =12
+                              Color: =ColorValue("#5C5C66")
+                              VerticalAlign: =VerticalAlign.Middle
+                              Wrap: =false
+                    - acActualiser:
+                        Control: Classic/Button@2.2.0
+                        Properties:
+                          Text: =If(App.Width < 700, "↻", "↻  Actualiser")
+                          Width: =If(App.Width < 700, 48, 130)
+                          Height: =36
+                          LayoutMinWidth: =If(App.Width < 700, 48, 130)
+                          Size: =12
+                          FontWeight: =FontWeight.Semibold
+                          OnSelect: |-
+                            =Refresh('Ticket dépannage');
+                            ClearCollect(colTickets, 'Ticket dépannage');
+                            Set(varMaj, Now());
+                            Set(varTotal, CountRows(colTickets));
+                            Set(varPrioritaires, CountRows(Filter(colTickets, StartsWith('Statut Urgence'.Value, "High") && 'Ticket clôturer'.Value <> "Oui")));
+                            ClearCollect(
+                                colStatut,
+                                {Libelle: "Non démarré", Nombre: CountRows(Filter(colTickets, 'Ticket clôturer'.Value <> "Oui" && 'Ticket clôturer'.Value <> "En cours")), Couleur: "#8A8F98"},
+                                {Libelle: "En cours", Nombre: CountRows(Filter(colTickets, 'Ticket clôturer'.Value = "En cours")), Couleur: "#F7A600"},
+                                {Libelle: "Clôturé", Nombre: CountRows(Filter(colTickets, 'Ticket clôturer'.Value = "Oui")), Couleur: "#107C10"}
+                            );
+                            ClearCollect(
+                                colPriorite,
+                                {Libelle: "Haute", Nombre: CountRows(Filter(colTickets, StartsWith('Statut Urgence'.Value, "High"))), Couleur: "#D13438"},
+                                {Libelle: "Moyenne", Nombre: CountRows(Filter(colTickets, StartsWith('Statut Urgence'.Value, "Medium"))), Couleur: "#F7A600"},
+                                {Libelle: "Basse", Nombre: CountRows(Filter(colTickets, StartsWith('Statut Urgence'.Value, "Low"))), Couleur: "#13A10E"}
+                            );
+                            ClearCollect(
+                                colDonutStatut,
+                                ForAll(
+                                    Sequence(CountRows(colStatut)) As i,
+                                    With(
+                                        {r: Index(colStatut, i.Value), t: Max(varTotal, 1)},
+                                        {Couleur: r.Couleur, Pct: r.Nombre / t * 100, Debut: Coalesce(Sum(FirstN(colStatut, i.Value - 1), Nombre), 0) / t * 100}
+                                    )
+                                )
+                            );
+                            ClearCollect(
+                                colDonutPriorite,
+                                ForAll(
+                                    Sequence(CountRows(colPriorite)) As i,
+                                    With(
+                                        {r: Index(colPriorite, i.Value), t: Max(Sum(colPriorite, Nombre), 1)},
+                                        {Couleur: r.Couleur, Pct: r.Nombre / t * 100, Debut: Coalesce(Sum(FirstN(colPriorite, i.Value - 1), Nombre), 0) / t * 100}
+                                    )
+                                )
+                            );
+                            ClearCollect(
+                                colMois,
+                                ForAll(
+                                    Sequence(6, 5, -1) As s,
+                                    With(
+                                        {d: DateAdd(Date(Year(Today()), Month(Today()), 1), -s.Value, TimeUnit.Months)},
+                                        With(
+                                            {m: Filter(colTickets, Year(Created) = Year(d) && Month(Created) = Month(d))},
+                                            {
+                                                Idx: 5 - s.Value,
+                                                Libelle: Text(d, "mmm", "fr-FR"),
+                                                Nombre: CountRows(m),
+                                                Clos: CountRows(Filter(m, 'Ticket clôturer'.Value = "Oui"))
+                                            }
+                                        )
+                                    )
+                                )
+                            )
+                          BorderStyle: =BorderStyle.Solid
+                          BorderThickness: =1
+                          RadiusTopLeft: =8
+                          RadiusTopRight: =8
+                          RadiusBottomLeft: =8
+                          RadiusBottomRight: =8
+                          Fill: =ColorValue("#FFFFFF")
+                          Color: =ColorValue("#001E62")
+                          BorderColor: =ColorValue("#D1D5DB")
+                          HoverFill: =ColorValue("#F3F5F9")
+                          HoverColor: =ColorValue("#001E62")
+                          HoverBorderColor: =ColorValue("#001E62")
+                          PressedFill: =ColorValue("#E8EDF7")
+                - acKpis:
+                    Control: GroupContainer@1.5.0
+                    Variant: AutoLayout
+                    Properties:
+                      LayoutDirection: =LayoutDirection.Horizontal
+                      DropShadow: =DropShadow.None
+                      LayoutMinHeight: =0
+                      LayoutMinWidth: =0
+                      Height: =84
+                      FillPortions: =0
+                      AlignInContainer: =AlignInContainer.Stretch
+                      LayoutGap: =If(App.Width < 700, 8, 12)
+                      LayoutOverflowX: =LayoutOverflow.Scroll
+                    Children:
+                    - acKpiTotal:
+                        Control: GroupContainer@1.5.0
+                        Variant: ManualLayout
+                        Properties:
+                          DropShadow: =DropShadow.None
+                          FillPortions: =If(App.Width < 700, 0, 1)
+                          Width: =158
+                          LayoutMinWidth: =If(App.Width < 700, 158, 140)
+                          AlignInContainer: =AlignInContainer.Stretch
+                          Fill: =If(false, ColorFade(ColorValue("#001E62"), 0.93), ColorValue("#FFFFFF"))
+                          BorderColor: =If(false, ColorValue("#001E62"), ColorValue("#E6E8EB"))
+                          BorderThickness: =If(false, 2, 1)
+                          RadiusTopLeft: =12
+                          RadiusTopRight: =12
+                          RadiusBottomLeft: =12
+                          RadiusBottomRight: =12
+                        Children:
+                        - acKpiTotalPastille:
+                            Control: GroupContainer@1.5.0
+                            Variant: ManualLayout
+                            Properties:
+                              DropShadow: =DropShadow.None
+                              X: =14
+                              Y: =(Parent.Height - 40) / 2
+                              Width: =40
+                              Height: =40
+                              Fill: =ColorFade(ColorValue("#001E62"), 0.85)
+                              RadiusTopLeft: =20
+                              RadiusTopRight: =20
+                              RadiusBottomLeft: =20
+                              RadiusBottomRight: =20
+                            Children:
+                            - acKpiTotalEmoji:
+                                Control: Label@2.5.1
+                                Properties:
+                                  Text: ="📊"
+                                  Font: =Font.'Segoe UI'
+                                  PaddingTop: =0
+                                  PaddingBottom: =0
+                                  PaddingLeft: =0
+                                  PaddingRight: =0
+                                  X: =0
+                                  Y: =0
+                                  Width: =40
+                                  Height: =40
+                                  Size: =16
+                                  Align: =Align.Center
+                                  VerticalAlign: =VerticalAlign.Middle
+                        - acKpiTotalValeur:
+                            Control: Label@2.5.1
+                            Properties:
+                              Text: =varTotal
+                              Font: =Font.'Segoe UI'
+                              PaddingTop: =0
+                              PaddingBottom: =0
+                              PaddingLeft: =0
+                              PaddingRight: =0
+                              X: =64
+                              Y: =Parent.Height / 2 - 27
+                              Width: =Parent.Width - 70
+                              Height: =30
+                              Size: =21
+                              FontWeight: =FontWeight.Bold
+                              Color: =ColorValue("#001E62")
+                              VerticalAlign: =VerticalAlign.Middle
+                        - acKpiTotalTitre:
+                            Control: Label@2.5.1
+                            Properties:
+                              Text: ="Tickets au total"
+                              Font: =Font.'Segoe UI'
+                              PaddingTop: =0
+                              PaddingBottom: =0
+                              PaddingLeft: =0
+                              PaddingRight: =0
+                              X: =64
+                              Y: =Parent.Height / 2 + 3
+                              Width: =Parent.Width - 70
+                              Height: =20
+                              Size: =12
+                              FontWeight: =FontWeight.Semibold
+                              Color: =ColorValue("#5C5C66")
+                              Wrap: =false
+                              VerticalAlign: =VerticalAlign.Middle
+                    - acKpiNonDemarres:
+                        Control: GroupContainer@1.5.0
+                        Variant: ManualLayout
+                        Properties:
+                          DropShadow: =DropShadow.None
+                          FillPortions: =If(App.Width < 700, 0, 1)
+                          Width: =158
+                          LayoutMinWidth: =If(App.Width < 700, 158, 140)
+                          AlignInContainer: =AlignInContainer.Stretch
+                          Fill: =If(false, ColorFade(ColorValue("#8A8F98"), 0.93), ColorValue("#FFFFFF"))
+                          BorderColor: =If(false, ColorValue("#8A8F98"), ColorValue("#E6E8EB"))
+                          BorderThickness: =If(false, 2, 1)
+                          RadiusTopLeft: =12
+                          RadiusTopRight: =12
+                          RadiusBottomLeft: =12
+                          RadiusBottomRight: =12
+                        Children:
+                        - acKpiNonDemarresPastille:
+                            Control: GroupContainer@1.5.0
+                            Variant: ManualLayout
+                            Properties:
+                              DropShadow: =DropShadow.None
+                              X: =14
+                              Y: =(Parent.Height - 40) / 2
+                              Width: =40
+                              Height: =40
+                              Fill: =ColorFade(ColorValue("#8A8F98"), 0.85)
+                              RadiusTopLeft: =20
+                              RadiusTopRight: =20
+                              RadiusBottomLeft: =20
+                              RadiusBottomRight: =20
+                            Children:
+                            - acKpiNonDemarresEmoji:
+                                Control: Label@2.5.1
+                                Properties:
+                                  Text: ="⏸️"
+                                  Font: =Font.'Segoe UI'
+                                  PaddingTop: =0
+                                  PaddingBottom: =0
+                                  PaddingLeft: =0
+                                  PaddingRight: =0
+                                  X: =0
+                                  Y: =0
+                                  Width: =40
+                                  Height: =40
+                                  Size: =16
+                                  Align: =Align.Center
+                                  VerticalAlign: =VerticalAlign.Middle
+                        - acKpiNonDemarresValeur:
+                            Control: Label@2.5.1
+                            Properties:
+                              Text: =Coalesce(LookUp(colStatut, Libelle = "Non démarré").Nombre, 0)
+                              Font: =Font.'Segoe UI'
+                              PaddingTop: =0
+                              PaddingBottom: =0
+                              PaddingLeft: =0
+                              PaddingRight: =0
+                              X: =64
+                              Y: =Parent.Height / 2 - 27
+                              Width: =Parent.Width - 70
+                              Height: =30
+                              Size: =21
+                              FontWeight: =FontWeight.Bold
+                              Color: =ColorValue("#8A8F98")
+                              VerticalAlign: =VerticalAlign.Middle
+                        - acKpiNonDemarresTitre:
+                            Control: Label@2.5.1
+                            Properties:
+                              Text: ="Non démarrés"
+                              Font: =Font.'Segoe UI'
+                              PaddingTop: =0
+                              PaddingBottom: =0
+                              PaddingLeft: =0
+                              PaddingRight: =0
+                              X: =64
+                              Y: =Parent.Height / 2 + 3
+                              Width: =Parent.Width - 70
+                              Height: =20
+                              Size: =12
+                              FontWeight: =FontWeight.Semibold
+                              Color: =ColorValue("#5C5C66")
+                              Wrap: =false
+                              VerticalAlign: =VerticalAlign.Middle
+                    - acKpiEnCours:
+                        Control: GroupContainer@1.5.0
+                        Variant: ManualLayout
+                        Properties:
+                          DropShadow: =DropShadow.None
+                          FillPortions: =If(App.Width < 700, 0, 1)
+                          Width: =158
+                          LayoutMinWidth: =If(App.Width < 700, 158, 140)
+                          AlignInContainer: =AlignInContainer.Stretch
+                          Fill: =If(false, ColorFade(ColorValue("#B97A00"), 0.93), ColorValue("#FFFFFF"))
+                          BorderColor: =If(false, ColorValue("#B97A00"), ColorValue("#E6E8EB"))
+                          BorderThickness: =If(false, 2, 1)
+                          RadiusTopLeft: =12
+                          RadiusTopRight: =12
+                          RadiusBottomLeft: =12
+                          RadiusBottomRight: =12
+                        Children:
+                        - acKpiEnCoursPastille:
+                            Control: GroupContainer@1.5.0
+                            Variant: ManualLayout
+                            Properties:
+                              DropShadow: =DropShadow.None
+                              X: =14
+                              Y: =(Parent.Height - 40) / 2
+                              Width: =40
+                              Height: =40
+                              Fill: =ColorFade(ColorValue("#B97A00"), 0.85)
+                              RadiusTopLeft: =20
+                              RadiusTopRight: =20
+                              RadiusBottomLeft: =20
+                              RadiusBottomRight: =20
+                            Children:
+                            - acKpiEnCoursEmoji:
+                                Control: Label@2.5.1
+                                Properties:
+                                  Text: ="⏳"
+                                  Font: =Font.'Segoe UI'
+                                  PaddingTop: =0
+                                  PaddingBottom: =0
+                                  PaddingLeft: =0
+                                  PaddingRight: =0
+                                  X: =0
+                                  Y: =0
+                                  Width: =40
+                                  Height: =40
+                                  Size: =16
+                                  Align: =Align.Center
+                                  VerticalAlign: =VerticalAlign.Middle
+                        - acKpiEnCoursValeur:
+                            Control: Label@2.5.1
+                            Properties:
+                              Text: =Coalesce(LookUp(colStatut, Libelle = "En cours").Nombre, 0)
+                              Font: =Font.'Segoe UI'
+                              PaddingTop: =0
+                              PaddingBottom: =0
+                              PaddingLeft: =0
+                              PaddingRight: =0
+                              X: =64
+                              Y: =Parent.Height / 2 - 27
+                              Width: =Parent.Width - 70
+                              Height: =30
+                              Size: =21
+                              FontWeight: =FontWeight.Bold
+                              Color: =ColorValue("#B97A00")
+                              VerticalAlign: =VerticalAlign.Middle
+                        - acKpiEnCoursTitre:
+                            Control: Label@2.5.1
+                            Properties:
+                              Text: ="En cours"
+                              Font: =Font.'Segoe UI'
+                              PaddingTop: =0
+                              PaddingBottom: =0
+                              PaddingLeft: =0
+                              PaddingRight: =0
+                              X: =64
+                              Y: =Parent.Height / 2 + 3
+                              Width: =Parent.Width - 70
+                              Height: =20
+                              Size: =12
+                              FontWeight: =FontWeight.Semibold
+                              Color: =ColorValue("#5C5C66")
+                              Wrap: =false
+                              VerticalAlign: =VerticalAlign.Middle
+                    - acKpiClotures:
+                        Control: GroupContainer@1.5.0
+                        Variant: ManualLayout
+                        Properties:
+                          DropShadow: =DropShadow.None
+                          FillPortions: =If(App.Width < 700, 0, 1)
+                          Width: =158
+                          LayoutMinWidth: =If(App.Width < 700, 158, 140)
+                          AlignInContainer: =AlignInContainer.Stretch
+                          Fill: =If(false, ColorFade(ColorValue("#107C10"), 0.93), ColorValue("#FFFFFF"))
+                          BorderColor: =If(false, ColorValue("#107C10"), ColorValue("#E6E8EB"))
+                          BorderThickness: =If(false, 2, 1)
+                          RadiusTopLeft: =12
+                          RadiusTopRight: =12
+                          RadiusBottomLeft: =12
+                          RadiusBottomRight: =12
+                        Children:
+                        - acKpiCloturesPastille:
+                            Control: GroupContainer@1.5.0
+                            Variant: ManualLayout
+                            Properties:
+                              DropShadow: =DropShadow.None
+                              X: =14
+                              Y: =(Parent.Height - 40) / 2
+                              Width: =40
+                              Height: =40
+                              Fill: =ColorFade(ColorValue("#107C10"), 0.85)
+                              RadiusTopLeft: =20
+                              RadiusTopRight: =20
+                              RadiusBottomLeft: =20
+                              RadiusBottomRight: =20
+                            Children:
+                            - acKpiCloturesEmoji:
+                                Control: Label@2.5.1
+                                Properties:
+                                  Text: ="✅"
+                                  Font: =Font.'Segoe UI'
+                                  PaddingTop: =0
+                                  PaddingBottom: =0
+                                  PaddingLeft: =0
+                                  PaddingRight: =0
+                                  X: =0
+                                  Y: =0
+                                  Width: =40
+                                  Height: =40
+                                  Size: =16
+                                  Align: =Align.Center
+                                  VerticalAlign: =VerticalAlign.Middle
+                        - acKpiCloturesValeur:
+                            Control: Label@2.5.1
+                            Properties:
+                              Text: =Coalesce(LookUp(colStatut, Libelle = "Clôturé").Nombre, 0)
+                              Font: =Font.'Segoe UI'
+                              PaddingTop: =0
+                              PaddingBottom: =0
+                              PaddingLeft: =0
+                              PaddingRight: =0
+                              X: =64
+                              Y: =Parent.Height / 2 - 27
+                              Width: =Parent.Width - 70
+                              Height: =30
+                              Size: =21
+                              FontWeight: =FontWeight.Bold
+                              Color: =ColorValue("#107C10")
+                              VerticalAlign: =VerticalAlign.Middle
+                        - acKpiCloturesTitre:
+                            Control: Label@2.5.1
+                            Properties:
+                              Text: ="Clôturés"
+                              Font: =Font.'Segoe UI'
+                              PaddingTop: =0
+                              PaddingBottom: =0
+                              PaddingLeft: =0
+                              PaddingRight: =0
+                              X: =64
+                              Y: =Parent.Height / 2 + 3
+                              Width: =Parent.Width - 70
+                              Height: =20
+                              Size: =12
+                              FontWeight: =FontWeight.Semibold
+                              Color: =ColorValue("#5C5C66")
+                              Wrap: =false
+                              VerticalAlign: =VerticalAlign.Middle
+                    - acKpiPrioritaires:
+                        Control: GroupContainer@1.5.0
+                        Variant: ManualLayout
+                        Properties:
+                          DropShadow: =DropShadow.None
+                          FillPortions: =If(App.Width < 700, 0, 1)
+                          Width: =158
+                          LayoutMinWidth: =If(App.Width < 700, 158, 140)
+                          AlignInContainer: =AlignInContainer.Stretch
+                          Fill: =If(false, ColorFade(ColorValue("#D13438"), 0.93), ColorValue("#FFFFFF"))
+                          BorderColor: =If(false, ColorValue("#D13438"), ColorValue("#E6E8EB"))
+                          BorderThickness: =If(false, 2, 1)
+                          RadiusTopLeft: =12
+                          RadiusTopRight: =12
+                          RadiusBottomLeft: =12
+                          RadiusBottomRight: =12
+                        Children:
+                        - acKpiPrioritairesPastille:
+                            Control: GroupContainer@1.5.0
+                            Variant: ManualLayout
+                            Properties:
+                              DropShadow: =DropShadow.None
+                              X: =14
+                              Y: =(Parent.Height - 40) / 2
+                              Width: =40
+                              Height: =40
+                              Fill: =ColorFade(ColorValue("#D13438"), 0.85)
+                              RadiusTopLeft: =20
+                              RadiusTopRight: =20
+                              RadiusBottomLeft: =20
+                              RadiusBottomRight: =20
+                            Children:
+                            - acKpiPrioritairesEmoji:
+                                Control: Label@2.5.1
+                                Properties:
+                                  Text: ="🔥"
+                                  Font: =Font.'Segoe UI'
+                                  PaddingTop: =0
+                                  PaddingBottom: =0
+                                  PaddingLeft: =0
+                                  PaddingRight: =0
+                                  X: =0
+                                  Y: =0
+                                  Width: =40
+                                  Height: =40
+                                  Size: =16
+                                  Align: =Align.Center
+                                  VerticalAlign: =VerticalAlign.Middle
+                        - acKpiPrioritairesValeur:
+                            Control: Label@2.5.1
+                            Properties:
+                              Text: =varPrioritaires
+                              Font: =Font.'Segoe UI'
+                              PaddingTop: =0
+                              PaddingBottom: =0
+                              PaddingLeft: =0
+                              PaddingRight: =0
+                              X: =64
+                              Y: =Parent.Height / 2 - 27
+                              Width: =Parent.Width - 70
+                              Height: =30
+                              Size: =21
+                              FontWeight: =FontWeight.Bold
+                              Color: =ColorValue("#D13438")
+                              VerticalAlign: =VerticalAlign.Middle
+                        - acKpiPrioritairesTitre:
+                            Control: Label@2.5.1
+                            Properties:
+                              Text: ="Prioritaires ouverts"
+                              Font: =Font.'Segoe UI'
+                              PaddingTop: =0
+                              PaddingBottom: =0
+                              PaddingLeft: =0
+                              PaddingRight: =0
+                              X: =64
+                              Y: =Parent.Height / 2 + 3
+                              Width: =Parent.Width - 70
+                              Height: =20
+                              Size: =12
+                              FontWeight: =FontWeight.Semibold
+                              Color: =ColorValue("#5C5C66")
+                              Wrap: =false
+                              VerticalAlign: =VerticalAlign.Middle
+                - acLigne1:
+                    Control: GroupContainer@1.5.0
+                    Variant: AutoLayout
+                    Properties:
+                      LayoutDirection: =If(App.Width < 700, LayoutDirection.Vertical, LayoutDirection.Horizontal)
+                      DropShadow: =DropShadow.None
+                      LayoutMinHeight: =0
+                      LayoutMinWidth: =0
+                      Height: =If(App.Width < 700, 616, 300)
+                      FillPortions: =0
+                      AlignInContainer: =AlignInContainer.Stretch
+                      LayoutGap: =16
+                    Children:
+                    - acGraphStatut:
+                        Control: GroupContainer@1.5.0
+                        Variant: AutoLayout
+                        Properties:
+                          LayoutDirection: =LayoutDirection.Vertical
+                          DropShadow: =DropShadow.None
+                          LayoutMinHeight: =0
+                          LayoutMinWidth: =0
+                          FillPortions: =1
+                          AlignInContainer: =AlignInContainer.Stretch
+                          LayoutGap: =6
+                          PaddingTop: =16
+                          PaddingBottom: =16
+                          PaddingLeft: =18
+                          PaddingRight: =18
+                          Fill: =ColorValue("#FFFFFF")
+                          BorderColor: =ColorValue("#E6E8EB")
+                          BorderThickness: =1
+                          RadiusTopLeft: =12
+                          RadiusTopRight: =12
+                          RadiusBottomLeft: =12
+                          RadiusBottomRight: =12
+                        Children:
+                        - acGraphStatutTitre:
+                            Control: Label@2.5.1
+                            Properties:
+                              Text: ="Répartition par statut"
+                              Font: =Font.'Segoe UI'
+                              PaddingTop: =0
+                              PaddingBottom: =0
+                              PaddingLeft: =0
+                              PaddingRight: =0
+                              Height: =24
+                              AlignInContainer: =AlignInContainer.Stretch
+                              Size: =14
+                              FontWeight: =FontWeight.Semibold
+                              Color: =ColorValue("#1B1B1F")
+                              VerticalAlign: =VerticalAlign.Middle
+                        - acDonutStatutZone:
+                            Control: GroupContainer@1.5.0
+                            Variant: AutoLayout
+                            Properties:
+                              LayoutDirection: =LayoutDirection.Horizontal
+                              DropShadow: =DropShadow.None
+                              LayoutMinHeight: =0
+                              LayoutMinWidth: =0
+                              FillPortions: =1
+                              AlignInContainer: =AlignInContainer.Stretch
+                              LayoutAlignItems: =LayoutAlignItems.Center
+                              LayoutGap: =16
+                            Children:
+                            - acDonutStatut:
+                                Control: Image@2.2.3
+                                Properties:
+                                  Image: |-
+                                    ="data:image/svg+xml;utf8," & EncodeUrl(
+                                        "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 42 42'>" &
+                                        "<circle cx='21' cy='21' r='15.915' fill='none' stroke='#EEF1F5' stroke-width='6'/>" &
+                                        Concat(
+                                            Filter(colDonutStatut, Pct > 0),
+                                            "<circle cx='21' cy='21' r='15.915' fill='none' stroke='" & Couleur & "' stroke-width='6' stroke-dasharray='" &
+                                            Text(Pct, "0.00", "en-US") & " " & Text(100 - Pct, "0.00", "en-US") &
+                                            "' stroke-dashoffset='" & Text(25 - Debut, "0.00", "en-US") & "'/>"
+                                        ) &
+                                        "<text x='21' y='22' text-anchor='middle' font-family='Segoe UI,sans-serif' font-size='8' font-weight='700' fill='#1B1B1F'>" &
+                                        varTotal & "</text>" &
+                                        "<text x='21' y='28' text-anchor='middle' font-family='Segoe UI,sans-serif' font-size='3.4' fill='#8A8A94'>tickets</text>" &
+                                        "</svg>"
+                                    )
+                                  ImagePosition: =ImagePosition.Fit
+                                  Width: =170
+                                  Height: =170
+                                  LayoutMinWidth: =140
+                                  AlignInContainer: =AlignInContainer.Center
+                            - acDonutStatutLegende:
+                                Control: HtmlViewer@2.1.0
+                                Properties:
+                                  HtmlText: |-
+                                    ="<div style='font-family:Segoe UI,sans-serif;font-size:13px;color:#1B1B1F'>" &
+                                    Concat(
+                                        colStatut,
+                                        "<div style='margin:10px 0'><span style='display:inline-block;width:12px;height:12px;border-radius:6px;background:" &
+                                        Couleur & ";margin-right:8px;vertical-align:middle'></span>" & Libelle &
+                                        "<span style='float:right;font-weight:600'>" & Nombre & "  <span style='color:#8A8A94;font-weight:400'>(" &
+                                        Round(Nombre / Max(varTotal, 1) * 100, 0) & " %)</span></span></div>"
+                                    ) & "</div>"
+                                  AutoHeight: =false
+                                  FillPortions: =1
+                                  LayoutMinHeight: =60
+                                  Height: =140
+                                  AlignInContainer: =AlignInContainer.Center
+                    - acGraphPriorite:
+                        Control: GroupContainer@1.5.0
+                        Variant: AutoLayout
+                        Properties:
+                          LayoutDirection: =LayoutDirection.Vertical
+                          DropShadow: =DropShadow.None
+                          LayoutMinHeight: =0
+                          LayoutMinWidth: =0
+                          FillPortions: =1
+                          AlignInContainer: =AlignInContainer.Stretch
+                          LayoutGap: =6
+                          PaddingTop: =16
+                          PaddingBottom: =16
+                          PaddingLeft: =18
+                          PaddingRight: =18
+                          Fill: =ColorValue("#FFFFFF")
+                          BorderColor: =ColorValue("#E6E8EB")
+                          BorderThickness: =1
+                          RadiusTopLeft: =12
+                          RadiusTopRight: =12
+                          RadiusBottomLeft: =12
+                          RadiusBottomRight: =12
+                        Children:
+                        - acGraphPrioriteTitre:
+                            Control: Label@2.5.1
+                            Properties:
+                              Text: ="Répartition par priorité"
+                              Font: =Font.'Segoe UI'
+                              PaddingTop: =0
+                              PaddingBottom: =0
+                              PaddingLeft: =0
+                              PaddingRight: =0
+                              Height: =24
+                              AlignInContainer: =AlignInContainer.Stretch
+                              Size: =14
+                              FontWeight: =FontWeight.Semibold
+                              Color: =ColorValue("#1B1B1F")
+                              VerticalAlign: =VerticalAlign.Middle
+                        - acDonutPrioriteZone:
+                            Control: GroupContainer@1.5.0
+                            Variant: AutoLayout
+                            Properties:
+                              LayoutDirection: =LayoutDirection.Horizontal
+                              DropShadow: =DropShadow.None
+                              LayoutMinHeight: =0
+                              LayoutMinWidth: =0
+                              FillPortions: =1
+                              AlignInContainer: =AlignInContainer.Stretch
+                              LayoutAlignItems: =LayoutAlignItems.Center
+                              LayoutGap: =16
+                            Children:
+                            - acDonutPriorite:
+                                Control: Image@2.2.3
+                                Properties:
+                                  Image: |-
+                                    ="data:image/svg+xml;utf8," & EncodeUrl(
+                                        "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 42 42'>" &
+                                        "<circle cx='21' cy='21' r='15.915' fill='none' stroke='#EEF1F5' stroke-width='6'/>" &
+                                        Concat(
+                                            Filter(colDonutPriorite, Pct > 0),
+                                            "<circle cx='21' cy='21' r='15.915' fill='none' stroke='" & Couleur & "' stroke-width='6' stroke-dasharray='" &
+                                            Text(Pct, "0.00", "en-US") & " " & Text(100 - Pct, "0.00", "en-US") &
+                                            "' stroke-dashoffset='" & Text(25 - Debut, "0.00", "en-US") & "'/>"
+                                        ) &
+                                        "<text x='21' y='22' text-anchor='middle' font-family='Segoe UI,sans-serif' font-size='8' font-weight='700' fill='#1B1B1F'>" &
+                                        Sum(colPriorite, Nombre) & "</text>" &
+                                        "<text x='21' y='28' text-anchor='middle' font-family='Segoe UI,sans-serif' font-size='3.4' fill='#8A8A94'>tickets</text>" &
+                                        "</svg>"
+                                    )
+                                  ImagePosition: =ImagePosition.Fit
+                                  Width: =170
+                                  Height: =170
+                                  LayoutMinWidth: =140
+                                  AlignInContainer: =AlignInContainer.Center
+                            - acDonutPrioriteLegende:
+                                Control: HtmlViewer@2.1.0
+                                Properties:
+                                  HtmlText: |-
+                                    ="<div style='font-family:Segoe UI,sans-serif;font-size:13px;color:#1B1B1F'>" &
+                                    Concat(
+                                        colPriorite,
+                                        "<div style='margin:10px 0'><span style='display:inline-block;width:12px;height:12px;border-radius:6px;background:" &
+                                        Couleur & ";margin-right:8px;vertical-align:middle'></span>" & Libelle &
+                                        "<span style='float:right;font-weight:600'>" & Nombre & "  <span style='color:#8A8A94;font-weight:400'>(" &
+                                        Round(Nombre / Max(Sum(colPriorite, Nombre), 1) * 100, 0) & " %)</span></span></div>"
+                                    ) & "</div>"
+                                  AutoHeight: =false
+                                  FillPortions: =1
+                                  LayoutMinHeight: =60
+                                  Height: =140
+                                  AlignInContainer: =AlignInContainer.Center
+                - acLigne2:
+                    Control: GroupContainer@1.5.0
+                    Variant: AutoLayout
+                    Properties:
+                      LayoutDirection: =If(App.Width < 700, LayoutDirection.Vertical, LayoutDirection.Horizontal)
+                      DropShadow: =DropShadow.None
+                      LayoutMinHeight: =0
+                      LayoutMinWidth: =0
+                      Height: =If(App.Width < 700, 616, 300)
+                      FillPortions: =0
+                      AlignInContainer: =AlignInContainer.Stretch
+                      LayoutGap: =16
+                    Children:
+                    - acGraphMois:
+                        Control: GroupContainer@1.5.0
+                        Variant: AutoLayout
+                        Properties:
+                          LayoutDirection: =LayoutDirection.Vertical
+                          DropShadow: =DropShadow.None
+                          LayoutMinHeight: =0
+                          LayoutMinWidth: =0
+                          FillPortions: =1
+                          AlignInContainer: =AlignInContainer.Stretch
+                          LayoutGap: =6
+                          PaddingTop: =16
+                          PaddingBottom: =16
+                          PaddingLeft: =18
+                          PaddingRight: =18
+                          Fill: =ColorValue("#FFFFFF")
+                          BorderColor: =ColorValue("#E6E8EB")
+                          BorderThickness: =1
+                          RadiusTopLeft: =12
+                          RadiusTopRight: =12
+                          RadiusBottomLeft: =12
+                          RadiusBottomRight: =12
+                        Children:
+                        - acGraphMoisTitre:
+                            Control: Label@2.5.1
+                            Properties:
+                              Text: ="Tickets créés par mois"
+                              Font: =Font.'Segoe UI'
+                              PaddingTop: =0
+                              PaddingBottom: =0
+                              PaddingLeft: =0
+                              PaddingRight: =0
+                              Height: =24
+                              AlignInContainer: =AlignInContainer.Stretch
+                              Size: =14
+                              FontWeight: =FontWeight.Semibold
+                              Color: =ColorValue("#1B1B1F")
+                              VerticalAlign: =VerticalAlign.Middle
+                        - acGraphMoisSousTitre:
+                            Control: Label@2.5.1
+                            Properties:
+                              Text: ="6 derniers mois"
+                              Font: =Font.'Segoe UI'
+                              PaddingTop: =0
+                              PaddingBottom: =0
+                              PaddingLeft: =0
+                              PaddingRight: =0
+                              Height: =18
+                              AlignInContainer: =AlignInContainer.Stretch
+                              Size: =11
+                              Color: =ColorValue("#5C5C66")
+                              VerticalAlign: =VerticalAlign.Middle
+                        - acMois:
+                            Control: Image@2.2.3
+                            Properties:
+                              Image: |-
+                                =With(
+                                    {m: Max(Coalesce(Max(colMois, Nombre), 0), 1)},
+                                    "data:image/svg+xml;utf8," & EncodeUrl(
+                                        "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 320 175' font-family='Segoe UI,sans-serif'>" &
+                                        "<line x1='10' y1='145' x2='310' y2='145' stroke='#E6E8EB' stroke-width='1'/>" &
+                                        Concat(
+                                            colMois,
+                                            With(
+                                                {h: Round(Nombre / m * 110, 0), x: 22 + Idx * 50},
+                                                "<rect x='" & x & "' y='" & (145 - h) & "' width='32' height='" & h & "' rx='6' fill='" &
+                                                If(Idx = 5, "#001E62", "#9DB0D9") & "'/>" &
+                                                "<text x='" & (x + 16) & "' y='" & (138 - h) & "' text-anchor='middle' font-size='12' font-weight='600' fill='#1B1B1F'>" &
+                                                Nombre & "</text>" &
+                                                "<text x='" & (x + 16) & "' y='165' text-anchor='middle' font-size='11' fill='#8A8A94'>" & Libelle & "</text>"
+                                            )
+                                        ) &
+                                        "</svg>"
+                                    )
+                                )
+                              ImagePosition: =ImagePosition.Fit
+                              FillPortions: =1
+                              LayoutMinHeight: =120
+                              AlignInContainer: =AlignInContainer.Stretch
+                    - acGraphClos:
+                        Control: GroupContainer@1.5.0
+                        Variant: AutoLayout
+                        Properties:
+                          LayoutDirection: =LayoutDirection.Vertical
+                          DropShadow: =DropShadow.None
+                          LayoutMinHeight: =0
+                          LayoutMinWidth: =0
+                          FillPortions: =1
+                          AlignInContainer: =AlignInContainer.Stretch
+                          LayoutGap: =6
+                          PaddingTop: =16
+                          PaddingBottom: =16
+                          PaddingLeft: =18
+                          PaddingRight: =18
+                          Fill: =ColorValue("#FFFFFF")
+                          BorderColor: =ColorValue("#E6E8EB")
+                          BorderThickness: =1
+                          RadiusTopLeft: =12
+                          RadiusTopRight: =12
+                          RadiusBottomLeft: =12
+                          RadiusBottomRight: =12
+                        Children:
+                        - acGraphClosTitre:
+                            Control: Label@2.5.1
+                            Properties:
+                              Text: ="Clôturés vs encore ouverts"
+                              Font: =Font.'Segoe UI'
+                              PaddingTop: =0
+                              PaddingBottom: =0
+                              PaddingLeft: =0
+                              PaddingRight: =0
+                              Height: =24
+                              AlignInContainer: =AlignInContainer.Stretch
+                              Size: =14
+                              FontWeight: =FontWeight.Semibold
+                              Color: =ColorValue("#1B1B1F")
+                              VerticalAlign: =VerticalAlign.Middle
+                        - acGraphClosSousTitre:
+                            Control: Label@2.5.1
+                            Properties:
+                              Text: =Round(Coalesce(LookUp(colStatut, Libelle = "Clôturé").Nombre, 0) / Max(varTotal, 1) * 100, 0) & " % des tickets sont clôturés  ·  " & (Coalesce(LookUp(colStatut, Libelle = "Non démarré").Nombre, 0) + Coalesce(LookUp(colStatut, Libelle = "En cours").Nombre, 0)) & " encore ouverts"
+                              Font: =Font.'Segoe UI'
+                              PaddingTop: =0
+                              PaddingBottom: =0
+                              PaddingLeft: =0
+                              PaddingRight: =0
+                              Height: =18
+                              AlignInContainer: =AlignInContainer.Stretch
+                              Size: =11
+                              Color: =ColorValue("#5C5C66")
+                              VerticalAlign: =VerticalAlign.Middle
+                        - acClos:
+                            Control: Image@2.2.3
+                            Properties:
+                              Image: |-
+                                =With(
+                                    {m: Max(Coalesce(Max(colMois, Nombre), 0), 1)},
+                                    "data:image/svg+xml;utf8," & EncodeUrl(
+                                        "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 320 190' font-family='Segoe UI,sans-serif'>" &
+                                        "<rect x='12' y='4' width='10' height='10' rx='2' fill='#107C10'/><text x='27' y='13' font-size='11' fill='#5C5C66'>Clôturés</text>" &
+                                        "<rect x='92' y='4' width='10' height='10' rx='2' fill='#5B9BD5'/><text x='107' y='13' font-size='11' fill='#5C5C66'>Encore ouverts</text>" &
+                                        "<line x1='10' y1='160' x2='310' y2='160' stroke='#E6E8EB' stroke-width='1'/>" &
+                                        Concat(
+                                            colMois,
+                                            With(
+                                                {hc: Round(Clos / m * 110, 0), ho: Round((Nombre - Clos) / m * 110, 0), x: 22 + Idx * 50},
+                                                "<rect x='" & x & "' y='" & (160 - hc) & "' width='32' height='" & hc & "' fill='#107C10'/>" &
+                                                "<rect x='" & x & "' y='" & (160 - hc - ho) & "' width='32' height='" & ho & "' fill='#5B9BD5'/>" &
+                                                "<text x='" & (x + 16) & "' y='" & (153 - hc - ho) & "' text-anchor='middle' font-size='11' font-weight='600' fill='#1B1B1F'>" &
+                                                Clos & "/" & Nombre & "</text>" &
+                                                "<text x='" & (x + 16) & "' y='180' text-anchor='middle' font-size='11' fill='#8A8A94'>" & Libelle & "</text>"
+                                            )
+                                        ) &
+                                        "</svg>"
+                                    )
+                                )
+                              ImagePosition: =ImagePosition.Fit
+                              FillPortions: =1
+                              LayoutMinHeight: =120
+                              AlignInContainer: =AlignInContainer.Stretch
+                - acUrgents:
+                    Control: GroupContainer@1.5.0
+                    Variant: AutoLayout
+                    Properties:
+                      LayoutDirection: =LayoutDirection.Vertical
+                      DropShadow: =DropShadow.None
+                      LayoutMinHeight: =0
+                      LayoutMinWidth: =0
+                      Height: =380
+                      FillPortions: =0
+                      AlignInContainer: =AlignInContainer.Stretch
+                      LayoutGap: =8
+                      PaddingTop: =16
+                      PaddingBottom: =12
+                      PaddingLeft: =18
+                      PaddingRight: =18
+                      Fill: =ColorValue("#FFFFFF")
+                      BorderColor: =ColorValue("#E6E8EB")
+                      BorderThickness: =1
+                      RadiusTopLeft: =12
+                      RadiusTopRight: =12
+                      RadiusBottomLeft: =12
+                      RadiusBottomRight: =12
+                    Children:
+                    - acUrgentsTitre:
+                        Control: Label@2.5.1
+                        Properties:
+                          Text: ="🚨  Tickets prioritaires à traiter"
+                          Font: =Font.'Segoe UI'
+                          PaddingTop: =0
+                          PaddingBottom: =0
+                          PaddingLeft: =0
+                          PaddingRight: =0
+                          Height: =24
+                          AlignInContainer: =AlignInContainer.Stretch
+                          Size: =14
+                          FontWeight: =FontWeight.Semibold
+                          Color: =ColorValue("#1B1B1F")
+                          VerticalAlign: =VerticalAlign.Middle
+                    - acUrgentsVide:
+                        Control: Label@2.5.1
+                        Properties:
+                          Text: ="✅  Aucun ticket prioritaire en attente."
+                          Font: =Font.'Segoe UI'
+                          PaddingTop: =0
+                          PaddingBottom: =0
+                          PaddingLeft: =0
+                          PaddingRight: =0
+                          Height: =36
+                          AlignInContainer: =AlignInContainer.Stretch
+                          Size: =12
+                          Color: =ColorValue("#107C10")
+                          Visible: =CountRows(acUrgentsListe.AllItems) = 0
+                          VerticalAlign: =VerticalAlign.Middle
+                    - acUrgentsListe:
+                        Control: Gallery@2.15.0
+                        Variant: Vertical
+                        Properties:
+                          Items: =FirstN(Sort(Filter(colTickets, StartsWith('Statut Urgence'.Value, "High") && 'Ticket clôturer'.Value <> "Oui"), Created, SortOrder.Descending), 5)
+                          TemplateSize: =64
+                          TemplatePadding: =0
+                          ShowScrollbar: =false
+                          FillPortions: =1
+                          LayoutMinHeight: =0
+                          AlignInContainer: =AlignInContainer.Stretch
+                        Children:
+                        - acUrgentCarte:
+                            Control: GroupContainer@1.5.0
+                            Variant: ManualLayout
+                            Properties:
+                              DropShadow: =DropShadow.None
+                              X: =0
+                              Y: =0
+                              Width: =Parent.TemplateWidth
+                              Height: =Parent.TemplateHeight - 8
+                              Fill: =ColorValue("#FFF8F8")
+                              BorderColor: =ColorValue("#F6D3D5")
+                              BorderThickness: =1
+                              RadiusTopLeft: =10
+                              RadiusTopRight: =10
+                              RadiusBottomLeft: =10
+                              RadiusBottomRight: =10
+                            Children:
+                            - acUrgentBarre:
+                                Control: Rectangle@2.3.0
+                                Properties:
+                                  X: =0
+                                  Y: =0
+                                  Width: =4
+                                  Height: =Parent.Height
+                                  Fill: =ColorValue("#D13438")
+                            - acUrgentTitre:
+                                Control: Label@2.5.1
+                                Properties:
+                                  Text: ="#" & ThisItem.ID & "  ·  " & Coalesce(ThisItem.Title, ThisItem.Description, "Ticket sans description")
+                                  Font: =Font.'Segoe UI'
+                                  PaddingTop: =0
+                                  PaddingBottom: =0
+                                  PaddingLeft: =0
+                                  PaddingRight: =0
+                                  X: =16
+                                  Y: =8
+                                  Width: =Parent.Width - 150
+                                  Height: =22
+                                  Size: =13
+                                  FontWeight: =FontWeight.Semibold
+                                  Color: =ColorValue("#1B1B1F")
+                                  Wrap: =false
+                            - acUrgentInfos:
+                                Control: Label@2.5.1
+                                Properties:
+                                  Text: =Coalesce(ThisItem.'Intervention sur équipement'.Value, "—") & "  ·  " & Coalesce(ThisItem.'Secteur demandeur'.Value, "—") & "  ·  " & Text(ThisItem.Created, "dd/mm/yyyy")
+                                  Font: =Font.'Segoe UI'
+                                  PaddingTop: =0
+                                  PaddingBottom: =0
+                                  PaddingLeft: =0
+                                  PaddingRight: =0
+                                  X: =16
+                                  Y: =30
+                                  Width: =Parent.Width - 150
+                                  Height: =18
+                                  Size: =11
+                                  Color: =ColorValue("#8A8A94")
+                                  Wrap: =false
+                            - acUrgentStatut:
+                                Control: GroupContainer@1.5.0
+                                Variant: ManualLayout
+                                Properties:
+                                  DropShadow: =DropShadow.None
+                                  Width: =110
+                                  Height: =24
+                                  LayoutMinWidth: =110
+                                  Fill: =ColorValue(Switch(ThisItem.'Ticket clôturer'.Value, "Oui", "#DFF6DD", "En cours", "#FFF1D6", "#EDEEF0"))
+                                  RadiusTopLeft: =12
+                                  RadiusTopRight: =12
+                                  RadiusBottomLeft: =12
+                                  RadiusBottomRight: =12
+                                  X: =Parent.Width - 124
+                                  Y: =16
+                                Children:
+                                - acUrgentStatutTxt:
+                                    Control: Label@2.5.1
+                                    Properties:
+                                      Text: =Switch(ThisItem.'Ticket clôturer'.Value, "Oui", "Clôturé", "En cours", "En cours", "Non démarré")
+                                      Font: =Font.'Segoe UI'
+                                      PaddingTop: =0
+                                      PaddingBottom: =0
+                                      PaddingLeft: =0
+                                      PaddingRight: =0
+                                      X: =0
+                                      Y: =0
+                                      Width: =Parent.Width
+                                      Height: =Parent.Height
+                                      Size: =11
+                                      FontWeight: =FontWeight.Semibold
+                                      Color: =ColorValue(Switch(ThisItem.'Ticket clôturer'.Value, "Oui", "#0E700E", "En cours", "#8A5A00", "#4B5059"))
+                                      Align: =Align.Center
+                                      VerticalAlign: =VerticalAlign.Middle
+                            - acUrgentClic:
+                                Control: Classic/Button@2.2.0
+                                Properties:
+                                  Text: =""
+                                  Fill: =RGBA(0, 0, 0, 0)
+                                  Color: =RGBA(0, 0, 0, 0)
+                                  BorderColor: =RGBA(0, 0, 0, 0)
+                                  BorderStyle: =BorderStyle.None
+                                  HoverFill: =RGBA(0, 0, 0, 0.03)
+                                  HoverColor: =RGBA(0, 0, 0, 0)
+                                  HoverBorderColor: =RGBA(0, 0, 0, 0)
+                                  PressedFill: =RGBA(0, 0, 0, 0.06)
+                                  PressedColor: =RGBA(0, 0, 0, 0)
+                                  PressedBorderColor: =RGBA(0, 0, 0, 0)
+                                  X: =0
+                                  Y: =0
+                                  Width: =Parent.Width
+                                  Height: =Parent.Height
+                                  OnSelect: |-
+                                    =Set(varTicket, ThisItem);
+                                    Navigate(scrDetail, ScreenTransition.Fade)
+                                  RadiusTopLeft: =10
+                                  RadiusTopRight: =10
+                                  RadiusBottomLeft: =10
+                                  RadiusBottomRight: =10
+        - acNavBas:
+            Control: GroupContainer@1.5.0
+            Variant: AutoLayout
+            Properties:
+              LayoutDirection: =LayoutDirection.Horizontal
+              DropShadow: =DropShadow.None
+              LayoutMinHeight: =0
+              LayoutMinWidth: =0
+              Height: =66
+              FillPortions: =0
+              AlignInContainer: =AlignInContainer.Stretch
+              Visible: =App.Width < 700
+              Fill: =ColorValue("#FFFFFF")
+              BorderColor: =ColorValue("#E6E8EB")
+              BorderThickness: =1
+              LayoutAlignItems: =LayoutAlignItems.Center
+              LayoutGap: =4
+              PaddingTop: =6
+              PaddingBottom: =6
+              PaddingLeft: =6
+              PaddingRight: =6
+            Children:
+            - acBas1:
+                Control: Classic/Button@2.2.0
+                Properties:
+                  Text: ="📊" & Char(10) & "Accueil"
+                  FillPortions: =1
+                  Height: =54
+                  Size: =10
+                  FontWeight: =FontWeight.Semibold
+                  Fill: =ColorValue("#E8EDF7")
+                  Color: =ColorValue("#001E62")
+                  BorderStyle: =BorderStyle.None
+                  BorderColor: =RGBA(0, 0, 0, 0)
+                  HoverBorderColor: =RGBA(0, 0, 0, 0)
+                  PressedBorderColor: =RGBA(0, 0, 0, 0)
+                  HoverFill: =ColorValue("#F0F3F9")
+                  HoverColor: =ColorValue("#001E62")
+                  PressedFill: =ColorValue("#E3E9F5")
+                  PressedColor: =ColorValue("#001E62")
+                  RadiusTopLeft: =10
+                  RadiusTopRight: =10
+                  RadiusBottomLeft: =10
+                  RadiusBottomRight: =10
+                  OnSelect: =Navigate(scrAccueil, ScreenTransition.Fade)
+                  AlignInContainer: =AlignInContainer.Center
+            - acBas2:
+                Control: Classic/Button@2.2.0
+                Properties:
+                  Text: ="📋" & Char(10) & "Tickets"
+                  FillPortions: =1
+                  Height: =54
+                  Size: =10
+                  FontWeight: =FontWeight.Semibold
+                  Fill: =RGBA(0, 0, 0, 0)
+                  Color: =ColorValue("#5C5C66")
+                  BorderStyle: =BorderStyle.None
+                  BorderColor: =RGBA(0, 0, 0, 0)
+                  HoverBorderColor: =RGBA(0, 0, 0, 0)
+                  PressedBorderColor: =RGBA(0, 0, 0, 0)
+                  HoverFill: =ColorValue("#F0F3F9")
+                  HoverColor: =ColorValue("#001E62")
+                  PressedFill: =ColorValue("#E3E9F5")
+                  PressedColor: =ColorValue("#001E62")
+                  RadiusTopLeft: =10
+                  RadiusTopRight: =10
+                  RadiusBottomLeft: =10
+                  RadiusBottomRight: =10
+                  OnSelect: =Navigate(scrListe, ScreenTransition.Fade)
+                  AlignInContainer: =AlignInContainer.Center
+            - acBas3:
+                Control: Classic/Button@2.2.0
+                Properties:
+                  Text: ="➕" & Char(10) & "Créer"
+                  FillPortions: =1
+                  Height: =54
+                  Size: =10
+                  FontWeight: =FontWeight.Semibold
+                  Fill: =RGBA(0, 0, 0, 0)
+                  Color: =ColorValue("#5C5C66")
+                  BorderStyle: =BorderStyle.None
+                  BorderColor: =RGBA(0, 0, 0, 0)
+                  HoverBorderColor: =RGBA(0, 0, 0, 0)
+                  PressedBorderColor: =RGBA(0, 0, 0, 0)
+                  HoverFill: =ColorValue("#F0F3F9")
+                  HoverColor: =ColorValue("#001E62")
+                  PressedFill: =ColorValue("#E3E9F5")
+                  PressedColor: =ColorValue("#001E62")
+                  RadiusTopLeft: =10
+                  RadiusTopRight: =10
+                  RadiusBottomLeft: =10
+                  RadiusBottomRight: =10
+                  OnSelect: |-
+                    =NewForm(Form1);
+                    Navigate(scrCreer, ScreenTransition.Fade)
+                  AlignInContainer: =AlignInContainer.Center

@@ -1,0 +1,1127 @@
+Screens:
+  scrListe:
+    Properties:
+      Fill: =ColorValue("#F5F6F8")
+      OnVisible: |-
+        =Refresh('Ticket dépannage');
+        ClearCollect(colTickets, 'Ticket dépannage')
+    Children:
+    - liRacine:
+        Control: GroupContainer@1.5.0
+        Variant: AutoLayout
+        Properties:
+          LayoutDirection: =LayoutDirection.Vertical
+          DropShadow: =DropShadow.None
+          LayoutMinHeight: =0
+          LayoutMinWidth: =0
+          X: =0
+          Y: =0
+          Width: =Parent.Width
+          Height: =Parent.Height
+          Fill: =ColorValue("#F5F6F8")
+          LayoutGap: =0
+        Children:
+        - liCorps:
+            Control: GroupContainer@1.5.0
+            Variant: AutoLayout
+            Properties:
+              LayoutDirection: =LayoutDirection.Horizontal
+              DropShadow: =DropShadow.None
+              LayoutMinHeight: =0
+              LayoutMinWidth: =0
+              FillPortions: =1
+              AlignInContainer: =AlignInContainer.Stretch
+              Fill: =ColorValue("#F5F6F8")
+            Children:
+            - liNav:
+                Control: GroupContainer@1.5.0
+                Variant: AutoLayout
+                Properties:
+                  LayoutDirection: =LayoutDirection.Vertical
+                  DropShadow: =DropShadow.None
+                  LayoutMinHeight: =0
+                  LayoutMinWidth: =If(App.Width < 1100, 76, 232)
+                  Width: =If(App.Width < 1100, 76, 232)
+                  FillPortions: =0
+                  AlignInContainer: =AlignInContainer.Stretch
+                  Visible: =!(App.Width < 700)
+                  Fill: =ColorValue("#001E62")
+                  LayoutGap: =6
+                  PaddingTop: =12
+                  PaddingBottom: =12
+                  PaddingLeft: =12
+                  PaddingRight: =12
+                Children:
+                - liNavLogo:
+                    Control: Label@2.5.1
+                    Properties:
+                      Text: ="ASICS"
+                      Font: =Font.'Segoe UI'
+                      PaddingTop: =0
+                      PaddingBottom: =0
+                      PaddingLeft: =If(App.Width < 1100, 0, 8)
+                      PaddingRight: =0
+                      Height: =40
+                      AlignInContainer: =AlignInContainer.Stretch
+                      Size: =If(App.Width < 1100, 13, 22)
+                      FontWeight: =FontWeight.Bold
+                      Italic: =true
+                      Color: =ColorValue("#FFFFFF")
+                      Align: =If(App.Width < 1100, Align.Center, Align.Left)
+                      VerticalAlign: =VerticalAlign.Middle
+                - liNavSousTitre:
+                    Control: Label@2.5.1
+                    Properties:
+                      Text: ="Gestion de la maintenance"
+                      Font: =Font.'Segoe UI'
+                      PaddingTop: =0
+                      PaddingBottom: =0
+                      PaddingLeft: =8
+                      PaddingRight: =0
+                      Height: =20
+                      AlignInContainer: =AlignInContainer.Stretch
+                      Size: =11
+                      Color: =ColorValue("#9FB3DE")
+                      Visible: =!(App.Width < 1100)
+                      Wrap: =false
+                - liNavTrait:
+                    Control: Rectangle@2.3.0
+                    Properties:
+                      Height: =1
+                      Fill: =RGBA(255, 255, 255, 0.14)
+                      AlignInContainer: =AlignInContainer.Stretch
+                - liNav1:
+                    Control: Classic/Button@2.2.0
+                    Properties:
+                      Text: =If(App.Width < 1100, "📊", "📊   Tableau de bord")
+                      Height: =44
+                      Size: =12
+                      FontWeight: =FontWeight.Semibold
+                      Fill: =RGBA(0, 0, 0, 0)
+                      Color: =ColorValue("#C9D3EA")
+                      BorderStyle: =BorderStyle.None
+                      BorderColor: =RGBA(0, 0, 0, 0)
+                      HoverBorderColor: =RGBA(0, 0, 0, 0)
+                      PressedBorderColor: =RGBA(0, 0, 0, 0)
+                      HoverFill: =RGBA(255, 255, 255, 0.10)
+                      HoverColor: =ColorValue("#FFFFFF")
+                      PressedFill: =RGBA(255, 255, 255, 0.18)
+                      PressedColor: =ColorValue("#FFFFFF")
+                      RadiusTopLeft: =8
+                      RadiusTopRight: =8
+                      RadiusBottomLeft: =8
+                      RadiusBottomRight: =8
+                      OnSelect: =Navigate(scrAccueil, ScreenTransition.Fade)
+                      AlignInContainer: =AlignInContainer.Stretch
+                - liNav2:
+                    Control: Classic/Button@2.2.0
+                    Properties:
+                      Text: =If(App.Width < 1100, "📋", "📋   Tickets")
+                      Height: =44
+                      Size: =12
+                      FontWeight: =FontWeight.Semibold
+                      Fill: =RGBA(255, 255, 255, 0.14)
+                      Color: =ColorValue("#FFFFFF")
+                      BorderStyle: =BorderStyle.None
+                      BorderColor: =RGBA(0, 0, 0, 0)
+                      HoverBorderColor: =RGBA(0, 0, 0, 0)
+                      PressedBorderColor: =RGBA(0, 0, 0, 0)
+                      HoverFill: =RGBA(255, 255, 255, 0.10)
+                      HoverColor: =ColorValue("#FFFFFF")
+                      PressedFill: =RGBA(255, 255, 255, 0.18)
+                      PressedColor: =ColorValue("#FFFFFF")
+                      RadiusTopLeft: =8
+                      RadiusTopRight: =8
+                      RadiusBottomLeft: =8
+                      RadiusBottomRight: =8
+                      OnSelect: =Navigate(scrListe, ScreenTransition.Fade)
+                      AlignInContainer: =AlignInContainer.Stretch
+                - liNav3:
+                    Control: Classic/Button@2.2.0
+                    Properties:
+                      Text: =If(App.Width < 1100, "➕", "➕   Nouveau ticket")
+                      Height: =44
+                      Size: =12
+                      FontWeight: =FontWeight.Semibold
+                      Fill: =RGBA(0, 0, 0, 0)
+                      Color: =ColorValue("#C9D3EA")
+                      BorderStyle: =BorderStyle.None
+                      BorderColor: =RGBA(0, 0, 0, 0)
+                      HoverBorderColor: =RGBA(0, 0, 0, 0)
+                      PressedBorderColor: =RGBA(0, 0, 0, 0)
+                      HoverFill: =RGBA(255, 255, 255, 0.10)
+                      HoverColor: =ColorValue("#FFFFFF")
+                      PressedFill: =RGBA(255, 255, 255, 0.18)
+                      PressedColor: =ColorValue("#FFFFFF")
+                      RadiusTopLeft: =8
+                      RadiusTopRight: =8
+                      RadiusBottomLeft: =8
+                      RadiusBottomRight: =8
+                      OnSelect: |-
+                        =NewForm(Form1);
+                        Navigate(scrCreer, ScreenTransition.Fade)
+                      AlignInContainer: =AlignInContainer.Stretch
+                - liNavEspace:
+                    Control: GroupContainer@1.5.0
+                    Variant: AutoLayout
+                    Properties:
+                      LayoutDirection: =LayoutDirection.Vertical
+                      DropShadow: =DropShadow.None
+                      LayoutMinHeight: =0
+                      LayoutMinWidth: =0
+                      FillPortions: =1
+                      AlignInContainer: =AlignInContainer.Stretch
+                - liNavUtilisateur:
+                    Control: Label@2.5.1
+                    Properties:
+                      Text: ="👤  " & User().FullName
+                      Font: =Font.'Segoe UI'
+                      PaddingTop: =0
+                      PaddingBottom: =0
+                      PaddingLeft: =8
+                      PaddingRight: =0
+                      Height: =36
+                      AlignInContainer: =AlignInContainer.Stretch
+                      Size: =11
+                      Color: =ColorValue("#C9D3EA")
+                      Visible: =!(App.Width < 1100)
+                      VerticalAlign: =VerticalAlign.Middle
+            - liContenu:
+                Control: GroupContainer@1.5.0
+                Variant: AutoLayout
+                Properties:
+                  LayoutDirection: =LayoutDirection.Vertical
+                  DropShadow: =DropShadow.None
+                  LayoutMinHeight: =0
+                  LayoutMinWidth: =0
+                  FillPortions: =1
+                  AlignInContainer: =AlignInContainer.Stretch
+                  Fill: =ColorValue("#F5F6F8")
+                  LayoutGap: =If(App.Width < 700, 12, 16)
+                  PaddingTop: =If(App.Width < 700, 12, 22)
+                  PaddingBottom: =If(App.Width < 700, 12, 22)
+                  PaddingLeft: =If(App.Width < 700, 12, 26)
+                  PaddingRight: =If(App.Width < 700, 12, 26)
+                Children:
+                - liEnTete:
+                    Control: GroupContainer@1.5.0
+                    Variant: AutoLayout
+                    Properties:
+                      LayoutDirection: =LayoutDirection.Horizontal
+                      DropShadow: =DropShadow.None
+                      LayoutMinHeight: =0
+                      LayoutMinWidth: =0
+                      Height: =58
+                      FillPortions: =0
+                      AlignInContainer: =AlignInContainer.Stretch
+                      LayoutAlignItems: =LayoutAlignItems.Center
+                      LayoutGap: =8
+                    Children:
+                    - liEnTeteTextes:
+                        Control: GroupContainer@1.5.0
+                        Variant: AutoLayout
+                        Properties:
+                          LayoutDirection: =LayoutDirection.Vertical
+                          DropShadow: =DropShadow.None
+                          LayoutMinHeight: =0
+                          LayoutMinWidth: =0
+                          FillPortions: =1
+                          AlignInContainer: =AlignInContainer.Center
+                          Height: =54
+                        Children:
+                        - liTitre:
+                            Control: Label@2.5.1
+                            Properties:
+                              Text: ="Tickets"
+                              Font: =Font.'Segoe UI'
+                              PaddingTop: =0
+                              PaddingBottom: =0
+                              PaddingLeft: =0
+                              PaddingRight: =0
+                              Height: =32
+                              AlignInContainer: =AlignInContainer.Stretch
+                              Size: =If(App.Width < 700, 18, 22)
+                              FontWeight: =FontWeight.Bold
+                              Color: =ColorValue("#1B1B1F")
+                              VerticalAlign: =VerticalAlign.Middle
+                        - liSousTitre:
+                            Control: Label@2.5.1
+                            Properties:
+                              Text: =CountRows(liGalerie.AllItems) & " ticket(s) affiché(s) sur " & CountRows(colTickets)
+                              Font: =Font.'Segoe UI'
+                              PaddingTop: =0
+                              PaddingBottom: =0
+                              PaddingLeft: =0
+                              PaddingRight: =0
+                              Height: =20
+                              AlignInContainer: =AlignInContainer.Stretch
+                              Size: =12
+                              Color: =ColorValue("#5C5C66")
+                              VerticalAlign: =VerticalAlign.Middle
+                              Wrap: =false
+                    - liActualiser:
+                        Control: Classic/Button@2.2.0
+                        Properties:
+                          Text: ="↻"
+                          Width: =44
+                          Height: =36
+                          LayoutMinWidth: =44
+                          Size: =12
+                          FontWeight: =FontWeight.Semibold
+                          OnSelect: |-
+                            =Refresh('Ticket dépannage');
+                            ClearCollect(colTickets, 'Ticket dépannage')
+                          BorderStyle: =BorderStyle.Solid
+                          BorderThickness: =1
+                          RadiusTopLeft: =8
+                          RadiusTopRight: =8
+                          RadiusBottomLeft: =8
+                          RadiusBottomRight: =8
+                          Fill: =ColorValue("#FFFFFF")
+                          Color: =ColorValue("#001E62")
+                          BorderColor: =ColorValue("#D1D5DB")
+                          HoverFill: =ColorValue("#F3F5F9")
+                          HoverColor: =ColorValue("#001E62")
+                          HoverBorderColor: =ColorValue("#001E62")
+                          PressedFill: =ColorValue("#E8EDF7")
+                    - liNouveau:
+                        Control: Classic/Button@2.2.0
+                        Properties:
+                          Text: =If(App.Width < 700, "+ Nouveau", "+ Nouveau ticket")
+                          Width: =If(App.Width < 700, 110, 160)
+                          Height: =36
+                          LayoutMinWidth: =If(App.Width < 700, 110, 160)
+                          Size: =12
+                          FontWeight: =FontWeight.Semibold
+                          OnSelect: |-
+                            =NewForm(Form1);
+                            Navigate(scrCreer, ScreenTransition.Fade)
+                          BorderStyle: =BorderStyle.Solid
+                          BorderThickness: =1
+                          RadiusTopLeft: =8
+                          RadiusTopRight: =8
+                          RadiusBottomLeft: =8
+                          RadiusBottomRight: =8
+                          Fill: =ColorValue("#001E62")
+                          Color: =ColorValue("#FFFFFF")
+                          BorderColor: =ColorValue("#001E62")
+                          HoverFill: =ColorValue("#0B2E7A")
+                          HoverColor: =ColorValue("#FFFFFF")
+                          HoverBorderColor: =ColorValue("#0B2E7A")
+                          PressedFill: =ColorValue("#00164A")
+                - liFiltres:
+                    Control: GroupContainer@1.5.0
+                    Variant: AutoLayout
+                    Properties:
+                      LayoutDirection: =If(App.Width < 700, LayoutDirection.Vertical, LayoutDirection.Horizontal)
+                      DropShadow: =DropShadow.None
+                      LayoutMinHeight: =0
+                      LayoutMinWidth: =0
+                      Height: =If(App.Width < 700, 232, 60)
+                      FillPortions: =0
+                      AlignInContainer: =AlignInContainer.Stretch
+                      LayoutAlignItems: =LayoutAlignItems.Center
+                      LayoutGap: =If(App.Width < 700, 8, 10)
+                      PaddingLeft: =12
+                      PaddingRight: =12
+                      PaddingTop: =If(App.Width < 700, 10, 0)
+                      PaddingBottom: =If(App.Width < 700, 10, 0)
+                      Fill: =ColorValue("#FFFFFF")
+                      BorderColor: =ColorValue("#E6E8EB")
+                      BorderThickness: =1
+                      RadiusTopLeft: =12
+                      RadiusTopRight: =12
+                      RadiusBottomLeft: =12
+                      RadiusBottomRight: =12
+                    Children:
+                    - liRecherche:
+                        Control: Classic/TextInput
+                        Properties:
+                          Default: =""
+                          HintText: |-
+                            ="🔍  Rechercher : n°, description, équipement, demandeur…"
+                          DelayOutput: =true
+                          Height: =36
+                          FillPortions: =If(App.Width < 700, 0, 1)
+                          LayoutMinWidth: =180
+                          Size: =12
+                          AlignInContainer: =If(App.Width < 700, AlignInContainer.Stretch, AlignInContainer.Center)
+                          Fill: =ColorValue("#F7F8FA")
+                          Color: =ColorValue("#1B1B1F")
+                          BorderColor: =ColorValue("#E6E8EB")
+                          BorderThickness: =1
+                          HoverBorderColor: =ColorValue("#C3C8D0")
+                          FocusedBorderColor: =ColorValue("#001E62")
+                          PaddingLeft: =12
+                          RadiusTopLeft: =8
+                          RadiusTopRight: =8
+                          RadiusBottomLeft: =8
+                          RadiusBottomRight: =8
+                    - liFiltreStatut:
+                        Control: ModernCombobox@1.1.1
+                        Properties:
+                          Items: |-
+                            =Table({Value: "Non démarré"}, {Value: "En cours"}, {Value: "Clôturé"})
+                          ItemDisplayText: =ThisItem.Value
+                          SelectMultiple: =false
+                          IsSearchable: =false
+                          Appearance: =Appearance.Outline
+                          Width: =160
+                          Height: =36
+                          Size: =12
+                          LayoutMinWidth: =160
+                          AlignInContainer: =If(App.Width < 700, AlignInContainer.Stretch, AlignInContainer.Center)
+                    - liFiltrePriorite:
+                        Control: ModernCombobox@1.1.1
+                        Properties:
+                          Items: |-
+                            =Table({Value: "Haute"}, {Value: "Moyenne"}, {Value: "Basse"})
+                          ItemDisplayText: =ThisItem.Value
+                          SelectMultiple: =false
+                          IsSearchable: =false
+                          Appearance: =Appearance.Outline
+                          Width: =140
+                          Height: =36
+                          Size: =12
+                          LayoutMinWidth: =140
+                          AlignInContainer: =If(App.Width < 700, AlignInContainer.Stretch, AlignInContainer.Center)
+                    - liTri:
+                        Control: ModernCombobox@1.1.1
+                        Properties:
+                          Items: |-
+                            =Table({Value: "Priorité puis date"}, {Value: "Date (plus récent)"}, {Value: "Date (plus ancien)"}, {Value: "Priorité"})
+                          ItemDisplayText: =ThisItem.Value
+                          SelectMultiple: =false
+                          IsSearchable: =false
+                          Appearance: =Appearance.Outline
+                          Width: =190
+                          Height: =36
+                          Size: =12
+                          LayoutMinWidth: =190
+                          AlignInContainer: =If(App.Width < 700, AlignInContainer.Stretch, AlignInContainer.Center)
+                          DefaultSelectedItems: |-
+                            =Table({Value: "Priorité puis date"})
+                    - liReinitialiser:
+                        Control: Classic/Button@2.2.0
+                        Properties:
+                          Text: ="Réinitialiser"
+                          Width: =120
+                          Height: =36
+                          LayoutMinWidth: =120
+                          Size: =12
+                          FontWeight: =FontWeight.Semibold
+                          OnSelect: |-
+                            =Reset(liRecherche);
+                            Reset(liFiltreStatut);
+                            Reset(liFiltrePriorite);
+                            Reset(liTri)
+                          BorderStyle: =BorderStyle.Solid
+                          BorderThickness: =1
+                          RadiusTopLeft: =8
+                          RadiusTopRight: =8
+                          RadiusBottomLeft: =8
+                          RadiusBottomRight: =8
+                          Fill: =ColorValue("#FFFFFF")
+                          Color: =ColorValue("#001E62")
+                          BorderColor: =ColorValue("#D1D5DB")
+                          HoverFill: =ColorValue("#F3F5F9")
+                          HoverColor: =ColorValue("#001E62")
+                          HoverBorderColor: =ColorValue("#001E62")
+                          PressedFill: =ColorValue("#E8EDF7")
+                          AlignInContainer: =If(App.Width < 700, AlignInContainer.Stretch, AlignInContainer.Center)
+                - liTableau:
+                    Control: GroupContainer@1.5.0
+                    Variant: AutoLayout
+                    Properties:
+                      LayoutDirection: =LayoutDirection.Vertical
+                      DropShadow: =DropShadow.None
+                      LayoutMinHeight: =0
+                      LayoutMinWidth: =0
+                      FillPortions: =1
+                      AlignInContainer: =AlignInContainer.Stretch
+                      LayoutGap: =0
+                      Fill: =ColorValue("#FFFFFF")
+                      BorderColor: =ColorValue("#E6E8EB")
+                      BorderThickness: =1
+                      RadiusTopLeft: =12
+                      RadiusTopRight: =12
+                      RadiusBottomLeft: =12
+                      RadiusBottomRight: =12
+                      PaddingTop: =8
+                      PaddingBottom: =8
+                      PaddingLeft: =8
+                      PaddingRight: =8
+                    Children:
+                    - liEnTeteTableau:
+                        Control: GroupContainer@1.5.0
+                        Variant: ManualLayout
+                        Properties:
+                          DropShadow: =DropShadow.None
+                          Height: =40
+                          FillPortions: =0
+                          AlignInContainer: =AlignInContainer.Stretch
+                          Fill: =ColorValue("#F7F8FA")
+                          Visible: =!(App.Width < 700)
+                          RadiusTopLeft: =8
+                          RadiusTopRight: =8
+                          RadiusBottomLeft: =8
+                          RadiusBottomRight: =8
+                        Children:
+                        - liColNum:
+                            Control: Label@2.5.1
+                            Properties:
+                              Text: ="N°"
+                              Font: =Font.'Segoe UI'
+                              PaddingTop: =0
+                              PaddingBottom: =0
+                              PaddingLeft: =0
+                              PaddingRight: =0
+                              X: =16
+                              Y: =0
+                              Width: =64
+                              Height: =Parent.Height
+                              Size: =11
+                              FontWeight: =FontWeight.Semibold
+                              Color: =ColorValue("#5C5C66")
+                              VerticalAlign: =VerticalAlign.Middle
+                              Visible: =true
+                              Align: =Align.Left
+                        - liColDate:
+                            Control: Label@2.5.1
+                            Properties:
+                              Text: ="Créé le"
+                              Font: =Font.'Segoe UI'
+                              PaddingTop: =0
+                              PaddingBottom: =0
+                              PaddingLeft: =0
+                              PaddingRight: =0
+                              X: =88
+                              Y: =0
+                              Width: =100
+                              Height: =Parent.Height
+                              Size: =11
+                              FontWeight: =FontWeight.Semibold
+                              Color: =ColorValue("#5C5C66")
+                              VerticalAlign: =VerticalAlign.Middle
+                              Visible: =true
+                              Align: =Align.Left
+                        - liColDesc:
+                            Control: Label@2.5.1
+                            Properties:
+                              Text: ="Description"
+                              Font: =Font.'Segoe UI'
+                              PaddingTop: =0
+                              PaddingBottom: =0
+                              PaddingLeft: =0
+                              PaddingRight: =0
+                              X: =196
+                              Y: =0
+                              Width: =(If(App.Width >= 1200, ((((If(App.Width >= 1200, ((Parent.Width - 16) - 100) - 8, (Parent.Width - 16)) - 112) - 8 - 112) - 8 - 150) - 8 - 150), ((If(App.Width >= 1200, ((Parent.Width - 16) - 100) - 8, (Parent.Width - 16)) - 112) - 8 - 112)) - 8 - 196)
+                              Height: =Parent.Height
+                              Size: =11
+                              FontWeight: =FontWeight.Semibold
+                              Color: =ColorValue("#5C5C66")
+                              VerticalAlign: =VerticalAlign.Middle
+                              Visible: =true
+                              Align: =Align.Left
+                        - liColDem:
+                            Control: Label@2.5.1
+                            Properties:
+                              Text: ="Demandeur"
+                              Font: =Font.'Segoe UI'
+                              PaddingTop: =0
+                              PaddingBottom: =0
+                              PaddingLeft: =0
+                              PaddingRight: =0
+                              X: =((((If(App.Width >= 1200, ((Parent.Width - 16) - 100) - 8, (Parent.Width - 16)) - 112) - 8 - 112) - 8 - 150) - 8 - 150)
+                              Y: =0
+                              Width: =150
+                              Height: =Parent.Height
+                              Size: =11
+                              FontWeight: =FontWeight.Semibold
+                              Color: =ColorValue("#5C5C66")
+                              VerticalAlign: =VerticalAlign.Middle
+                              Visible: =App.Width >= 1200
+                              Align: =Align.Left
+                        - liColResp:
+                            Control: Label@2.5.1
+                            Properties:
+                              Text: ="Responsable"
+                              Font: =Font.'Segoe UI'
+                              PaddingTop: =0
+                              PaddingBottom: =0
+                              PaddingLeft: =0
+                              PaddingRight: =0
+                              X: =(((If(App.Width >= 1200, ((Parent.Width - 16) - 100) - 8, (Parent.Width - 16)) - 112) - 8 - 112) - 8 - 150)
+                              Y: =0
+                              Width: =150
+                              Height: =Parent.Height
+                              Size: =11
+                              FontWeight: =FontWeight.Semibold
+                              Color: =ColorValue("#5C5C66")
+                              VerticalAlign: =VerticalAlign.Middle
+                              Visible: =App.Width >= 1200
+                              Align: =Align.Left
+                        - liColPr:
+                            Control: Label@2.5.1
+                            Properties:
+                              Text: ="Priorité"
+                              Font: =Font.'Segoe UI'
+                              PaddingTop: =0
+                              PaddingBottom: =0
+                              PaddingLeft: =0
+                              PaddingRight: =0
+                              X: =((If(App.Width >= 1200, ((Parent.Width - 16) - 100) - 8, (Parent.Width - 16)) - 112) - 8 - 112)
+                              Y: =0
+                              Width: =112
+                              Height: =Parent.Height
+                              Size: =11
+                              FontWeight: =FontWeight.Semibold
+                              Color: =ColorValue("#5C5C66")
+                              VerticalAlign: =VerticalAlign.Middle
+                              Visible: =true
+                              Align: =Align.Center
+                        - liColSt:
+                            Control: Label@2.5.1
+                            Properties:
+                              Text: ="Statut"
+                              Font: =Font.'Segoe UI'
+                              PaddingTop: =0
+                              PaddingBottom: =0
+                              PaddingLeft: =0
+                              PaddingRight: =0
+                              X: =(If(App.Width >= 1200, ((Parent.Width - 16) - 100) - 8, (Parent.Width - 16)) - 112)
+                              Y: =0
+                              Width: =112
+                              Height: =Parent.Height
+                              Size: =11
+                              FontWeight: =FontWeight.Semibold
+                              Color: =ColorValue("#5C5C66")
+                              VerticalAlign: =VerticalAlign.Middle
+                              Visible: =true
+                              Align: =Align.Center
+                        - liColClo:
+                            Control: Label@2.5.1
+                            Properties:
+                              Text: ="Clôturé le"
+                              Font: =Font.'Segoe UI'
+                              PaddingTop: =0
+                              PaddingBottom: =0
+                              PaddingLeft: =0
+                              PaddingRight: =0
+                              X: =((Parent.Width - 16) - 100)
+                              Y: =0
+                              Width: =100
+                              Height: =Parent.Height
+                              Size: =11
+                              FontWeight: =FontWeight.Semibold
+                              Color: =ColorValue("#5C5C66")
+                              VerticalAlign: =VerticalAlign.Middle
+                              Visible: =App.Width >= 1200
+                              Align: =Align.Left
+                    - liVide:
+                        Control: Label@2.5.1
+                        Properties:
+                          Text: ="Aucun ticket ne correspond à vos critères."
+                          Font: =Font.'Segoe UI'
+                          PaddingTop: =0
+                          PaddingBottom: =0
+                          PaddingLeft: =0
+                          PaddingRight: =0
+                          Height: =60
+                          AlignInContainer: =AlignInContainer.Stretch
+                          Align: =Align.Center
+                          Size: =13
+                          Color: =ColorValue("#8A8A94")
+                          Visible: =CountRows(liGalerie.AllItems) = 0
+                          VerticalAlign: =VerticalAlign.Middle
+                    - liGalerie:
+                        Control: Gallery@2.15.0
+                        Variant: Vertical
+                        Properties:
+                          Items: |-
+                            =With(
+                                {
+                                    d: Filter(
+                                        colTickets,
+                                        (IsBlank(liFiltreStatut.Selected.Value) || Switch('Ticket clôturer'.Value, "Oui", "Clôturé", "En cours", "En cours", "Non démarré") = liFiltreStatut.Selected.Value) &&
+                                        (IsBlank(liFiltrePriorite.Selected.Value) || Switch(First(Split(Coalesce('Statut Urgence'.Value, ""), " ")).Value, "High", "Haute", "Medium", "Moyenne", "Low", "Basse", "—") = liFiltrePriorite.Selected.Value) &&
+                                        (
+                                            IsBlank(liRecherche.Text) ||
+                                            liRecherche.Text in Description ||
+                                            liRecherche.Text in Title ||
+                                            liRecherche.Text in Author.DisplayName ||
+                                            liRecherche.Text in 'Prise en charge'.DisplayName ||
+                                            liRecherche.Text in 'Intervention sur équipement'.Value ||
+                                            liRecherche.Text in 'Secteur demandeur'.Value ||
+                                            liRecherche.Text in Text(ID)
+                                        )
+                                    )
+                                },
+                                Switch(
+                                    Coalesce(liTri.Selected.Value, "Priorité puis date"),
+                                    "Date (plus récent)", Sort(d, Created, SortOrder.Descending),
+                                    "Date (plus ancien)", Sort(d, Created, SortOrder.Ascending),
+                                    "Priorité", Sort(d, Switch(First(Split(Coalesce('Statut Urgence'.Value, ""), " ")).Value, "High", 1, "Medium", 2, "Low", 3, 4), SortOrder.Ascending),
+                                    Sort(d, Switch(First(Split(Coalesce('Statut Urgence'.Value, ""), " ")).Value, "High", 1, "Medium", 2, "Low", 3, 4) * 100000000 + DateDiff(Created, DateTime(2100, 1, 1, 0, 0, 0), TimeUnit.Minutes), SortOrder.Ascending)
+                                )
+                            )
+                          TemplateSize: =If(App.Width < 700, 104, 58)
+                          TemplatePadding: =0
+                          ShowScrollbar: =false
+                          FillPortions: =1
+                          LayoutMinHeight: =0
+                          AlignInContainer: =AlignInContainer.Stretch
+                        Children:
+                        - liLigneBarre:
+                            Control: Rectangle@2.3.0
+                            Properties:
+                              X: =0
+                              Y: =8
+                              Width: =4
+                              Height: =Parent.TemplateHeight - 16
+                              Fill: =ColorValue(Switch(First(Split(Coalesce(ThisItem.'Statut Urgence'.Value, ""), " ")).Value, "High", "#D13438", "Medium", "#F7A600", "Low", "#13A10E", "#C8CCD2"))
+                        - liLigneNum:
+                            Control: Label@2.5.1
+                            Properties:
+                              Text: ="#" & ThisItem.ID
+                              Font: =Font.'Segoe UI'
+                              PaddingTop: =0
+                              PaddingBottom: =0
+                              PaddingLeft: =0
+                              PaddingRight: =0
+                              X: =16
+                              Y: =0
+                              Width: =64
+                              Height: =Parent.TemplateHeight
+                              Size: =12
+                              FontWeight: =FontWeight.Semibold
+                              Color: =ColorValue("#001E62")
+                              VerticalAlign: =VerticalAlign.Middle
+                              Visible: =!(App.Width < 700)
+                        - liLigneDate:
+                            Control: Label@2.5.1
+                            Properties:
+                              Text: =Text(ThisItem.Created, "dd/mm/yyyy")
+                              Font: =Font.'Segoe UI'
+                              PaddingTop: =0
+                              PaddingBottom: =0
+                              PaddingLeft: =0
+                              PaddingRight: =0
+                              X: =88
+                              Y: =0
+                              Width: =100
+                              Height: =Parent.TemplateHeight
+                              Size: =12
+                              Color: =ColorValue("#5C5C66")
+                              VerticalAlign: =VerticalAlign.Middle
+                              Visible: =!(App.Width < 700)
+                        - liLigneDesc:
+                            Control: Label@2.5.1
+                            Properties:
+                              Text: =Coalesce(ThisItem.Title, ThisItem.Description, "Ticket sans description")
+                              Font: =Font.'Segoe UI'
+                              PaddingTop: =0
+                              PaddingBottom: =0
+                              PaddingLeft: =0
+                              PaddingRight: =0
+                              X: =196
+                              Y: =9
+                              Width: =(If(App.Width >= 1200, ((((If(App.Width >= 1200, ((Parent.TemplateWidth - 16) - 100) - 8, (Parent.TemplateWidth - 16)) - 112) - 8 - 112) - 8 - 150) - 8 - 150), ((If(App.Width >= 1200, ((Parent.TemplateWidth - 16) - 100) - 8, (Parent.TemplateWidth - 16)) - 112) - 8 - 112)) - 8 - 196)
+                              Height: =22
+                              Size: =13
+                              FontWeight: =FontWeight.Semibold
+                              Color: =ColorValue("#1B1B1F")
+                              Wrap: =false
+                              Visible: =!(App.Width < 700)
+                        - liLigneLieu:
+                            Control: Label@2.5.1
+                            Properties:
+                              Text: =Coalesce(ThisItem.'Intervention sur équipement'.Value, "—") & "  ·  " & Coalesce(ThisItem.'Secteur demandeur'.Value, "—")
+                              Font: =Font.'Segoe UI'
+                              PaddingTop: =0
+                              PaddingBottom: =0
+                              PaddingLeft: =0
+                              PaddingRight: =0
+                              X: =196
+                              Y: =31
+                              Width: =(If(App.Width >= 1200, ((((If(App.Width >= 1200, ((Parent.TemplateWidth - 16) - 100) - 8, (Parent.TemplateWidth - 16)) - 112) - 8 - 112) - 8 - 150) - 8 - 150), ((If(App.Width >= 1200, ((Parent.TemplateWidth - 16) - 100) - 8, (Parent.TemplateWidth - 16)) - 112) - 8 - 112)) - 8 - 196)
+                              Height: =18
+                              Size: =11
+                              Color: =ColorValue("#8A8A94")
+                              Wrap: =false
+                              Visible: =!(App.Width < 700)
+                        - liLigneDemandeur:
+                            Control: Label@2.5.1
+                            Properties:
+                              Text: =ThisItem.Author.DisplayName
+                              Font: =Font.'Segoe UI'
+                              PaddingTop: =0
+                              PaddingBottom: =0
+                              PaddingLeft: =0
+                              PaddingRight: =0
+                              X: =((((If(App.Width >= 1200, ((Parent.TemplateWidth - 16) - 100) - 8, (Parent.TemplateWidth - 16)) - 112) - 8 - 112) - 8 - 150) - 8 - 150)
+                              Y: =0
+                              Width: =150
+                              Height: =Parent.TemplateHeight
+                              Size: =12
+                              Color: =ColorValue("#5C5C66")
+                              Wrap: =false
+                              VerticalAlign: =VerticalAlign.Middle
+                              Visible: =!(App.Width < 700) && App.Width >= 1200
+                        - liLigneResponsable:
+                            Control: Label@2.5.1
+                            Properties:
+                              Text: =Coalesce(ThisItem.'Prise en charge'.DisplayName, "Non assigné")
+                              Font: =Font.'Segoe UI'
+                              PaddingTop: =0
+                              PaddingBottom: =0
+                              PaddingLeft: =0
+                              PaddingRight: =0
+                              X: =(((If(App.Width >= 1200, ((Parent.TemplateWidth - 16) - 100) - 8, (Parent.TemplateWidth - 16)) - 112) - 8 - 112) - 8 - 150)
+                              Y: =0
+                              Width: =150
+                              Height: =Parent.TemplateHeight
+                              Size: =12
+                              Color: =If(IsBlank(ThisItem.'Prise en charge'.DisplayName), ColorValue("#8A8A94"), ColorValue("#5C5C66"))
+                              Wrap: =false
+                              VerticalAlign: =VerticalAlign.Middle
+                              Visible: =!(App.Width < 700) && App.Width >= 1200
+                        - liLignePriorite:
+                            Control: GroupContainer@1.5.0
+                            Variant: ManualLayout
+                            Properties:
+                              DropShadow: =DropShadow.None
+                              Width: =104
+                              Height: =24
+                              LayoutMinWidth: =104
+                              Fill: =ColorValue(Switch(First(Split(Coalesce(ThisItem.'Statut Urgence'.Value, ""), " ")).Value, "High", "#FDE7E9", "Medium", "#FFF1D6", "Low", "#DFF6DD", "#EDEEF0"))
+                              RadiusTopLeft: =12
+                              RadiusTopRight: =12
+                              RadiusBottomLeft: =12
+                              RadiusBottomRight: =12
+                              X: =((If(App.Width >= 1200, ((Parent.TemplateWidth - 16) - 100) - 8, (Parent.TemplateWidth - 16)) - 112) - 8 - 112) + 4
+                              Y: =(Parent.TemplateHeight - 24) / 2
+                              Visible: =!(App.Width < 700)
+                            Children:
+                            - liLignePrioriteTxt:
+                                Control: Label@2.5.1
+                                Properties:
+                                  Text: =Switch(First(Split(Coalesce(ThisItem.'Statut Urgence'.Value, ""), " ")).Value, "High", "Haute", "Medium", "Moyenne", "Low", "Basse", "—")
+                                  Font: =Font.'Segoe UI'
+                                  PaddingTop: =0
+                                  PaddingBottom: =0
+                                  PaddingLeft: =0
+                                  PaddingRight: =0
+                                  X: =0
+                                  Y: =0
+                                  Width: =Parent.Width
+                                  Height: =Parent.Height
+                                  Size: =11
+                                  FontWeight: =FontWeight.Semibold
+                                  Color: =ColorValue(Switch(First(Split(Coalesce(ThisItem.'Statut Urgence'.Value, ""), " ")).Value, "High", "#A4262C", "Medium", "#8A5A00", "Low", "#0E700E", "#4B5059"))
+                                  Align: =Align.Center
+                                  VerticalAlign: =VerticalAlign.Middle
+                        - liLigneStatut:
+                            Control: GroupContainer@1.5.0
+                            Variant: ManualLayout
+                            Properties:
+                              DropShadow: =DropShadow.None
+                              Width: =104
+                              Height: =24
+                              LayoutMinWidth: =104
+                              Fill: =ColorValue(Switch(ThisItem.'Ticket clôturer'.Value, "Oui", "#DFF6DD", "En cours", "#FFF1D6", "#EDEEF0"))
+                              RadiusTopLeft: =12
+                              RadiusTopRight: =12
+                              RadiusBottomLeft: =12
+                              RadiusBottomRight: =12
+                              X: =(If(App.Width >= 1200, ((Parent.TemplateWidth - 16) - 100) - 8, (Parent.TemplateWidth - 16)) - 112) + 4
+                              Y: =(Parent.TemplateHeight - 24) / 2
+                              Visible: =!(App.Width < 700)
+                            Children:
+                            - liLigneStatutTxt:
+                                Control: Label@2.5.1
+                                Properties:
+                                  Text: =Switch(ThisItem.'Ticket clôturer'.Value, "Oui", "Clôturé", "En cours", "En cours", "Non démarré")
+                                  Font: =Font.'Segoe UI'
+                                  PaddingTop: =0
+                                  PaddingBottom: =0
+                                  PaddingLeft: =0
+                                  PaddingRight: =0
+                                  X: =0
+                                  Y: =0
+                                  Width: =Parent.Width
+                                  Height: =Parent.Height
+                                  Size: =11
+                                  FontWeight: =FontWeight.Semibold
+                                  Color: =ColorValue(Switch(ThisItem.'Ticket clôturer'.Value, "Oui", "#0E700E", "En cours", "#8A5A00", "#4B5059"))
+                                  Align: =Align.Center
+                                  VerticalAlign: =VerticalAlign.Middle
+                        - liLigneCloture:
+                            Control: Label@2.5.1
+                            Properties:
+                              Text: =If(ThisItem.'Ticket clôturer'.Value = "Oui", Text(ThisItem.Modified, "dd/mm/yyyy") & If(IsBlank(ThisItem.'Heure cloture du ticket'), "", " " & ThisItem.'Heure cloture du ticket'), "—")
+                              Font: =Font.'Segoe UI'
+                              PaddingTop: =0
+                              PaddingBottom: =0
+                              PaddingLeft: =0
+                              PaddingRight: =0
+                              X: =((Parent.TemplateWidth - 16) - 100)
+                              Y: =0
+                              Width: =100
+                              Height: =Parent.TemplateHeight
+                              Size: =11
+                              Color: =ColorValue("#5C5C66")
+                              VerticalAlign: =VerticalAlign.Middle
+                              Visible: =!(App.Width < 700) && App.Width >= 1200
+                        - liTelEnTete:
+                            Control: Label@2.5.1
+                            Properties:
+                              Text: ="#" & ThisItem.ID & "  ·  " & Text(ThisItem.Created, "dd/mm/yyyy")
+                              Font: =Font.'Segoe UI'
+                              PaddingTop: =0
+                              PaddingBottom: =0
+                              PaddingLeft: =0
+                              PaddingRight: =0
+                              X: =16
+                              Y: =10
+                              Width: =Parent.TemplateWidth - 32
+                              Height: =18
+                              Size: =11
+                              FontWeight: =FontWeight.Semibold
+                              Color: =ColorValue("#001E62")
+                              Visible: =App.Width < 700
+                        - liTelDesc:
+                            Control: Label@2.5.1
+                            Properties:
+                              Text: =Coalesce(ThisItem.Title, ThisItem.Description, "Ticket sans description")
+                              Font: =Font.'Segoe UI'
+                              PaddingTop: =0
+                              PaddingBottom: =0
+                              PaddingLeft: =0
+                              PaddingRight: =0
+                              X: =16
+                              Y: =30
+                              Width: =Parent.TemplateWidth - 32
+                              Height: =22
+                              Size: =13
+                              FontWeight: =FontWeight.Semibold
+                              Color: =ColorValue("#1B1B1F")
+                              Wrap: =false
+                              Visible: =App.Width < 700
+                        - liTelInfos:
+                            Control: Label@2.5.1
+                            Properties:
+                              Text: =ThisItem.Author.DisplayName & "  ·  " & Coalesce(ThisItem.'Prise en charge'.DisplayName, "Non assigné")
+                              Font: =Font.'Segoe UI'
+                              PaddingTop: =0
+                              PaddingBottom: =0
+                              PaddingLeft: =0
+                              PaddingRight: =0
+                              X: =16
+                              Y: =52
+                              Width: =Parent.TemplateWidth - 32
+                              Height: =18
+                              Size: =11
+                              Color: =ColorValue("#8A8A94")
+                              Wrap: =false
+                              Visible: =App.Width < 700
+                        - liTelPriorite:
+                            Control: GroupContainer@1.5.0
+                            Variant: ManualLayout
+                            Properties:
+                              DropShadow: =DropShadow.None
+                              Width: =96
+                              Height: =24
+                              LayoutMinWidth: =96
+                              Fill: =ColorValue(Switch(First(Split(Coalesce(ThisItem.'Statut Urgence'.Value, ""), " ")).Value, "High", "#FDE7E9", "Medium", "#FFF1D6", "Low", "#DFF6DD", "#EDEEF0"))
+                              RadiusTopLeft: =12
+                              RadiusTopRight: =12
+                              RadiusBottomLeft: =12
+                              RadiusBottomRight: =12
+                              X: =16
+                              Y: =74
+                              Visible: =App.Width < 700
+                            Children:
+                            - liTelPrioriteTxt:
+                                Control: Label@2.5.1
+                                Properties:
+                                  Text: =Switch(First(Split(Coalesce(ThisItem.'Statut Urgence'.Value, ""), " ")).Value, "High", "Haute", "Medium", "Moyenne", "Low", "Basse", "—")
+                                  Font: =Font.'Segoe UI'
+                                  PaddingTop: =0
+                                  PaddingBottom: =0
+                                  PaddingLeft: =0
+                                  PaddingRight: =0
+                                  X: =0
+                                  Y: =0
+                                  Width: =Parent.Width
+                                  Height: =Parent.Height
+                                  Size: =11
+                                  FontWeight: =FontWeight.Semibold
+                                  Color: =ColorValue(Switch(First(Split(Coalesce(ThisItem.'Statut Urgence'.Value, ""), " ")).Value, "High", "#A4262C", "Medium", "#8A5A00", "Low", "#0E700E", "#4B5059"))
+                                  Align: =Align.Center
+                                  VerticalAlign: =VerticalAlign.Middle
+                        - liTelStatut:
+                            Control: GroupContainer@1.5.0
+                            Variant: ManualLayout
+                            Properties:
+                              DropShadow: =DropShadow.None
+                              Width: =104
+                              Height: =24
+                              LayoutMinWidth: =104
+                              Fill: =ColorValue(Switch(ThisItem.'Ticket clôturer'.Value, "Oui", "#DFF6DD", "En cours", "#FFF1D6", "#EDEEF0"))
+                              RadiusTopLeft: =12
+                              RadiusTopRight: =12
+                              RadiusBottomLeft: =12
+                              RadiusBottomRight: =12
+                              X: =120
+                              Y: =74
+                              Visible: =App.Width < 700
+                            Children:
+                            - liTelStatutTxt:
+                                Control: Label@2.5.1
+                                Properties:
+                                  Text: =Switch(ThisItem.'Ticket clôturer'.Value, "Oui", "Clôturé", "En cours", "En cours", "Non démarré")
+                                  Font: =Font.'Segoe UI'
+                                  PaddingTop: =0
+                                  PaddingBottom: =0
+                                  PaddingLeft: =0
+                                  PaddingRight: =0
+                                  X: =0
+                                  Y: =0
+                                  Width: =Parent.Width
+                                  Height: =Parent.Height
+                                  Size: =11
+                                  FontWeight: =FontWeight.Semibold
+                                  Color: =ColorValue(Switch(ThisItem.'Ticket clôturer'.Value, "Oui", "#0E700E", "En cours", "#8A5A00", "#4B5059"))
+                                  Align: =Align.Center
+                                  VerticalAlign: =VerticalAlign.Middle
+                        - liLigneTrait:
+                            Control: Rectangle@2.3.0
+                            Properties:
+                              X: =0
+                              Y: =Parent.TemplateHeight - 1
+                              Width: =Parent.TemplateWidth
+                              Height: =1
+                              Fill: =ColorValue("#EEF0F3")
+                        - liLigneClic:
+                            Control: Classic/Button@2.2.0
+                            Properties:
+                              Text: =""
+                              Fill: =RGBA(0, 0, 0, 0)
+                              Color: =RGBA(0, 0, 0, 0)
+                              BorderColor: =RGBA(0, 0, 0, 0)
+                              BorderStyle: =BorderStyle.None
+                              HoverFill: =RGBA(0, 30, 98, 0.04)
+                              HoverColor: =RGBA(0, 0, 0, 0)
+                              HoverBorderColor: =RGBA(0, 0, 0, 0)
+                              PressedFill: =RGBA(0, 0, 0, 0.06)
+                              PressedColor: =RGBA(0, 0, 0, 0)
+                              PressedBorderColor: =RGBA(0, 0, 0, 0)
+                              X: =0
+                              Y: =0
+                              Width: =Parent.TemplateWidth
+                              Height: =Parent.TemplateHeight
+                              OnSelect: |-
+                                =Set(varTicket, ThisItem);
+                                Navigate(scrDetail, ScreenTransition.Fade)
+                              RadiusTopLeft: =0
+                              RadiusTopRight: =0
+                              RadiusBottomLeft: =0
+                              RadiusBottomRight: =0
+        - liNavBas:
+            Control: GroupContainer@1.5.0
+            Variant: AutoLayout
+            Properties:
+              LayoutDirection: =LayoutDirection.Horizontal
+              DropShadow: =DropShadow.None
+              LayoutMinHeight: =0
+              LayoutMinWidth: =0
+              Height: =66
+              FillPortions: =0
+              AlignInContainer: =AlignInContainer.Stretch
+              Visible: =App.Width < 700
+              Fill: =ColorValue("#FFFFFF")
+              BorderColor: =ColorValue("#E6E8EB")
+              BorderThickness: =1
+              LayoutAlignItems: =LayoutAlignItems.Center
+              LayoutGap: =4
+              PaddingTop: =6
+              PaddingBottom: =6
+              PaddingLeft: =6
+              PaddingRight: =6
+            Children:
+            - liBas1:
+                Control: Classic/Button@2.2.0
+                Properties:
+                  Text: ="📊" & Char(10) & "Accueil"
+                  FillPortions: =1
+                  Height: =54
+                  Size: =10
+                  FontWeight: =FontWeight.Semibold
+                  Fill: =RGBA(0, 0, 0, 0)
+                  Color: =ColorValue("#5C5C66")
+                  BorderStyle: =BorderStyle.None
+                  BorderColor: =RGBA(0, 0, 0, 0)
+                  HoverBorderColor: =RGBA(0, 0, 0, 0)
+                  PressedBorderColor: =RGBA(0, 0, 0, 0)
+                  HoverFill: =ColorValue("#F0F3F9")
+                  HoverColor: =ColorValue("#001E62")
+                  PressedFill: =ColorValue("#E3E9F5")
+                  PressedColor: =ColorValue("#001E62")
+                  RadiusTopLeft: =10
+                  RadiusTopRight: =10
+                  RadiusBottomLeft: =10
+                  RadiusBottomRight: =10
+                  OnSelect: =Navigate(scrAccueil, ScreenTransition.Fade)
+                  AlignInContainer: =AlignInContainer.Center
+            - liBas2:
+                Control: Classic/Button@2.2.0
+                Properties:
+                  Text: ="📋" & Char(10) & "Tickets"
+                  FillPortions: =1
+                  Height: =54
+                  Size: =10
+                  FontWeight: =FontWeight.Semibold
+                  Fill: =ColorValue("#E8EDF7")
+                  Color: =ColorValue("#001E62")
+                  BorderStyle: =BorderStyle.None
+                  BorderColor: =RGBA(0, 0, 0, 0)
+                  HoverBorderColor: =RGBA(0, 0, 0, 0)
+                  PressedBorderColor: =RGBA(0, 0, 0, 0)
+                  HoverFill: =ColorValue("#F0F3F9")
+                  HoverColor: =ColorValue("#001E62")
+                  PressedFill: =ColorValue("#E3E9F5")
+                  PressedColor: =ColorValue("#001E62")
+                  RadiusTopLeft: =10
+                  RadiusTopRight: =10
+                  RadiusBottomLeft: =10
+                  RadiusBottomRight: =10
+                  OnSelect: =Navigate(scrListe, ScreenTransition.Fade)
+                  AlignInContainer: =AlignInContainer.Center
+            - liBas3:
+                Control: Classic/Button@2.2.0
+                Properties:
+                  Text: ="➕" & Char(10) & "Créer"
+                  FillPortions: =1
+                  Height: =54
+                  Size: =10
+                  FontWeight: =FontWeight.Semibold
+                  Fill: =RGBA(0, 0, 0, 0)
+                  Color: =ColorValue("#5C5C66")
+                  BorderStyle: =BorderStyle.None
+                  BorderColor: =RGBA(0, 0, 0, 0)
+                  HoverBorderColor: =RGBA(0, 0, 0, 0)
+                  PressedBorderColor: =RGBA(0, 0, 0, 0)
+                  HoverFill: =ColorValue("#F0F3F9")
+                  HoverColor: =ColorValue("#001E62")
+                  PressedFill: =ColorValue("#E3E9F5")
+                  PressedColor: =ColorValue("#001E62")
+                  RadiusTopLeft: =10
+                  RadiusTopRight: =10
+                  RadiusBottomLeft: =10
+                  RadiusBottomRight: =10
+                  OnSelect: |-
+                    =NewForm(Form1);
+                    Navigate(scrCreer, ScreenTransition.Fade)
+                  AlignInContainer: =AlignInContainer.Center

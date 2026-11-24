@@ -1,0 +1,827 @@
+Screens:
+  scrCreer:
+    Properties:
+      Fill: =ColorValue("#F5F6F8")
+      OnVisible: |-
+        =Set(varMsgCreation, false);
+        NewForm(Form1)
+    Children:
+    - crRacine:
+        Control: GroupContainer@1.5.0
+        Variant: AutoLayout
+        Properties:
+          LayoutDirection: =LayoutDirection.Vertical
+          DropShadow: =DropShadow.None
+          LayoutMinHeight: =0
+          LayoutMinWidth: =0
+          X: =0
+          Y: =0
+          Width: =Parent.Width
+          Height: =Parent.Height
+          Fill: =ColorValue("#F5F6F8")
+          LayoutGap: =0
+        Children:
+        - crCorps:
+            Control: GroupContainer@1.5.0
+            Variant: AutoLayout
+            Properties:
+              LayoutDirection: =LayoutDirection.Horizontal
+              DropShadow: =DropShadow.None
+              LayoutMinHeight: =0
+              LayoutMinWidth: =0
+              FillPortions: =1
+              AlignInContainer: =AlignInContainer.Stretch
+              Fill: =ColorValue("#F5F6F8")
+            Children:
+            - crNav:
+                Control: GroupContainer@1.5.0
+                Variant: AutoLayout
+                Properties:
+                  LayoutDirection: =LayoutDirection.Vertical
+                  DropShadow: =DropShadow.None
+                  LayoutMinHeight: =0
+                  LayoutMinWidth: =If(App.Width < 1100, 76, 232)
+                  Width: =If(App.Width < 1100, 76, 232)
+                  FillPortions: =0
+                  AlignInContainer: =AlignInContainer.Stretch
+                  Visible: =!(App.Width < 700)
+                  Fill: =ColorValue("#001E62")
+                  LayoutGap: =6
+                  PaddingTop: =12
+                  PaddingBottom: =12
+                  PaddingLeft: =12
+                  PaddingRight: =12
+                Children:
+                - crNavLogo:
+                    Control: Label@2.5.1
+                    Properties:
+                      Text: ="ASICS"
+                      Font: =Font.'Segoe UI'
+                      PaddingTop: =0
+                      PaddingBottom: =0
+                      PaddingLeft: =If(App.Width < 1100, 0, 8)
+                      PaddingRight: =0
+                      Height: =40
+                      AlignInContainer: =AlignInContainer.Stretch
+                      Size: =If(App.Width < 1100, 13, 22)
+                      FontWeight: =FontWeight.Bold
+                      Italic: =true
+                      Color: =ColorValue("#FFFFFF")
+                      Align: =If(App.Width < 1100, Align.Center, Align.Left)
+                      VerticalAlign: =VerticalAlign.Middle
+                - crNavSousTitre:
+                    Control: Label@2.5.1
+                    Properties:
+                      Text: ="Gestion de la maintenance"
+                      Font: =Font.'Segoe UI'
+                      PaddingTop: =0
+                      PaddingBottom: =0
+                      PaddingLeft: =8
+                      PaddingRight: =0
+                      Height: =20
+                      AlignInContainer: =AlignInContainer.Stretch
+                      Size: =11
+                      Color: =ColorValue("#9FB3DE")
+                      Visible: =!(App.Width < 1100)
+                      Wrap: =false
+                - crNavTrait:
+                    Control: Rectangle@2.3.0
+                    Properties:
+                      Height: =1
+                      Fill: =RGBA(255, 255, 255, 0.14)
+                      AlignInContainer: =AlignInContainer.Stretch
+                - crNav1:
+                    Control: Classic/Button@2.2.0
+                    Properties:
+                      Text: =If(App.Width < 1100, "📊", "📊   Tableau de bord")
+                      Height: =44
+                      Size: =12
+                      FontWeight: =FontWeight.Semibold
+                      Fill: =RGBA(0, 0, 0, 0)
+                      Color: =ColorValue("#C9D3EA")
+                      BorderStyle: =BorderStyle.None
+                      BorderColor: =RGBA(0, 0, 0, 0)
+                      HoverBorderColor: =RGBA(0, 0, 0, 0)
+                      PressedBorderColor: =RGBA(0, 0, 0, 0)
+                      HoverFill: =RGBA(255, 255, 255, 0.10)
+                      HoverColor: =ColorValue("#FFFFFF")
+                      PressedFill: =RGBA(255, 255, 255, 0.18)
+                      PressedColor: =ColorValue("#FFFFFF")
+                      RadiusTopLeft: =8
+                      RadiusTopRight: =8
+                      RadiusBottomLeft: =8
+                      RadiusBottomRight: =8
+                      OnSelect: =Navigate(scrAccueil, ScreenTransition.Fade)
+                      AlignInContainer: =AlignInContainer.Stretch
+                - crNav2:
+                    Control: Classic/Button@2.2.0
+                    Properties:
+                      Text: =If(App.Width < 1100, "📋", "📋   Tickets")
+                      Height: =44
+                      Size: =12
+                      FontWeight: =FontWeight.Semibold
+                      Fill: =RGBA(0, 0, 0, 0)
+                      Color: =ColorValue("#C9D3EA")
+                      BorderStyle: =BorderStyle.None
+                      BorderColor: =RGBA(0, 0, 0, 0)
+                      HoverBorderColor: =RGBA(0, 0, 0, 0)
+                      PressedBorderColor: =RGBA(0, 0, 0, 0)
+                      HoverFill: =RGBA(255, 255, 255, 0.10)
+                      HoverColor: =ColorValue("#FFFFFF")
+                      PressedFill: =RGBA(255, 255, 255, 0.18)
+                      PressedColor: =ColorValue("#FFFFFF")
+                      RadiusTopLeft: =8
+                      RadiusTopRight: =8
+                      RadiusBottomLeft: =8
+                      RadiusBottomRight: =8
+                      OnSelect: =Navigate(scrListe, ScreenTransition.Fade)
+                      AlignInContainer: =AlignInContainer.Stretch
+                - crNav3:
+                    Control: Classic/Button@2.2.0
+                    Properties:
+                      Text: =If(App.Width < 1100, "➕", "➕   Nouveau ticket")
+                      Height: =44
+                      Size: =12
+                      FontWeight: =FontWeight.Semibold
+                      Fill: =RGBA(255, 255, 255, 0.14)
+                      Color: =ColorValue("#FFFFFF")
+                      BorderStyle: =BorderStyle.None
+                      BorderColor: =RGBA(0, 0, 0, 0)
+                      HoverBorderColor: =RGBA(0, 0, 0, 0)
+                      PressedBorderColor: =RGBA(0, 0, 0, 0)
+                      HoverFill: =RGBA(255, 255, 255, 0.10)
+                      HoverColor: =ColorValue("#FFFFFF")
+                      PressedFill: =RGBA(255, 255, 255, 0.18)
+                      PressedColor: =ColorValue("#FFFFFF")
+                      RadiusTopLeft: =8
+                      RadiusTopRight: =8
+                      RadiusBottomLeft: =8
+                      RadiusBottomRight: =8
+                      OnSelect: |-
+                        =NewForm(Form1);
+                        Navigate(scrCreer, ScreenTransition.Fade)
+                      AlignInContainer: =AlignInContainer.Stretch
+                - crNavEspace:
+                    Control: GroupContainer@1.5.0
+                    Variant: AutoLayout
+                    Properties:
+                      LayoutDirection: =LayoutDirection.Vertical
+                      DropShadow: =DropShadow.None
+                      LayoutMinHeight: =0
+                      LayoutMinWidth: =0
+                      FillPortions: =1
+                      AlignInContainer: =AlignInContainer.Stretch
+                - crNavUtilisateur:
+                    Control: Label@2.5.1
+                    Properties:
+                      Text: ="👤  " & User().FullName
+                      Font: =Font.'Segoe UI'
+                      PaddingTop: =0
+                      PaddingBottom: =0
+                      PaddingLeft: =8
+                      PaddingRight: =0
+                      Height: =36
+                      AlignInContainer: =AlignInContainer.Stretch
+                      Size: =11
+                      Color: =ColorValue("#C9D3EA")
+                      Visible: =!(App.Width < 1100)
+                      VerticalAlign: =VerticalAlign.Middle
+            - crContenu:
+                Control: GroupContainer@1.5.0
+                Variant: AutoLayout
+                Properties:
+                  LayoutDirection: =LayoutDirection.Vertical
+                  DropShadow: =DropShadow.None
+                  LayoutMinHeight: =0
+                  LayoutMinWidth: =0
+                  FillPortions: =1
+                  AlignInContainer: =AlignInContainer.Stretch
+                  Fill: =ColorValue("#F5F6F8")
+                  LayoutGap: =If(App.Width < 700, 12, 16)
+                  PaddingTop: =If(App.Width < 700, 12, 22)
+                  PaddingBottom: =If(App.Width < 700, 12, 22)
+                  PaddingLeft: =If(App.Width < 700, 12, 26)
+                  PaddingRight: =If(App.Width < 700, 12, 26)
+                Children:
+                - crEnTete:
+                    Control: GroupContainer@1.5.0
+                    Variant: AutoLayout
+                    Properties:
+                      LayoutDirection: =LayoutDirection.Horizontal
+                      DropShadow: =DropShadow.None
+                      LayoutMinHeight: =0
+                      LayoutMinWidth: =0
+                      Height: =58
+                      FillPortions: =0
+                      AlignInContainer: =AlignInContainer.Stretch
+                      LayoutAlignItems: =LayoutAlignItems.Center
+                      LayoutGap: =8
+                    Children:
+                    - crEnTeteTextes:
+                        Control: GroupContainer@1.5.0
+                        Variant: AutoLayout
+                        Properties:
+                          LayoutDirection: =LayoutDirection.Vertical
+                          DropShadow: =DropShadow.None
+                          LayoutMinHeight: =0
+                          LayoutMinWidth: =0
+                          FillPortions: =1
+                          AlignInContainer: =AlignInContainer.Center
+                          Height: =54
+                        Children:
+                        - crTitre:
+                            Control: Label@2.5.1
+                            Properties:
+                              Text: ="Nouveau ticket"
+                              Font: =Font.'Segoe UI'
+                              PaddingTop: =0
+                              PaddingBottom: =0
+                              PaddingLeft: =0
+                              PaddingRight: =0
+                              Height: =32
+                              AlignInContainer: =AlignInContainer.Stretch
+                              Size: =If(App.Width < 700, 18, 22)
+                              FontWeight: =FontWeight.Bold
+                              Color: =ColorValue("#1B1B1F")
+                              VerticalAlign: =VerticalAlign.Middle
+                        - crSousTitre:
+                            Control: Label@2.5.1
+                            Properties:
+                              Text: |-
+                                ="Décrivez le problème : il sera enregistré directement dans Microsoft Lists."
+                              Font: =Font.'Segoe UI'
+                              PaddingTop: =0
+                              PaddingBottom: =0
+                              PaddingLeft: =0
+                              PaddingRight: =0
+                              Height: =20
+                              AlignInContainer: =AlignInContainer.Stretch
+                              Size: =12
+                              Color: =ColorValue("#5C5C66")
+                              VerticalAlign: =VerticalAlign.Middle
+                              Wrap: =false
+                - crBandeau:
+                    Control: GroupContainer@1.5.0
+                    Variant: AutoLayout
+                    Properties:
+                      LayoutDirection: =LayoutDirection.Horizontal
+                      DropShadow: =DropShadow.None
+                      LayoutMinHeight: =0
+                      LayoutMinWidth: =0
+                      Height: =54
+                      FillPortions: =0
+                      AlignInContainer: =AlignInContainer.Stretch
+                      Visible: =varMsgCreation
+                      Fill: =ColorValue("#DFF6DD")
+                      BorderColor: =ColorValue("#9FD89F")
+                      BorderThickness: =1
+                      LayoutGap: =8
+                      LayoutAlignItems: =LayoutAlignItems.Center
+                      PaddingLeft: =16
+                      PaddingRight: =8
+                      RadiusTopLeft: =10
+                      RadiusTopRight: =10
+                      RadiusBottomLeft: =10
+                      RadiusBottomRight: =10
+                    Children:
+                    - crBandeauTexte:
+                        Control: Label@2.5.1
+                        Properties:
+                          Text: ="✅  Ticket n° " & varNumTicket & " enregistré. L'équipe maintenance a été prévenue."
+                          Font: =Font.'Segoe UI'
+                          PaddingTop: =0
+                          PaddingBottom: =0
+                          PaddingLeft: =0
+                          PaddingRight: =0
+                          FillPortions: =1
+                          Height: =40
+                          Size: =If(App.Width < 700, 12, 13)
+                          FontWeight: =FontWeight.Semibold
+                          Color: =ColorValue("#0E700E")
+                          VerticalAlign: =VerticalAlign.Middle
+                    - crBandeauVoir:
+                        Control: Classic/Button@2.2.0
+                        Properties:
+                          Text: ="Voir le ticket"
+                          Width: =120
+                          Height: =36
+                          LayoutMinWidth: =120
+                          Size: =12
+                          FontWeight: =FontWeight.Semibold
+                          OnSelect: |-
+                            =Set(varTicket, LookUp('Ticket dépannage', ID = varNumTicket));
+                            Navigate(scrDetail, ScreenTransition.Fade)
+                          BorderStyle: =BorderStyle.Solid
+                          BorderThickness: =1
+                          RadiusTopLeft: =8
+                          RadiusTopRight: =8
+                          RadiusBottomLeft: =8
+                          RadiusBottomRight: =8
+                          Fill: =ColorValue("#FFFFFF")
+                          Color: =ColorValue("#001E62")
+                          BorderColor: =ColorValue("#D1D5DB")
+                          HoverFill: =ColorValue("#F3F5F9")
+                          HoverColor: =ColorValue("#001E62")
+                          HoverBorderColor: =ColorValue("#001E62")
+                          PressedFill: =ColorValue("#E8EDF7")
+                          Visible: =!(App.Width < 700)
+                    - crBandeauFermer:
+                        Control: Classic/Button@2.2.0
+                        Properties:
+                          Text: ="✕"
+                          Width: =32
+                          Height: =32
+                          LayoutMinWidth: =32
+                          Size: =12
+                          Fill: =RGBA(0, 0, 0, 0)
+                          Color: =ColorValue("#0E700E")
+                          BorderStyle: =BorderStyle.None
+                          BorderColor: =RGBA(0, 0, 0, 0)
+                          HoverFill: =ColorValue("#CDEFCB")
+                          HoverColor: =ColorValue("#0E700E")
+                          HoverBorderColor: =RGBA(0, 0, 0, 0)
+                          PressedFill: =ColorValue("#BFE8BC")
+                          PressedColor: =ColorValue("#0E700E")
+                          PressedBorderColor: =RGBA(0, 0, 0, 0)
+                          OnSelect: =Set(varMsgCreation, false)
+                          RadiusTopLeft: =16
+                          RadiusTopRight: =16
+                          RadiusBottomLeft: =16
+                          RadiusBottomRight: =16
+                - crZone:
+                    Control: GroupContainer@1.5.0
+                    Variant: AutoLayout
+                    Properties:
+                      LayoutDirection: =LayoutDirection.Horizontal
+                      DropShadow: =DropShadow.None
+                      LayoutMinHeight: =0
+                      LayoutMinWidth: =0
+                      FillPortions: =1
+                      AlignInContainer: =AlignInContainer.Stretch
+                      LayoutGap: =16
+                    Children:
+                    - crFormulaire:
+                        Control: GroupContainer@1.5.0
+                        Variant: AutoLayout
+                        Properties:
+                          LayoutDirection: =LayoutDirection.Vertical
+                          DropShadow: =DropShadow.None
+                          LayoutMinHeight: =0
+                          LayoutMinWidth: =0
+                          FillPortions: =3
+                          AlignInContainer: =AlignInContainer.Stretch
+                          Fill: =ColorValue("#FFFFFF")
+                          BorderColor: =ColorValue("#E6E8EB")
+                          BorderThickness: =1
+                          RadiusTopLeft: =12
+                          RadiusTopRight: =12
+                          RadiusBottomLeft: =12
+                          RadiusBottomRight: =12
+                          PaddingTop: =8
+                          PaddingBottom: =8
+                          PaddingLeft: =8
+                          PaddingRight: =8
+                    - crAide:
+                        Control: GroupContainer@1.5.0
+                        Variant: AutoLayout
+                        Properties:
+                          LayoutDirection: =LayoutDirection.Vertical
+                          DropShadow: =DropShadow.None
+                          LayoutMinHeight: =0
+                          LayoutMinWidth: =280
+                          FillPortions: =1
+                          AlignInContainer: =AlignInContainer.Stretch
+                          LayoutGap: =16
+                          Visible: =App.Width >= 1250
+                        Children:
+                        - crConseils:
+                            Control: GroupContainer@1.5.0
+                            Variant: AutoLayout
+                            Properties:
+                              LayoutDirection: =LayoutDirection.Vertical
+                              DropShadow: =DropShadow.None
+                              LayoutMinHeight: =0
+                              LayoutMinWidth: =0
+                              Height: =290
+                              FillPortions: =0
+                              AlignInContainer: =AlignInContainer.Stretch
+                              LayoutGap: =6
+                              Fill: =ColorValue("#FFFFFF")
+                              BorderColor: =ColorValue("#E6E8EB")
+                              BorderThickness: =1
+                              RadiusTopLeft: =12
+                              RadiusTopRight: =12
+                              RadiusBottomLeft: =12
+                              RadiusBottomRight: =12
+                              PaddingTop: =16
+                              PaddingBottom: =16
+                              PaddingLeft: =16
+                              PaddingRight: =16
+                            Children:
+                            - crConseilsTitre:
+                                Control: Label@2.5.1
+                                Properties:
+                                  Text: ="💡  Avant d'envoyer"
+                                  Font: =Font.'Segoe UI'
+                                  PaddingTop: =0
+                                  PaddingBottom: =0
+                                  PaddingLeft: =0
+                                  PaddingRight: =0
+                                  Height: =24
+                                  AlignInContainer: =AlignInContainer.Stretch
+                                  Size: =14
+                                  FontWeight: =FontWeight.Semibold
+                                  Color: =ColorValue("#1B1B1F")
+                                  VerticalAlign: =VerticalAlign.Middle
+                            - crConseilsTexte:
+                                Control: HtmlViewer@2.1.0
+                                Properties:
+                                  HtmlText: |-
+                                    ="<div style='font-family:Segoe UI,sans-serif;font-size:12px;color:#424242;line-height:1.6'>" &
+                                    "<div style='font-weight:600;color:#1B1B1F;margin:4px 0 6px'>Niveau de priorité</div>" &
+                                    "<div><span style='display:inline-block;width:10px;height:10px;border-radius:5px;background:#D13438;margin-right:8px'></span><b>High</b> : activité à l'arrêt</div>" &
+                                    "<div><span style='display:inline-block;width:10px;height:10px;border-radius:5px;background:#F7A600;margin-right:8px'></span><b>Medium</b> : ralentissement de l'activité</div>" &
+                                    "<div><span style='display:inline-block;width:10px;height:10px;border-radius:5px;background:#13A10E;margin-right:8px'></span><b>Low</b> : n'impacte pas l'activité</div>" &
+                                    "<div style='font-weight:600;color:#1B1B1F;margin:14px 0 6px'>Pour un traitement rapide</div>" &
+                                    "<ul style='margin:0;padding-left:18px'>" &
+                                    "<li>Ajoutez au moins une photo de l'équipement.</li>" &
+                                    "<li>Précisez la cellule et l'équipement concernés.</li>" &
+                                    "<li>Indiquez un plan B si l'activité est bloquée.</li>" &
+                                    "</ul></div>"
+                                  AutoHeight: =false
+                                  FillPortions: =1
+                                  LayoutMinHeight: =100
+                                  AlignInContainer: =AlignInContainer.Stretch
+                        - crMes:
+                            Control: GroupContainer@1.5.0
+                            Variant: AutoLayout
+                            Properties:
+                              LayoutDirection: =LayoutDirection.Vertical
+                              DropShadow: =DropShadow.None
+                              LayoutMinHeight: =0
+                              LayoutMinWidth: =0
+                              FillPortions: =1
+                              AlignInContainer: =AlignInContainer.Stretch
+                              LayoutGap: =8
+                              Fill: =ColorValue("#FFFFFF")
+                              BorderColor: =ColorValue("#E6E8EB")
+                              BorderThickness: =1
+                              RadiusTopLeft: =12
+                              RadiusTopRight: =12
+                              RadiusBottomLeft: =12
+                              RadiusBottomRight: =12
+                              PaddingTop: =16
+                              PaddingBottom: =16
+                              PaddingLeft: =16
+                              PaddingRight: =16
+                            Children:
+                            - crMesEntete:
+                                Control: Label@2.5.1
+                                Properties:
+                                  Text: ="🕘  Mes derniers tickets"
+                                  Font: =Font.'Segoe UI'
+                                  PaddingTop: =0
+                                  PaddingBottom: =0
+                                  PaddingLeft: =0
+                                  PaddingRight: =0
+                                  Height: =24
+                                  AlignInContainer: =AlignInContainer.Stretch
+                                  Size: =14
+                                  FontWeight: =FontWeight.Semibold
+                                  Color: =ColorValue("#1B1B1F")
+                                  VerticalAlign: =VerticalAlign.Middle
+                            - crMesVide:
+                                Control: Label@2.5.1
+                                Properties:
+                                  Text: ="Vous n'avez encore créé aucun ticket."
+                                  Font: =Font.'Segoe UI'
+                                  PaddingTop: =0
+                                  PaddingBottom: =0
+                                  PaddingLeft: =0
+                                  PaddingRight: =0
+                                  Height: =36
+                                  AlignInContainer: =AlignInContainer.Stretch
+                                  Size: =12
+                                  Color: =ColorValue("#8A8A94")
+                                  Visible: =CountRows(crMesListe.AllItems) = 0
+                                  VerticalAlign: =VerticalAlign.Middle
+                            - crMesListe:
+                                Control: Gallery@2.15.0
+                                Variant: Vertical
+                                Properties:
+                                  Items: =FirstN(Sort(Filter('Ticket dépannage', Author.Email = User().Email), ID, SortOrder.Descending), 5)
+                                  TemplateSize: =64
+                                  TemplatePadding: =0
+                                  ShowScrollbar: =false
+                                  FillPortions: =1
+                                  LayoutMinHeight: =0
+                                  AlignInContainer: =AlignInContainer.Stretch
+                                Children:
+                                - crMesCarte:
+                                    Control: GroupContainer@1.5.0
+                                    Variant: ManualLayout
+                                    Properties:
+                                      DropShadow: =DropShadow.None
+                                      X: =0
+                                      Y: =0
+                                      Width: =Parent.TemplateWidth
+                                      Height: =Parent.TemplateHeight - 8
+                                      Fill: =ColorValue("#F7F8FA")
+                                      BorderColor: =ColorValue("#EEF0F3")
+                                      BorderThickness: =1
+                                      RadiusTopLeft: =10
+                                      RadiusTopRight: =10
+                                      RadiusBottomLeft: =10
+                                      RadiusBottomRight: =10
+                                    Children:
+                                    - crMesTitre:
+                                        Control: Label@2.5.1
+                                        Properties:
+                                          Text: =Coalesce(ThisItem.Title, ThisItem.Description, "Ticket sans description")
+                                          Font: =Font.'Segoe UI'
+                                          PaddingTop: =0
+                                          PaddingBottom: =0
+                                          PaddingLeft: =0
+                                          PaddingRight: =0
+                                          X: =12
+                                          Y: =8
+                                          Width: =Parent.Width - 130
+                                          Height: =22
+                                          Size: =12
+                                          FontWeight: =FontWeight.Semibold
+                                          Color: =ColorValue("#1B1B1F")
+                                          Wrap: =false
+                                    - crMesInfo:
+                                        Control: Label@2.5.1
+                                        Properties:
+                                          Text: ="#" & ThisItem.ID & "  ·  " & Text(ThisItem.Created, "dd/mm/yyyy")
+                                          Font: =Font.'Segoe UI'
+                                          PaddingTop: =0
+                                          PaddingBottom: =0
+                                          PaddingLeft: =0
+                                          PaddingRight: =0
+                                          X: =12
+                                          Y: =30
+                                          Width: =Parent.Width - 130
+                                          Height: =18
+                                          Size: =11
+                                          Color: =ColorValue("#8A8A94")
+                                          Wrap: =false
+                                    - crMesStatut:
+                                        Control: GroupContainer@1.5.0
+                                        Variant: ManualLayout
+                                        Properties:
+                                          DropShadow: =DropShadow.None
+                                          Width: =104
+                                          Height: =24
+                                          LayoutMinWidth: =104
+                                          Fill: =ColorValue(Switch(ThisItem.'Ticket clôturer'.Value, "Oui", "#DFF6DD", "En cours", "#FFF1D6", "#EDEEF0"))
+                                          RadiusTopLeft: =12
+                                          RadiusTopRight: =12
+                                          RadiusBottomLeft: =12
+                                          RadiusBottomRight: =12
+                                          X: =Parent.Width - 114
+                                          Y: =16
+                                        Children:
+                                        - crMesStatutTxt:
+                                            Control: Label@2.5.1
+                                            Properties:
+                                              Text: =Switch(ThisItem.'Ticket clôturer'.Value, "Oui", "Clôturé", "En cours", "En cours", "Non démarré")
+                                              Font: =Font.'Segoe UI'
+                                              PaddingTop: =0
+                                              PaddingBottom: =0
+                                              PaddingLeft: =0
+                                              PaddingRight: =0
+                                              X: =0
+                                              Y: =0
+                                              Width: =Parent.Width
+                                              Height: =Parent.Height
+                                              Size: =11
+                                              FontWeight: =FontWeight.Semibold
+                                              Color: =ColorValue(Switch(ThisItem.'Ticket clôturer'.Value, "Oui", "#0E700E", "En cours", "#8A5A00", "#4B5059"))
+                                              Align: =Align.Center
+                                              VerticalAlign: =VerticalAlign.Middle
+                                    - crMesClic:
+                                        Control: Classic/Button@2.2.0
+                                        Properties:
+                                          Text: =""
+                                          Fill: =RGBA(0, 0, 0, 0)
+                                          Color: =RGBA(0, 0, 0, 0)
+                                          BorderColor: =RGBA(0, 0, 0, 0)
+                                          BorderStyle: =BorderStyle.None
+                                          HoverFill: =RGBA(0, 0, 0, 0.03)
+                                          HoverColor: =RGBA(0, 0, 0, 0)
+                                          HoverBorderColor: =RGBA(0, 0, 0, 0)
+                                          PressedFill: =RGBA(0, 0, 0, 0.06)
+                                          PressedColor: =RGBA(0, 0, 0, 0)
+                                          PressedBorderColor: =RGBA(0, 0, 0, 0)
+                                          X: =0
+                                          Y: =0
+                                          Width: =Parent.Width
+                                          Height: =Parent.Height
+                                          OnSelect: |-
+                                            =Set(varTicket, ThisItem);
+                                            Navigate(scrDetail, ScreenTransition.Fade)
+                                          RadiusTopLeft: =10
+                                          RadiusTopRight: =10
+                                          RadiusBottomLeft: =10
+                                          RadiusBottomRight: =10
+                - crActions:
+                    Control: GroupContainer@1.5.0
+                    Variant: AutoLayout
+                    Properties:
+                      LayoutDirection: =LayoutDirection.Horizontal
+                      DropShadow: =DropShadow.None
+                      LayoutMinHeight: =0
+                      LayoutMinWidth: =0
+                      Height: =64
+                      FillPortions: =0
+                      AlignInContainer: =AlignInContainer.Stretch
+                      LayoutAlignItems: =LayoutAlignItems.Center
+                      LayoutGap: =10
+                      PaddingLeft: =If(App.Width < 700, 12, 18)
+                      PaddingRight: =If(App.Width < 700, 12, 14)
+                      Fill: =ColorValue("#FFFFFF")
+                      BorderColor: =ColorValue("#E6E8EB")
+                      BorderThickness: =1
+                      RadiusTopLeft: =12
+                      RadiusTopRight: =12
+                      RadiusBottomLeft: =12
+                      RadiusBottomRight: =12
+                    Children:
+                    - crActionsAide:
+                        Control: Label@2.5.1
+                        Properties:
+                          Text: ="Les champs marqués d'un * sont obligatoires."
+                          Font: =Font.'Segoe UI'
+                          PaddingTop: =0
+                          PaddingBottom: =0
+                          PaddingLeft: =0
+                          PaddingRight: =0
+                          FillPortions: =1
+                          Height: =36
+                          Size: =12
+                          Color: =ColorValue("#8A8A94")
+                          VerticalAlign: =VerticalAlign.Middle
+                          Visible: =!(App.Width < 700)
+                    - crActionsEspace:
+                        Control: GroupContainer@1.5.0
+                        Variant: AutoLayout
+                        Properties:
+                          LayoutDirection: =LayoutDirection.Horizontal
+                          DropShadow: =DropShadow.None
+                          LayoutMinHeight: =0
+                          LayoutMinWidth: =0
+                          FillPortions: =If(App.Width < 700, 1, 0)
+                          Width: =1
+                          Height: =10
+                          Visible: =App.Width < 700
+                    - crEffacer:
+                        Control: Classic/Button@2.2.0
+                        Properties:
+                          Text: ="Effacer"
+                          Width: =If(App.Width < 700, 100, 120)
+                          Height: =36
+                          LayoutMinWidth: =If(App.Width < 700, 100, 120)
+                          Size: =12
+                          FontWeight: =FontWeight.Semibold
+                          OnSelect: |-
+                            =ResetForm(Form1);
+                            NewForm(Form1);
+                            Set(varMsgCreation, false)
+                          BorderStyle: =BorderStyle.Solid
+                          BorderThickness: =1
+                          RadiusTopLeft: =8
+                          RadiusTopRight: =8
+                          RadiusBottomLeft: =8
+                          RadiusBottomRight: =8
+                          Fill: =ColorValue("#FFFFFF")
+                          Color: =ColorValue("#001E62")
+                          BorderColor: =ColorValue("#D1D5DB")
+                          HoverFill: =ColorValue("#F3F5F9")
+                          HoverColor: =ColorValue("#001E62")
+                          HoverBorderColor: =ColorValue("#001E62")
+                          PressedFill: =ColorValue("#E8EDF7")
+                    - crEnvoyer:
+                        Control: Classic/Button@2.2.0
+                        Properties:
+                          Text: ="Créer le ticket"
+                          Width: =If(App.Width < 700, 140, 170)
+                          Height: =36
+                          LayoutMinWidth: =If(App.Width < 700, 140, 170)
+                          Size: =12
+                          FontWeight: =FontWeight.Semibold
+                          OnSelect: =SubmitForm(Form1)
+                          BorderStyle: =BorderStyle.Solid
+                          BorderThickness: =1
+                          RadiusTopLeft: =8
+                          RadiusTopRight: =8
+                          RadiusBottomLeft: =8
+                          RadiusBottomRight: =8
+                          Fill: =ColorValue("#001E62")
+                          Color: =ColorValue("#FFFFFF")
+                          BorderColor: =ColorValue("#001E62")
+                          HoverFill: =ColorValue("#0B2E7A")
+                          HoverColor: =ColorValue("#FFFFFF")
+                          HoverBorderColor: =ColorValue("#0B2E7A")
+                          PressedFill: =ColorValue("#00164A")
+                          DisplayMode: =If(Form1.Valid, DisplayMode.Edit, DisplayMode.Disabled)
+                          DisabledFill: =ColorValue("#C7CFDF")
+                          DisabledColor: =ColorValue("#FFFFFF")
+                          DisabledBorderColor: =ColorValue("#C7CFDF")
+        - crNavBas:
+            Control: GroupContainer@1.5.0
+            Variant: AutoLayout
+            Properties:
+              LayoutDirection: =LayoutDirection.Horizontal
+              DropShadow: =DropShadow.None
+              LayoutMinHeight: =0
+              LayoutMinWidth: =0
+              Height: =66
+              FillPortions: =0
+              AlignInContainer: =AlignInContainer.Stretch
+              Visible: =App.Width < 700
+              Fill: =ColorValue("#FFFFFF")
+              BorderColor: =ColorValue("#E6E8EB")
+              BorderThickness: =1
+              LayoutAlignItems: =LayoutAlignItems.Center
+              LayoutGap: =4
+              PaddingTop: =6
+              PaddingBottom: =6
+              PaddingLeft: =6
+              PaddingRight: =6
+            Children:
+            - crBas1:
+                Control: Classic/Button@2.2.0
+                Properties:
+                  Text: ="📊" & Char(10) & "Accueil"
+                  FillPortions: =1
+                  Height: =54
+                  Size: =10
+                  FontWeight: =FontWeight.Semibold
+                  Fill: =RGBA(0, 0, 0, 0)
+                  Color: =ColorValue("#5C5C66")
+                  BorderStyle: =BorderStyle.None
+                  BorderColor: =RGBA(0, 0, 0, 0)
+                  HoverBorderColor: =RGBA(0, 0, 0, 0)
+                  PressedBorderColor: =RGBA(0, 0, 0, 0)
+                  HoverFill: =ColorValue("#F0F3F9")
+                  HoverColor: =ColorValue("#001E62")
+                  PressedFill: =ColorValue("#E3E9F5")
+                  PressedColor: =ColorValue("#001E62")
+                  RadiusTopLeft: =10
+                  RadiusTopRight: =10
+                  RadiusBottomLeft: =10
+                  RadiusBottomRight: =10
+                  OnSelect: =Navigate(scrAccueil, ScreenTransition.Fade)
+                  AlignInContainer: =AlignInContainer.Center
+            - crBas2:
+                Control: Classic/Button@2.2.0
+                Properties:
+                  Text: ="📋" & Char(10) & "Tickets"
+                  FillPortions: =1
+                  Height: =54
+                  Size: =10
+                  FontWeight: =FontWeight.Semibold
+                  Fill: =RGBA(0, 0, 0, 0)
+                  Color: =ColorValue("#5C5C66")
+                  BorderStyle: =BorderStyle.None
+                  BorderColor: =RGBA(0, 0, 0, 0)
+                  HoverBorderColor: =RGBA(0, 0, 0, 0)
+                  PressedBorderColor: =RGBA(0, 0, 0, 0)
+                  HoverFill: =ColorValue("#F0F3F9")
+                  HoverColor: =ColorValue("#001E62")
+                  PressedFill: =ColorValue("#E3E9F5")
+                  PressedColor: =ColorValue("#001E62")
+                  RadiusTopLeft: =10
+                  RadiusTopRight: =10
+                  RadiusBottomLeft: =10
+                  RadiusBottomRight: =10
+                  OnSelect: =Navigate(scrListe, ScreenTransition.Fade)
+                  AlignInContainer: =AlignInContainer.Center
+            - crBas3:
+                Control: Classic/Button@2.2.0
+                Properties:
+                  Text: ="➕" & Char(10) & "Créer"
+                  FillPortions: =1
+                  Height: =54
+                  Size: =10
+                  FontWeight: =FontWeight.Semibold
+                  Fill: =ColorValue("#E8EDF7")
+                  Color: =ColorValue("#001E62")
+                  BorderStyle: =BorderStyle.None
+                  BorderColor: =RGBA(0, 0, 0, 0)
+                  HoverBorderColor: =RGBA(0, 0, 0, 0)
+                  PressedBorderColor: =RGBA(0, 0, 0, 0)
+                  HoverFill: =ColorValue("#F0F3F9")
+                  HoverColor: =ColorValue("#001E62")
+                  PressedFill: =ColorValue("#E3E9F5")
+                  PressedColor: =ColorValue("#001E62")
+                  RadiusTopLeft: =10
+                  RadiusTopRight: =10
+                  RadiusBottomLeft: =10
+                  RadiusBottomRight: =10
+                  OnSelect: |-
+                    =NewForm(Form1);
+                    Navigate(scrCreer, ScreenTransition.Fade)
+                  AlignInContainer: =AlignInContainer.Center
