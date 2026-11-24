@@ -1,0 +1,1225 @@
+ComponentDefinitions:
+  cmpAccordionTickets:
+    DefinitionType: CanvasComponent
+    AccessAppScope: true
+    CustomProperties:
+      ActionKey:
+        PropertyKind: Output
+        DisplayName: ActionKey
+        Description: ID de la ligne dont une action vient d'être utilisée (à lire dans OnEdit, OnDelete, OnMoveUp, OnMoveDown).
+        DataType: Number
+      ActionRowType:
+        PropertyKind: Output
+        DisplayName: ActionRowType
+        Description: group ou item selon la ligne qui a déclenché l'action.
+        DataType: Text
+      Config:
+        PropertyKind: Input
+        DisplayName: Config
+        Description: Apparence et comportement (thème, couleur d'accent, arrondi, hauteur des lignes, éléments affichés, actions autorisées).
+        DataType: Record
+        Default: |-
+          ={
+              Theme: "light",
+              Accent: "#001E62",
+              Radius: 12,
+              RowHeight: 76,
+              ShowHeader: true,
+              ShowTags: true,
+              ShowMeta: true,
+              ShowExpandAll: true,
+              AllowReorder: false,
+              AllowEdit: false,
+              AllowDelete: false
+          }
+      ExpandedGroupKey:
+        PropertyKind: Output
+        DisplayName: ExpandedGroupKey
+        Description: Numéro du groupe ouvert (1 Ouverts, 2 En cours, 3 Clôturés), vide si tout est replié.
+        DataType: Number
+      GroupCount:
+        PropertyKind: Output
+        DisplayName: GroupCount
+        Description: Nombre de groupes.
+        DataType: Number
+      Groups:
+        PropertyKind: Input
+        DisplayName: Groups
+        Description: Les groupes (un par statut de ticket).
+        DataType: Table
+        Default: |-
+          =With(
+              {T: 'Ticket dépannage'},
+              Table(
+                  {
+                      GroupKey: 1,
+                      GroupOrder: 1,
+                      Marker: "📋",
+                      Title: "Ouverts",
+                      Subtitle: "À prendre en charge",
+                      Tag: With(
+                          {n: CountRows(Filter(T, 'Ticket clôturer'.Value = "Non" && StartsWith('Statut Urgence'.Value, "High")))},
+                          If(n = 0, "", n & If(n = 1, " urgent", " urgents"))
+                      ),
+                      Tone: "danger",
+                      Meta: "",
+                      Locked: true
+                  },
+                  {
+                      GroupKey: 2,
+                      GroupOrder: 2,
+                      Marker: "⏳",
+                      Title: "En cours",
+                      Subtitle: "Intervention en cours",
+                      Tag: With(
+                          {n: CountRows(Filter(T, 'Ticket clôturer'.Value = "En cours" && StartsWith('Statut Urgence'.Value, "High")))},
+                          If(n = 0, "", n & If(n = 1, " urgent", " urgents"))
+                      ),
+                      Tone: "danger",
+                      Meta: "",
+                      Locked: true
+                  },
+                  {
+                      GroupKey: 3,
+                      GroupOrder: 3,
+                      Marker: "✅",
+                      Title: "Clôturés",
+                      Subtitle: "Interventions terminées",
+                      Tag: "",
+                      Tone: "positive",
+                      Meta: "",
+                      Locked: true
+                  }
+              )
+          )
+      IsExpandAll:
+        PropertyKind: Output
+        DisplayName: IsExpandAll
+        Description: Vrai quand tous les groupes sont ouverts.
+        DataType: Boolean
+      ItemCount:
+        PropertyKind: Output
+        DisplayName: ItemCount
+        Description: Nombre total de tickets.
+        DataType: Number
+      Items:
+        PropertyKind: Input
+        DisplayName: Items
+        Description: Les tickets. ItemKey = ID du ticket, GroupKey = 1 ouvert, 2 en cours, 3 clôturé.
+        DataType: Table
+        Default: |-
+          =ForAll(
+              Sort('Ticket dépannage', ID, SortOrder.Descending) As T,
+              With(
+                  {u: First(Split(Coalesce(T.'Statut Urgence'.Value, ""), " ")).Value},
+                  {
+                      ItemKey: T.ID,
+                      GroupKey: Switch(T.'Ticket clôturer'.Value, "Oui", 3, "En cours", 2, 1),
+                      ItemOrder: 1000000 - T.ID,
+                      Marker: Text(T.ID),
+                      Title: Coalesce(T.Title, T.Description, "Ticket sans titre"),
+                      Subtitle: Coalesce(T.'Intervention sur équipement'.Value, "—") & "  ·  " & Coalesce(T.'Secteur demandeur'.Value, "—") & "  ·  " & Text(T.'Date de la demande', "dd/mm/yyyy"),
+                      Tag: Switch(u, "High", "Urgence haute", "Medium", "Urgence moyenne", "Low", "Urgence basse", ""),
+                      Tone: Switch(u, "High", "danger", "Medium", "warning", "Low", "positive", ""),
+                      Meta: Coalesce(T.'Prise en charge'.DisplayName, "Non assigné"),
+                      Locked: true
+                  }
+              )
+          )
+      OnDelete:
+        PropertyKind: Event
+        DisplayName: OnDelete
+        Description: Bouton supprimer (désactivé par défaut via Config.AllowDelete).
+        ReturnType: None
+        Default: =false
+      OnEdit:
+        PropertyKind: Event
+        DisplayName: OnEdit
+        Description: Bouton modifier (désactivé par défaut via Config.AllowEdit).
+        ReturnType: None
+        Default: =false
+      OnMoveDown:
+        PropertyKind: Event
+        DisplayName: OnMoveDown
+        Description: Bouton descendre (désactivé par défaut via Config.AllowReorder).
+        ReturnType: None
+        Default: =false
+      OnMoveUp:
+        PropertyKind: Event
+        DisplayName: OnMoveUp
+        Description: Bouton monter (désactivé par défaut via Config.AllowReorder).
+        ReturnType: None
+        Default: =false
+      OnSelectGroup:
+        PropertyKind: Event
+        DisplayName: OnSelectGroup
+        Description: Se déclenche quand on ouvre ou ferme un groupe.
+        ReturnType: None
+        Default: =false
+      OnSelectItem:
+        PropertyKind: Event
+        DisplayName: OnSelectItem
+        Description: Se déclenche quand on clique sur un ticket. Lire SelectedItemKey (ID du ticket).
+        ReturnType: None
+        Default: =false
+      SelectedItemKey:
+        PropertyKind: Output
+        DisplayName: SelectedItemKey
+        Description: ID du dernier ticket cliqué.
+        DataType: Number
+      Title:
+        PropertyKind: Input
+        DisplayName: Title
+        Description: Titre affiché en haut de la liste.
+        DataType: Text
+        Default: ="Tickets par statut"
+    Properties:
+      ActionKey: =If(_cmpAlActionKey = 0, Blank(), _cmpAlActionKey)
+      ActionRowType: =_cmpAlActionType
+      ExpandedGroupKey: =If(_cmpAlAll || _cmpAlExpanded = 0, Blank(), _cmpAlExpanded)
+      GroupCount: =CountRows(cmpAccordionTickets.Groups)
+      Height: =480
+      IsExpandAll: =_cmpAlAll
+      ItemCount: =CountRows(cmpAccordionTickets.Items)
+      OnReset: |-
+        =Set(_cmpAlExpanded, 0);
+        Set(_cmpAlItemKey, 0);
+        Set(_cmpAlActionKey, 0);
+        Set(_cmpAlActionType, "");
+        Set(_cmpAlAll, false)
+      SelectedItemKey: =If(_cmpAlItemKey = 0, Blank(), _cmpAlItemKey)
+      Width: =720
+    Children:
+      - conAlRoot:
+          Control: GroupContainer@1.5.0
+          Variant: AutoLayout
+          Properties:
+            Fill: |-
+              =If(
+                  cmpAccordionTickets.Config.Theme = "dark",
+                  RGBA(15, 23, 42, 1),
+                  RGBA(248, 250, 252, 1)
+              )
+            Height: =Parent.Height
+            LayoutAlignItems: =LayoutAlignItems.Stretch
+            LayoutDirection: =LayoutDirection.Vertical
+            Width: =Parent.Width
+          Children:
+            - conAlHeader:
+                Control: GroupContainer@1.5.0
+                Variant: AutoLayout
+                Properties:
+                  FillPortions: =0
+                  Height: =56
+                  LayoutAlignItems: =LayoutAlignItems.Center
+                  LayoutDirection: =LayoutDirection.Horizontal
+                  LayoutGap: =12
+                  LayoutMinHeight: =0
+                  LayoutMinWidth: =0
+                  PaddingBottom: =12
+                  PaddingLeft: =16
+                  PaddingRight: =16
+                  PaddingTop: =12
+                  Visible: =Coalesce(cmpAccordionTickets.Config.ShowHeader, true)
+                Children:
+                  - lblAlTitle:
+                      Control: ModernText@1.0.0
+                      Properties:
+                        AlignInContainer: =AlignInContainer.Center
+                        Color: |-
+                          =If(
+                              cmpAccordionTickets.Config.Theme = "dark",
+                              RGBA(241, 245, 249, 1),
+                              RGBA(15, 23, 42, 1)
+                          )
+                        FillPortions: =1
+                        FontWeight: =FontWeight.Semibold
+                        LayoutMinHeight: =0
+                        LayoutMinWidth: =0
+                        Text: =cmpAccordionTickets.Title
+                        Wrap: =false
+                  - lblAlTotals:
+                      Control: ModernText@1.0.0
+                      Properties:
+                        Align: =Align.Right
+                        AlignInContainer: =AlignInContainer.Center
+                        Color: |-
+                          =If(
+                              cmpAccordionTickets.Config.Theme = "dark",
+                              RGBA(148, 163, 184, 1),
+                              RGBA(100, 116, 139, 1)
+                          )
+                        LayoutMinHeight: =0
+                        LayoutMinWidth: =0
+                        Size: =11
+                        Text: |-
+                          =cmpAccordionTickets.ItemCount
+                          & If(cmpAccordionTickets.ItemCount = 1, " ticket", " tickets")
+                        Visible: =Parent.Width >= 400
+                        Wrap: =false
+                  - btnAlExpandAll:
+                      Control: ModernButton@1.0.0
+                      Properties:
+                        AccessibleLabel: =If(_cmpAlAll, "Replier tous les groupes", "Déplier tous les groupes")
+                        AlignInContainer: =AlignInContainer.Center
+                        Appearance: =ButtonAppearance.Subtle
+                        Color: |-
+                          =If(
+                              IsBlank(cmpAccordionTickets.Config.Accent),
+                              RGBA(59, 130, 246, 1),
+                              ColorValue(cmpAccordionTickets.Config.Accent)
+                          )
+                        FontWeight: =FontWeight.Semibold
+                        Icon: =If(_cmpAlAll, "ChevronUp", "ChevronDown")
+                        LayoutMinHeight: =0
+                        LayoutMinWidth: =0
+                        OnSelect: |-
+                          =Set(_cmpAlAll, !_cmpAlAll);
+                          Set(_cmpAlExpanded, 0)
+                        Size: =11
+                        Text: =If(_cmpAlAll, "Tout replier", "Tout déplier")
+                        Tooltip: |-
+                          =If(
+                              _cmpAlAll,
+                              "Fermer tous les groupes",
+                              "Ouvrir tous les groupes"
+                          )
+                        Visible: |-
+                          =Coalesce(cmpAccordionTickets.Config.ShowExpandAll, true)
+                          && cmpAccordionTickets.GroupCount > 1
+                        Width: =124
+            - shpAlRule:
+                Control: GroupContainer@1.5.0
+                Variant: ManualLayout
+                Properties:
+                  DropShadow: =DropShadow.None
+                  Fill: |-
+                    =If(
+                        cmpAccordionTickets.Config.Theme = "dark",
+                        RGBA(51, 65, 85, 1),
+                        RGBA(226, 232, 240, 1)
+                    )
+                  FillPortions: =0
+                  Height: =1
+                  Visible: =Coalesce(cmpAccordionTickets.Config.ShowHeader, true)
+            - galAlRows:
+                Control: Gallery@2.15.0
+                Variant: Vertical
+                Properties:
+                  AccessibleLabel: =cmpAccordionTickets.Title
+                  BorderColor: =RGBA(0, 0, 0, 0)
+                  DelayItemLoading: =false
+                  Items: |-
+                    =With(
+                        {
+                            gi: ForAll(
+                                Sort(cmpAccordionTickets.Groups, GroupOrder) As x,
+                                {
+                                    GroupKey: x.GroupKey,
+                                    Pos: CountRows(
+                                        Filter(cmpAccordionTickets.Groups, GroupOrder <= x.GroupOrder)
+                                    ),
+                                    Cnt: If(
+                                        _cmpAlAll || x.GroupKey = _cmpAlExpanded,
+                                        CountRows(
+                                            Filter(cmpAccordionTickets.Items, GroupKey = x.GroupKey)
+                                        ),
+                                        0
+                                    ),
+                                    Before: Coalesce(
+                                        Sum(
+                                            ForAll(
+                                                Filter(
+                                                    cmpAccordionTickets.Groups,
+                                                    GroupOrder < x.GroupOrder
+                                                ) As y,
+                                                If(
+                                                    _cmpAlAll || y.GroupKey = _cmpAlExpanded,
+                                                    CountRows(
+                                                        Filter(
+                                                            cmpAccordionTickets.Items,
+                                                            GroupKey = y.GroupKey
+                                                        )
+                                                    ),
+                                                    0
+                                                )
+                                            ),
+                                            Value
+                                        ),
+                                        0
+                                    )
+                                }
+                            )
+                        },
+                        ForAll(
+                            Sequence(
+                                CountRows(cmpAccordionTickets.Groups) + Coalesce(Sum(gi, Cnt), 0)
+                            ) As s,
+                            With(
+                                { o: Last(Sort(Filter(gi, Pos + Before <= s.Value), Pos + Before)) },
+                                With(
+                                    {
+                                        g: LookUp(
+                                            cmpAccordionTickets.Groups,
+                                            GroupKey = o.GroupKey
+                                        ),
+                                        ci: s.Value - (o.Pos + o.Before)
+                                    },
+                                    With(
+                                        {
+                                            isChild: ci > 0,
+                                            c: Last(
+                                                FirstN(
+                                                    Sort(
+                                                        Filter(
+                                                            cmpAccordionTickets.Items,
+                                                            GroupKey = o.GroupKey
+                                                        ),
+                                                        ItemOrder
+                                                    ),
+                                                    Max(ci, 1)
+                                                )
+                                            )
+                                        },
+                                        {
+                                            RowType: If(isChild, "item", "group"),
+                                            SortOrder: g.GroupOrder,
+                                            GroupKey: g.GroupKey,
+                                            RowKey: If(isChild, c.ItemKey, g.GroupKey),
+                                            Marker: If(isChild, c.Marker, g.Marker),
+                                            Title: If(isChild, c.Title, g.Title),
+                                            Subtitle: If(isChild, c.Subtitle, g.Subtitle),
+                                            Tag: If(isChild, c.Tag, g.Tag),
+                                            Tone: If(isChild, c.Tone, g.Tone),
+                                            IsExpanded: _cmpAlAll || g.GroupKey = _cmpAlExpanded,
+                                            Locked: If(isChild, c.Locked, g.Locked),
+                                            CanMoveUp: If(
+                                                isChild,
+                                                CountRows(
+                                                    Filter(
+                                                        cmpAccordionTickets.Items,
+                                                        GroupKey = g.GroupKey,
+                                                        ItemOrder < c.ItemOrder
+                                                    )
+                                                ) > 0,
+                                                CountRows(
+                                                    Filter(
+                                                        cmpAccordionTickets.Groups,
+                                                        GroupOrder < g.GroupOrder
+                                                    )
+                                                ) > 0
+                                            ),
+                                            CanMoveDown: If(
+                                                isChild,
+                                                CountRows(
+                                                    Filter(
+                                                        cmpAccordionTickets.Items,
+                                                        GroupKey = g.GroupKey,
+                                                        ItemOrder > c.ItemOrder
+                                                    )
+                                                ) > 0,
+                                                CountRows(
+                                                    Filter(
+                                                        cmpAccordionTickets.Groups,
+                                                        GroupOrder > g.GroupOrder
+                                                    )
+                                                ) > 0
+                                            ),
+                                            ChildCount: CountRows(
+                                                Filter(
+                                                    cmpAccordionTickets.Items,
+                                                    GroupKey = g.GroupKey
+                                                )
+                                            ),
+                                            Meta: If(
+                                                isChild,
+                                                c.Meta,
+                                                If(
+                                                    IsBlank(g.Meta),
+                                                    With(
+                                                        {
+                                                            n: CountRows(
+                                                                Filter(
+                                                                    cmpAccordionTickets.Items,
+                                                                    GroupKey = g.GroupKey
+                                                                )
+                                                            )
+                                                        },
+                                                        n & If(n <= 1, " ticket", " tickets")
+                                                    ),
+                                                    g.Meta
+                                                )
+                                            )
+                                        }
+                                    )
+                                )
+                            )
+                        )
+                    )
+                  LayoutMinHeight: =0
+                  LoadingSpinner: =LoadingSpinner.None
+                  TabIndex: =0
+                  TemplatePadding: =0
+                  TemplateSize: =Coalesce(cmpAccordionTickets.Config.RowHeight, 76)
+                  Visible: =cmpAccordionTickets.GroupCount > 0
+                Children:
+                  - conAlGroup:
+                      Control: GroupContainer@1.5.0
+                      Variant: ManualLayout
+                      Properties:
+                        BorderColor: |-
+                          =If(
+                              ThisItem.IsExpanded,
+                              If(
+                                  IsBlank(cmpAccordionTickets.Config.Accent),
+                                  RGBA(59, 130, 246, 1),
+                                  ColorValue(cmpAccordionTickets.Config.Accent)
+                              ),
+                              If(
+                                  cmpAccordionTickets.Config.Theme = "dark",
+                                  RGBA(51, 65, 85, 1),
+                                  RGBA(226, 232, 240, 1)
+                              )
+                          )
+                        BorderThickness: =1
+                        DropShadow: =DropShadow.None
+                        Fill: |-
+                          =If(
+                              cmpAccordionTickets.Config.Theme = "dark",
+                              RGBA(30, 41, 59, 1),
+                              RGBA(255, 255, 255, 1)
+                          )
+                        Height: =Parent.TemplateHeight - 8
+                        RadiusBottomLeft: =Coalesce(cmpAccordionTickets.Config.Radius, 12)
+                        RadiusBottomRight: =Coalesce(cmpAccordionTickets.Config.Radius, 12)
+                        RadiusTopLeft: =Coalesce(cmpAccordionTickets.Config.Radius, 12)
+                        RadiusTopRight: =Coalesce(cmpAccordionTickets.Config.Radius, 12)
+                        Visible: =ThisItem.RowType = "group"
+                        Width: =Parent.TemplateWidth - 32
+                        X: =16
+                        Y: =4
+                      Children:
+                        - lblAlGpMarker:
+                            Control: ModernText@1.0.0
+                            Properties:
+                              Align: =Align.Center
+                              Color: =RGBA(255, 255, 255, 1)
+                              Fill: |-
+                                =If(
+                                    IsBlank(cmpAccordionTickets.Config.Accent),
+                                    RGBA(59, 130, 246, 1),
+                                    ColorValue(cmpAccordionTickets.Config.Accent)
+                                )
+                              FontWeight: =FontWeight.Bold
+                              Height: =28
+                              PaddingBottom: =0
+                              PaddingLeft: =0
+                              PaddingRight: =0
+                              PaddingTop: =0
+                              RadiusBottomLeft: =14
+                              RadiusBottomRight: =14
+                              RadiusTopLeft: =14
+                              RadiusTopRight: =14
+                              Size: =11
+                              Text: =ThisItem.Marker
+                              Visible: =!IsBlank(ThisItem.Marker)
+                              Width: =28
+                              Wrap: =false
+                              X: =44
+                              Y: =(Parent.Height - Self.Height) / 2
+                        - lblAlGpTag:
+                            Control: ModernText@1.0.0
+                            Properties:
+                              Align: =Align.Center
+                              Color: |-
+                                =Switch(
+                                    Lower(ThisItem.Tone),
+                                    "positive", RGBA(21, 128, 61, 1),
+                                    "warning", RGBA(180, 83, 9, 1),
+                                    "danger", RGBA(185, 28, 28, 1),
+                                    "info", RGBA(29, 78, 216, 1),
+                                    RGBA(71, 85, 105, 1)
+                                )
+                              Fill: |-
+                                =Switch(
+                                    Lower(ThisItem.Tone),
+                                    "positive", RGBA(220, 252, 231, 1),
+                                    "warning", RGBA(254, 243, 199, 1),
+                                    "danger", RGBA(254, 226, 226, 1),
+                                    "info", RGBA(219, 234, 254, 1),
+                                    RGBA(241, 245, 249, 1)
+                                )
+                              FontWeight: =FontWeight.Semibold
+                              Height: =22
+                              PaddingBottom: =0
+                              PaddingLeft: =4
+                              PaddingRight: =4
+                              PaddingTop: =0
+                              RadiusBottomLeft: =11
+                              RadiusBottomRight: =11
+                              RadiusTopLeft: =11
+                              RadiusTopRight: =11
+                              Size: =10
+                              Text: =ThisItem.Tag
+                              Visible: |-
+                                =Coalesce(cmpAccordionTickets.Config.ShowTags, true)
+                                && !IsBlank(ThisItem.Tag)
+                                && Parent.Width >= 560 + If(
+                                          Coalesce(cmpAccordionTickets.Config.AllowReorder, true)
+                                              || Coalesce(cmpAccordionTickets.Config.AllowEdit, true)
+                                              || Coalesce(cmpAccordionTickets.Config.AllowDelete, true),
+                                          172,
+                                          0
+                                      )
+                              Width: =104
+                              Wrap: =false
+                              X: |-
+                                =Parent.Width - 300 - If(
+                                          Coalesce(cmpAccordionTickets.Config.AllowReorder, true)
+                                              || Coalesce(cmpAccordionTickets.Config.AllowEdit, true)
+                                              || Coalesce(cmpAccordionTickets.Config.AllowDelete, true),
+                                          172,
+                                          0
+                                      )
+                              Y: =(Parent.Height - Self.Height) / 2
+                        - lblAlGpMeta:
+                            Control: ModernText@1.0.0
+                            Properties:
+                              Align: =Align.Right
+                              Color: |-
+                                =If(
+                                    cmpAccordionTickets.Config.Theme = "dark",
+                                    RGBA(148, 163, 184, 1),
+                                    RGBA(100, 116, 139, 1)
+                                )
+                              PaddingBottom: =0
+                              PaddingLeft: =0
+                              PaddingRight: =0
+                              PaddingTop: =0
+                              Size: =11
+                              Text: =ThisItem.Meta
+                              Visible: |-
+                                =Coalesce(cmpAccordionTickets.Config.ShowMeta, true)
+                                && Parent.Width >= 420 + If(
+                                          Coalesce(cmpAccordionTickets.Config.AllowReorder, true)
+                                              || Coalesce(cmpAccordionTickets.Config.AllowEdit, true)
+                                              || Coalesce(cmpAccordionTickets.Config.AllowDelete, true),
+                                          172,
+                                          0
+                                      )
+                              Width: =176
+                              Wrap: =false
+                              X: |-
+                                =Parent.Width - 188 - If(
+                                          Coalesce(cmpAccordionTickets.Config.AllowReorder, true)
+                                              || Coalesce(cmpAccordionTickets.Config.AllowEdit, true)
+                                              || Coalesce(cmpAccordionTickets.Config.AllowDelete, true),
+                                          172,
+                                          0
+                                      )
+                              Y: =(Parent.Height - Self.Height) / 2
+                        - lblAlGpTitle:
+                            Control: ModernText@1.0.0
+                            Properties:
+                              Color: |-
+                                =If(
+                                    cmpAccordionTickets.Config.Theme = "dark",
+                                    RGBA(241, 245, 249, 1),
+                                    RGBA(15, 23, 42, 1)
+                                )
+                              FontWeight: =FontWeight.Semibold
+                              Height: =20
+                              PaddingBottom: =0
+                              PaddingLeft: =0
+                              PaddingRight: =0
+                              PaddingTop: =0
+                              Size: =13
+                              Text: =ThisItem.Title
+                              Width: |-
+                                =With(
+                                    { act: If(
+                                          Coalesce(cmpAccordionTickets.Config.AllowReorder, true)
+                                              || Coalesce(cmpAccordionTickets.Config.AllowEdit, true)
+                                              || Coalesce(cmpAccordionTickets.Config.AllowDelete, true),
+                                          172,
+                                          0
+                                      ) },
+                                    Max(
+                                        72,
+                                        Parent.Width - 80 - act
+                                        - If(
+                                              Coalesce(cmpAccordionTickets.Config.ShowTags, true) && Parent.Width >= 560 + act, 308,
+                                              Coalesce(cmpAccordionTickets.Config.ShowMeta, true) && Parent.Width >= 420 + act, 196,
+                                              12
+                                          )
+                                    )
+                                )
+                              Wrap: =false
+                              X: =80
+                              Y: =(Parent.Height - 38) / 2
+                        - lblAlGpSubtitle:
+                            Control: ModernText@1.0.0
+                            Properties:
+                              Color: |-
+                                =If(
+                                    cmpAccordionTickets.Config.Theme = "dark",
+                                    RGBA(148, 163, 184, 1),
+                                    RGBA(100, 116, 139, 1)
+                                )
+                              Height: =18
+                              PaddingBottom: =0
+                              PaddingLeft: =0
+                              PaddingRight: =0
+                              PaddingTop: =0
+                              Size: =11
+                              Text: =ThisItem.Subtitle
+                              Visible: =!IsBlank(ThisItem.Subtitle)
+                              Width: =lblAlGpTitle.Width
+                              Wrap: =false
+                              X: =lblAlGpTitle.X
+                              Y: =lblAlGpTitle.Y + lblAlGpTitle.Height
+                        - btnAlGpChevron:
+                            Control: ModernButton@1.0.0
+                            Properties:
+                              AccessibleLabel: |-
+                                =If(
+                                    ThisItem.IsExpanded,
+                                    "Replier " & ThisItem.Title,
+                                    "Déplier " & ThisItem.Title
+                                )
+                              Appearance: =ButtonAppearance.Subtle
+                              Color: |-
+                                =If(
+                                    cmpAccordionTickets.Config.Theme = "dark",
+                                    RGBA(148, 163, 184, 1),
+                                    RGBA(100, 116, 139, 1)
+                                )
+                              Icon: =If(ThisItem.IsExpanded, "ChevronDown", "ChevronRight")
+                              Layout: =ButtonLayout.IconOnly
+                              OnSelect: =Select(btnAlGpTap)
+                              Size: =12
+                              Text: =""
+                              Tooltip: =If(ThisItem.IsExpanded, "Replier", "Déplier")
+                              Width: =32
+                              X: =8
+                              Y: =(Parent.Height - Self.Height) / 2
+                        - btnAlGpUp:
+                            Control: ModernButton@1.0.0
+                            Properties:
+                              AccessibleLabel: ="Monter " & ThisItem.Title
+                              Appearance: =ButtonAppearance.Subtle
+                              Color: |-
+                                =If(
+                                    cmpAccordionTickets.Config.Theme = "dark",
+                                    RGBA(148, 163, 184, 1),
+                                    RGBA(100, 116, 139, 1)
+                                )
+                              DisplayMode: |-
+                                =If(
+                                    ThisItem.CanMoveUp,
+                                    DisplayMode.Edit,
+                                    DisplayMode.Disabled
+                                )
+                              Icon: ="ChevronUp"
+                              Layout: =ButtonLayout.IconOnly
+                              OnSelect: |-
+                                =Set(_cmpAlActionKey, ThisItem.RowKey);
+                                Set(_cmpAlActionType, ThisItem.RowType);
+                                cmpAccordionTickets.OnMoveUp()
+                              Size: =12
+                              Text: =""
+                              Tooltip: ="Monter"
+                              Visible: =Coalesce(cmpAccordionTickets.Config.AllowReorder, true) && !ThisItem.Locked
+                              Width: =32
+                              X: =Parent.Width - 164
+                              Y: =(Parent.Height - Self.Height) / 2
+                        - btnAlGpDown:
+                            Control: ModernButton@1.0.0
+                            Properties:
+                              AccessibleLabel: ="Descendre " & ThisItem.Title
+                              Appearance: =ButtonAppearance.Subtle
+                              Color: |-
+                                =If(
+                                    cmpAccordionTickets.Config.Theme = "dark",
+                                    RGBA(148, 163, 184, 1),
+                                    RGBA(100, 116, 139, 1)
+                                )
+                              DisplayMode: |-
+                                =If(
+                                    ThisItem.CanMoveDown,
+                                    DisplayMode.Edit,
+                                    DisplayMode.Disabled
+                                )
+                              Icon: ="ChevronDown"
+                              Layout: =ButtonLayout.IconOnly
+                              OnSelect: |-
+                                =Set(_cmpAlActionKey, ThisItem.RowKey);
+                                Set(_cmpAlActionType, ThisItem.RowType);
+                                cmpAccordionTickets.OnMoveDown()
+                              Size: =12
+                              Text: =""
+                              Tooltip: ="Descendre"
+                              Visible: =Coalesce(cmpAccordionTickets.Config.AllowReorder, true) && !ThisItem.Locked
+                              Width: =32
+                              X: =Parent.Width - 124
+                              Y: =(Parent.Height - Self.Height) / 2
+                        - btnAlGpEdit:
+                            Control: ModernButton@1.0.0
+                            Properties:
+                              AccessibleLabel: ="Modifier " & ThisItem.Title
+                              Appearance: =ButtonAppearance.Subtle
+                              Color: |-
+                                =If(
+                                    cmpAccordionTickets.Config.Theme = "dark",
+                                    RGBA(148, 163, 184, 1),
+                                    RGBA(100, 116, 139, 1)
+                                )
+                              Icon: ="Edit"
+                              Layout: =ButtonLayout.IconOnly
+                              OnSelect: |-
+                                =Set(_cmpAlActionKey, ThisItem.RowKey);
+                                Set(_cmpAlActionType, ThisItem.RowType);
+                                cmpAccordionTickets.OnEdit()
+                              Size: =12
+                              Text: =""
+                              Tooltip: ="Modifier"
+                              Visible: =Coalesce(cmpAccordionTickets.Config.AllowEdit, true) && !ThisItem.Locked
+                              Width: =32
+                              X: =Parent.Width - 84
+                              Y: =(Parent.Height - Self.Height) / 2
+                        - btnAlGpDelete:
+                            Control: ModernButton@1.0.0
+                            Properties:
+                              AccessibleLabel: ="Supprimer " & ThisItem.Title
+                              Appearance: =ButtonAppearance.Subtle
+                              Color: |-
+                                =If(
+                                    cmpAccordionTickets.Config.Theme = "dark",
+                                    RGBA(148, 163, 184, 1),
+                                    RGBA(100, 116, 139, 1)
+                                )
+                              Icon: ="Delete"
+                              Layout: =ButtonLayout.IconOnly
+                              OnSelect: |-
+                                =Set(_cmpAlActionKey, ThisItem.RowKey);
+                                Set(_cmpAlActionType, ThisItem.RowType);
+                                cmpAccordionTickets.OnDelete()
+                              Size: =12
+                              Text: =""
+                              Tooltip: ="Supprimer"
+                              Visible: =Coalesce(cmpAccordionTickets.Config.AllowDelete, true) && !ThisItem.Locked
+                              Width: =32
+                              X: =Parent.Width - 44
+                              Y: =(Parent.Height - Self.Height) / 2
+                        - btnAlGpTap:
+                            Control: ModernButton@1.0.0
+                            Properties:
+                              AccessibleLabel: |-
+                                =ThisItem.Title
+                                & ", "
+                                & ThisItem.Meta
+                                & If(
+                                    IsBlank(ThisItem.Tag),
+                                    "",
+                                    ", " & ThisItem.Tag
+                                )
+                                & If(ThisItem.IsExpanded, ". Déplié.", ". Replié.")
+                              Appearance: =ButtonAppearance.Transparent
+                              Height: =Parent.Height - 2
+                              Layout: =ButtonLayout.TextOnly
+                              OnSelect: |-
+                                =Set(
+                                    _cmpAlExpanded,
+                                    If(
+                                        _cmpAlAll,
+                                        ThisItem.GroupKey,
+                                        ThisItem.IsExpanded,
+                                        0,
+                                        ThisItem.GroupKey
+                                    )
+                                );
+                                Set(_cmpAlAll, false);
+                                cmpAccordionTickets.OnSelectGroup()
+                              Text: =""
+                              Tooltip: |-
+                                =If(
+                                    ThisItem.IsExpanded,
+                                    "Cliquer pour replier",
+                                    "Cliquer pour voir les " & ThisItem.ChildCount & " tickets"
+                                )
+                              Width: |-
+                                =Parent.Width - 2
+                                - If(
+                                      Coalesce(cmpAccordionTickets.Config.AllowReorder, true)
+                                          || Coalesce(cmpAccordionTickets.Config.AllowEdit, true)
+                                          || Coalesce(cmpAccordionTickets.Config.AllowDelete, true),
+                                      172,
+                                      0
+                                  )
+                              X: =1
+                              Y: =1
+                  - conAlItem:
+                      Control: GroupContainer@1.5.0
+                      Variant: ManualLayout
+                      Properties:
+                        BorderColor: |-
+                          =If(
+                              cmpAccordionTickets.Config.Theme = "dark",
+                              RGBA(51, 65, 85, 1),
+                              RGBA(226, 232, 240, 1)
+                          )
+                        BorderThickness: =1
+                        DropShadow: =DropShadow.None
+                        Fill: |-
+                          =If(
+                              cmpAccordionTickets.Config.Theme = "dark",
+                              RGBA(15, 23, 42, 1),
+                              RGBA(248, 250, 252, 1)
+                          )
+                        Height: =Parent.TemplateHeight - 12
+                        RadiusBottomLeft: =Coalesce(cmpAccordionTickets.Config.Radius, 12)
+                        RadiusBottomRight: =Coalesce(cmpAccordionTickets.Config.Radius, 12)
+                        RadiusTopLeft: =Coalesce(cmpAccordionTickets.Config.Radius, 12)
+                        RadiusTopRight: =Coalesce(cmpAccordionTickets.Config.Radius, 12)
+                        Visible: =ThisItem.RowType = "item"
+                        Width: =Parent.TemplateWidth - 72
+                        X: =56
+                        Y: =6
+                      Children:
+                        - lblAlItMarker:
+                            Control: ModernText@1.0.0
+                            Properties:
+                              Align: =Align.Center
+                              BorderColor: |-
+                                =If(
+                                    cmpAccordionTickets.Config.Theme = "dark",
+                                    RGBA(71, 85, 105, 1),
+                                    RGBA(203, 213, 225, 1)
+                                )
+                              BorderStyle: =BorderStyle.Solid
+                              BorderThickness: =1
+                              Color: |-
+                                =If(
+                                    cmpAccordionTickets.Config.Theme = "dark",
+                                    RGBA(148, 163, 184, 1),
+                                    RGBA(100, 116, 139, 1)
+                                )
+                              Fill: |-
+                                =If(
+                                    cmpAccordionTickets.Config.Theme = "dark",
+                                    RGBA(30, 41, 59, 1),
+                                    RGBA(255, 255, 255, 1)
+                                )
+                              FontWeight: =FontWeight.Semibold
+                              Height: =26
+                              PaddingBottom: =0
+                              PaddingLeft: =2
+                              PaddingRight: =2
+                              PaddingTop: =0
+                              RadiusBottomLeft: =6
+                              RadiusBottomRight: =6
+                              RadiusTopLeft: =6
+                              RadiusTopRight: =6
+                              Size: =10
+                              Text: =ThisItem.Marker
+                              Visible: =!IsBlank(ThisItem.Marker)
+                              Width: =34
+                              Wrap: =false
+                              X: =10
+                              Y: =(Parent.Height - Self.Height) / 2
+                        - lblAlItTag:
+                            Control: ModernText@1.0.0
+                            Properties:
+                              Align: =Align.Center
+                              Color: |-
+                                =Switch(
+                                    Lower(ThisItem.Tone),
+                                    "positive", RGBA(21, 128, 61, 1),
+                                    "warning", RGBA(180, 83, 9, 1),
+                                    "danger", RGBA(185, 28, 28, 1),
+                                    "info", RGBA(29, 78, 216, 1),
+                                    RGBA(71, 85, 105, 1)
+                                )
+                              Fill: |-
+                                =Switch(
+                                    Lower(ThisItem.Tone),
+                                    "positive", RGBA(220, 252, 231, 1),
+                                    "warning", RGBA(254, 243, 199, 1),
+                                    "danger", RGBA(254, 226, 226, 1),
+                                    "info", RGBA(219, 234, 254, 1),
+                                    RGBA(241, 245, 249, 1)
+                                )
+                              FontWeight: =FontWeight.Semibold
+                              Height: =22
+                              PaddingBottom: =0
+                              PaddingLeft: =4
+                              PaddingRight: =4
+                              PaddingTop: =0
+                              RadiusBottomLeft: =11
+                              RadiusBottomRight: =11
+                              RadiusTopLeft: =11
+                              RadiusTopRight: =11
+                              Size: =10
+                              Text: =ThisItem.Tag
+                              Visible: |-
+                                =Coalesce(cmpAccordionTickets.Config.ShowTags, true)
+                                && !IsBlank(ThisItem.Tag)
+                                && Parent.Width >= 520 + If(
+                                          Coalesce(cmpAccordionTickets.Config.AllowReorder, true)
+                                              || Coalesce(cmpAccordionTickets.Config.AllowEdit, true)
+                                              || Coalesce(cmpAccordionTickets.Config.AllowDelete, true),
+                                          172,
+                                          0
+                                      )
+                              Width: =112
+                              Wrap: =false
+                              X: |-
+                                =Parent.Width - 236 - If(
+                                          Coalesce(cmpAccordionTickets.Config.AllowReorder, true)
+                                              || Coalesce(cmpAccordionTickets.Config.AllowEdit, true)
+                                              || Coalesce(cmpAccordionTickets.Config.AllowDelete, true),
+                                          172,
+                                          0
+                                      )
+                              Y: =(Parent.Height - Self.Height) / 2
+                        - lblAlItMeta:
+                            Control: ModernText@1.0.0
+                            Properties:
+                              Align: =Align.Right
+                              Color: |-
+                                =If(
+                                    cmpAccordionTickets.Config.Theme = "dark",
+                                    RGBA(203, 213, 225, 1),
+                                    RGBA(51, 65, 85, 1)
+                                )
+                              FontWeight: =FontWeight.Semibold
+                              PaddingBottom: =0
+                              PaddingLeft: =0
+                              PaddingRight: =0
+                              PaddingTop: =0
+                              Size: =11
+                              Text: =ThisItem.Meta
+                              Visible: =Coalesce(cmpAccordionTickets.Config.ShowMeta, true)
+                              Width: =104
+                              Wrap: =false
+                              X: |-
+                                =Parent.Width - 116 - If(
+                                          Coalesce(cmpAccordionTickets.Config.AllowReorder, true)
+                                              || Coalesce(cmpAccordionTickets.Config.AllowEdit, true)
+                                              || Coalesce(cmpAccordionTickets.Config.AllowDelete, true),
+                                          172,
+                                          0
+                                      )
+                              Y: =(Parent.Height - Self.Height) / 2
+                        - lblAlItTitle:
+                            Control: ModernText@1.0.0
+                            Properties:
+                              Color: |-
+                                =If(
+                                    cmpAccordionTickets.Config.Theme = "dark",
+                                    RGBA(241, 245, 249, 1),
+                                    RGBA(15, 23, 42, 1)
+                                )
+                              FontWeight: =FontWeight.Semibold
+                              Height: =18
+                              PaddingBottom: =0
+                              PaddingLeft: =0
+                              PaddingRight: =0
+                              PaddingTop: =0
+                              Size: =12
+                              Text: =ThisItem.Title
+                              Width: |-
+                                =With(
+                                    { act: If(
+                                          Coalesce(cmpAccordionTickets.Config.AllowReorder, true)
+                                              || Coalesce(cmpAccordionTickets.Config.AllowEdit, true)
+                                              || Coalesce(cmpAccordionTickets.Config.AllowDelete, true),
+                                          172,
+                                          0
+                                      ) },
+                                    Max(
+                                        64,
+                                        Parent.Width - 54 - act
+                                        - If(
+                                              Coalesce(cmpAccordionTickets.Config.ShowTags, true) && Parent.Width >= 520 + act, 248,
+                                              Coalesce(cmpAccordionTickets.Config.ShowMeta, true), 128,
+                                              12
+                                          )
+                                    )
+                                )
+                              Wrap: =false
+                              X: =54
+                              Y: =(Parent.Height - 34) / 2
+                        - lblAlItSubtitle:
+                            Control: ModernText@1.0.0
+                            Properties:
+                              Color: |-
+                                =If(
+                                    cmpAccordionTickets.Config.Theme = "dark",
+                                    RGBA(100, 116, 139, 1),
+                                    RGBA(148, 163, 184, 1)
+                                )
+                              Height: =16
+                              PaddingBottom: =0
+                              PaddingLeft: =0
+                              PaddingRight: =0
+                              PaddingTop: =0
+                              Size: =10
+                              Text: =ThisItem.Subtitle
+                              Visible: =!IsBlank(ThisItem.Subtitle)
+                              Width: =lblAlItTitle.Width
+                              Wrap: =false
+                              X: =lblAlItTitle.X
+                              Y: =lblAlItTitle.Y + lblAlItTitle.Height
+                        - btnAlItUp:
+                            Control: ModernButton@1.0.0
+                            Properties:
+                              AccessibleLabel: ="Monter " & ThisItem.Title
+                              Appearance: =ButtonAppearance.Subtle
+                              Color: |-
+                                =If(
+                                    cmpAccordionTickets.Config.Theme = "dark",
+                                    RGBA(148, 163, 184, 1),
+                                    RGBA(100, 116, 139, 1)
+                                )
+                              DisplayMode: |-
+                                =If(
+                                    ThisItem.CanMoveUp,
+                                    DisplayMode.Edit,
+                                    DisplayMode.Disabled
+                                )
+                              Icon: ="ChevronUp"
+                              Layout: =ButtonLayout.IconOnly
+                              OnSelect: |-
+                                =Set(_cmpAlActionKey, ThisItem.RowKey);
+                                Set(_cmpAlActionType, ThisItem.RowType);
+                                cmpAccordionTickets.OnMoveUp()
+                              Size: =12
+                              Text: =""
+                              Tooltip: ="Monter"
+                              Visible: =Coalesce(cmpAccordionTickets.Config.AllowReorder, true) && !ThisItem.Locked
+                              Width: =32
+                              X: =Parent.Width - 164
+                              Y: =(Parent.Height - Self.Height) / 2
+                        - btnAlItDown:
+                            Control: ModernButton@1.0.0
+                            Properties:
+                              AccessibleLabel: ="Descendre " & ThisItem.Title
+                              Appearance: =ButtonAppearance.Subtle
+                              Color: |-
+                                =If(
+                                    cmpAccordionTickets.Config.Theme = "dark",
+                                    RGBA(148, 163, 184, 1),
+                                    RGBA(100, 116, 139, 1)
+                                )
+                              DisplayMode: |-
+                                =If(
+                                    ThisItem.CanMoveDown,
+                                    DisplayMode.Edit,
+                                    DisplayMode.Disabled
+                                )
+                              Icon: ="ChevronDown"
+                              Layout: =ButtonLayout.IconOnly
+                              OnSelect: |-
+                                =Set(_cmpAlActionKey, ThisItem.RowKey);
+                                Set(_cmpAlActionType, ThisItem.RowType);
+                                cmpAccordionTickets.OnMoveDown()
+                              Size: =12
+                              Text: =""
+                              Tooltip: ="Descendre"
+                              Visible: =Coalesce(cmpAccordionTickets.Config.AllowReorder, true) && !ThisItem.Locked
+                              Width: =32
+                              X: =Parent.Width - 124
+                              Y: =(Parent.Height - Self.Height) / 2
+                        - btnAlItEdit:
+                            Control: ModernButton@1.0.0
+                            Properties:
+                              AccessibleLabel: ="Modifier " & ThisItem.Title
+                              Appearance: =ButtonAppearance.Subtle
+                              Color: |-
+                                =If(
+                                    cmpAccordionTickets.Config.Theme = "dark",
+                                    RGBA(148, 163, 184, 1),
+                                    RGBA(100, 116, 139, 1)
+                                )
+                              Icon: ="Edit"
+                              Layout: =ButtonLayout.IconOnly
+                              OnSelect: |-
+                                =Set(_cmpAlActionKey, ThisItem.RowKey);
+                                Set(_cmpAlActionType, ThisItem.RowType);
+                                cmpAccordionTickets.OnEdit()
+                              Size: =12
+                              Text: =""
+                              Tooltip: ="Modifier"
+                              Visible: =Coalesce(cmpAccordionTickets.Config.AllowEdit, true) && !ThisItem.Locked
+                              Width: =32
+                              X: =Parent.Width - 84
+                              Y: =(Parent.Height - Self.Height) / 2
+                        - btnAlItDelete:
+                            Control: ModernButton@1.0.0
+                            Properties:
+                              AccessibleLabel: ="Supprimer " & ThisItem.Title
+                              Appearance: =ButtonAppearance.Subtle
+                              Color: |-
+                                =If(
+                                    cmpAccordionTickets.Config.Theme = "dark",
+                                    RGBA(148, 163, 184, 1),
+                                    RGBA(100, 116, 139, 1)
+                                )
+                              Icon: ="Delete"
+                              Layout: =ButtonLayout.IconOnly
+                              OnSelect: |-
+                                =Set(_cmpAlActionKey, ThisItem.RowKey);
+                                Set(_cmpAlActionType, ThisItem.RowType);
+                                cmpAccordionTickets.OnDelete()
+                              Size: =12
+                              Text: =""
+                              Tooltip: ="Supprimer"
+                              Visible: =Coalesce(cmpAccordionTickets.Config.AllowDelete, true) && !ThisItem.Locked
+                              Width: =32
+                              X: =Parent.Width - 44
+                              Y: =(Parent.Height - Self.Height) / 2
+                        - btnAlItTap:
+                            Control: ModernButton@1.0.0
+                            Properties:
+                              AccessibleLabel: |-
+                                =ThisItem.Title
+                                & If(IsBlank(ThisItem.Subtitle), "", ", " & ThisItem.Subtitle)
+                                & If(IsBlank(ThisItem.Meta), "", ", " & ThisItem.Meta)
+                                & If(IsBlank(ThisItem.Tag), "", ", " & ThisItem.Tag)
+                              Appearance: =ButtonAppearance.Transparent
+                              Height: =Parent.Height - 2
+                              Layout: =ButtonLayout.TextOnly
+                              OnSelect: |-
+                                =Set(_cmpAlItemKey, ThisItem.RowKey);
+                                cmpAccordionTickets.OnSelectItem()
+                              Text: =""
+                              Width: |-
+                                =Parent.Width - 2
+                                - If(
+                                      Coalesce(cmpAccordionTickets.Config.AllowReorder, true)
+                                          || Coalesce(cmpAccordionTickets.Config.AllowEdit, true)
+                                          || Coalesce(cmpAccordionTickets.Config.AllowDelete, true),
+                                      172,
+                                      0
+                                  )
+                              X: =1
+                              Y: =1
+            - lblAlEmpty:
+                Control: ModernText@1.0.0
+                Properties:
+                  Align: =Align.Center
+                  Color: |-
+                    =If(
+                        cmpAccordionTickets.Config.Theme = "dark",
+                        RGBA(148, 163, 184, 1),
+                        RGBA(100, 116, 139, 1)
+                    )
+                  FillPortions: =1
+                  LayoutMinHeight: =0
+                  LayoutMinWidth: =0
+                  PaddingLeft: =32
+                  PaddingRight: =32
+                  Size: =12
+                  Text: ="Aucun ticket à afficher."
+                  Visible: =cmpAccordionTickets.GroupCount = 0
